@@ -15,7 +15,7 @@ export default function Parametres (){
               Aucune donnée disponible
             </h3>
             <p className="text-sm text-muted-foreground">
-              Les données s'afficheront ici une fois alimenté.
+              Les données s&apos;afficheront ici une fois alimenté.
             </p>
             <Button className="mt-4">Ajouter</Button>
           </div>

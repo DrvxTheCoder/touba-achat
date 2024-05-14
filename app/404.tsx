@@ -21,7 +21,7 @@ const Custom404: NextPage = () => {
           ERROR 404 - Page Introuvable
         </h3>
         <p className="text-sm text-muted-foreground">
-          Vous vous etes perdu? Retournez à la page d'acceuil en cliquant ici.
+          Vous vous etes perdu? Retournez à la page d&apos;acceuil en cliquant ici.
         </p>
         <Button className="mt-4">Retourner au dashboard</Button>
       </div>

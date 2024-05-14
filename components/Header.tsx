@@ -53,10 +53,11 @@ export default function Header (){
                 <CustomLogoSVG width="2rem" height="2rem" />
                 Touba-Achat™
               </Link>
-              {links.map((link) => (
+              {links.map((link, index) => (
 
                 <Link 
-                    href={link.href} 
+                    href={link.href}
+                    key={index} 
                     className={clsx(
                         "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2",
                         {
