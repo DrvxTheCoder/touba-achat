@@ -21,17 +21,18 @@ export default function Sidebar(){
         { href: "/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0  }
     ];
     return (
-        <aside className="sticky hidden border-r bg-muted/40 md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
+        <aside className="absolute sticky left-0 h-full hidden border-r bg-muted/40 md:block">
+        <div className="fixed flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
+            <div className="flex items-center gap-2 font-semibold">
               <CustomLogoSVG width="2rem" height="2rem" />
-              <span className="">Touba-Achat™</span>
-            </Link>
-            <ModeToggle />
+              <Link href="/">Touba-Achat™</Link>
+              <ModeToggle />
+            </div>
+            
           </div>
-          <div className="flex-1">
-          <nav className="grid items-start px-2 pt-4 text-sm font-medium lg:px-4">
+          <div className="flex">
+          <nav className="grid items-start px-2 pt-4 text-sm font-medium lg:px-4 w-7/12">
             {links.map((link, index) => (
 
                 <Link
@@ -55,7 +56,7 @@ export default function Sidebar(){
                 ))}
             </nav>
           </div>
-          <div className="mt-auto p-4">
+          <div className="mt-auto p-4 w-7/12">
             <Card x-chunk="dashboard-02-chunk-0">
               <CardHeader className="p-2 pt-0 md:p-4">
                 <CardTitle>Documentation</CardTitle>

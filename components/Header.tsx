@@ -32,7 +32,7 @@ export default function Header (){
         { href: "/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
     ];
     return(
-        <header className="sticky flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+        <header className="absolute sticky w-full z-10 backdrop-blur-sm top-0 flex h-14 gap-4 items-center border-b bg-muted/60 px-4 lg:h-[60px] lg:px-6">
         <Sheet>
           <SheetTrigger asChild>
             <Button
