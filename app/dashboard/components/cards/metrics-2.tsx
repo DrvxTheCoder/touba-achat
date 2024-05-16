@@ -86,7 +86,7 @@ export function CardsMetric2() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              Aujourd'hui
+                              Aujourd&apos;hui
                             </span>
                             <span className="font-bold">
                               {payload[1].value}
