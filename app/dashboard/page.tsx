@@ -1,7 +1,10 @@
+"use client"
+
 import Link from "next/link"
 import { Metadata } from "next"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, ArrowUpRight, CreditCard, DollarSign, Package2Icon, PackageIcon, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,6 +23,7 @@ import { CardsActivityGoal } from "@/app/dashboard/components/cards/activity";
 import { CardsMetric2 } from "@/app/dashboard/components/cards/metrics-2";
 
 export default function Dashboard (){
+  const [badgeCount, setBageCount] = useState(1);
     return(
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex-1 space-y-4">
@@ -40,6 +44,10 @@ export default function Dashboard (){
               </TabsTrigger>
               <TabsTrigger value="notifications">
                 Notifications
+                {badgeCount > 0 && (
+                    <Badge className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-bold">
+                       {badgeCount} 
+                    </Badge>)}
               </TabsTrigger>
             </TabsList>
             {/* Start Overview */}
