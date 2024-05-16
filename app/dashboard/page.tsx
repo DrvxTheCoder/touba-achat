@@ -32,16 +32,17 @@ export default function Dashboard (){
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="analytics" disabled>
+              <TabsTrigger value="analytics">
                 Analytiques
               </TabsTrigger>
-              <TabsTrigger value="reports" disabled>
+              <TabsTrigger value="reports">
                 Rapports
               </TabsTrigger>
-              <TabsTrigger value="notifications" disabled>
+              <TabsTrigger value="notifications">
                 Notifications
               </TabsTrigger>
             </TabsList>
+            {/* Start Overview */}
             <TabsContent value="overview" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -145,6 +146,22 @@ export default function Dashboard (){
                 <CardsMetric2 />
               </div>
             </TabsContent>
+            {/* End Overview */}
+            {/* Start Analytiques */}
+            <TabsContent value="analytics" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <Card className="col-span-4">
+                  <CardHeader>
+                    <CardTitle>Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    <Overview />
+                  </CardContent>
+                </Card>
+                <CardsMetric2 />
+              </div>
+            </TabsContent>
+            {/* End Analytiques */}
           </Tabs>
         </div>
       </main>

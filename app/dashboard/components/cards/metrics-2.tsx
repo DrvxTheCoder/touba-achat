@@ -51,7 +51,7 @@ export function CardsMetric2() {
   const theme = themes.find((theme) => theme.name === config.theme)
 
   return (
-    <Card className="col-span-3 space-y-12">
+    <Card className="md:col-span-3 col-span-4 space-y-12">
       <CardHeader>
         <CardTitle>Fréquence EDB</CardTitle>
         <CardDescription>
