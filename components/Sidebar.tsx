@@ -32,7 +32,7 @@ export default function Sidebar(){
             
           </div>
           <div className="flex">
-          <nav className="grid items-start px-2 pt-4 text-sm font-medium lg:px-4 w-7/12">
+          <nav className="grid items-start px-2 pt-4 text-sm font-medium lg:px-4 lg:w-7/12">
             {links.map((link, index) => (
 
                 <Link

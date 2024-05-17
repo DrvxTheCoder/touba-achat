@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, ArrowUpRight, CreditCard, DollarSign, Package2Icon, PackageIcon, Users } from "lucide-react";
+import { Activity, ArrowUpRight, Clock, CreditCard, DollarSign, Package2Icon, PackageIcon, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,8 +33,8 @@ export default function Dashboard (){
             <TeamSwitcher />
             </div>
           </div>
-          <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList>
+          <Tabs defaultValue="overview" className="space-y-4 flex flex-col items-center">
+            <TabsList className="max-w-md">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="analytics">
                 Analytiques
@@ -45,13 +45,13 @@ export default function Dashboard (){
               <TabsTrigger value="notifications">
                 Notifications
                 {badgeCount > 0 && (
-                    <Badge className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-bold">
+                    <Badge className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                        {badgeCount} 
                     </Badge>)}
               </TabsTrigger>
             </TabsList>
             {/* Start Overview */}
-            <TabsContent value="overview" className="space-y-4">
+            <TabsContent value="overview" className="space-y-4 w-full">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -94,32 +94,8 @@ export default function Dashboard (){
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Sales</CardTitle>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-muted-foreground"
-                    >
-                      <rect width="20" height="14" x="2" y="5" rx="2" />
-                      <path d="M2 10h20" />
-                    </svg>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">+12,234</div>
-                    <p className="text-xs text-muted-foreground">
-                      +19% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Active Now
+                      Actif
                     </CardTitle>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -135,10 +111,19 @@ export default function Dashboard (){
                     </svg>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">+573</div>
+                    <div className="text-2xl font-bold">+30</div>
                     <p className="text-xs text-muted-foreground">
-                      +201 since last hour
+                    +5 depuis la dernière heure
                     </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">En Attente</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">25</div>
                   </CardContent>
                 </Card>
               </div>
@@ -156,7 +141,7 @@ export default function Dashboard (){
             </TabsContent>
             {/* End Overview */}
             {/* Start Analytiques */}
-            <TabsContent value="analytics" className="space-y-4">
+            <TabsContent value="analytics" className="space-y-4 w-full">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                   <CardHeader>

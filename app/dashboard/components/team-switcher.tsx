@@ -48,8 +48,8 @@ const groups = [
     label: "",
     teams: [
       {
-        label: "Paul Ismael Flan",
-        value: "personal",
+        label: "Afficher tout",
+        value: "all",
       },
     ],
   },
@@ -112,7 +112,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
                 alt={selectedTeam.label}
                 className="grayscale"
               />
-              <AvatarFallback>SC</AvatarFallback>
+              <AvatarFallback>TO</AvatarFallback>
             </Avatar>
             {selectedTeam.label}
             <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
