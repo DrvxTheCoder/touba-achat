@@ -212,7 +212,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
             </div>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
             Cancel
           </Button>
