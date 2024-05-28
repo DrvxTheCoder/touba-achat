@@ -185,10 +185,10 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
         <div>
           <div className="space-y-4 py-1 pb-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Team name</Label>
-              <Input id="name" placeholder="Acme Inc." />
+              <Label htmlFor="name">Nom de la direction</Label>
+              <Input id="name" placeholder="Touba Oil SAU." />
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="plan">Subscription plan</Label>
               <Select>
                 <SelectTrigger>
@@ -209,14 +209,14 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
           </div>
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
-            Cancel
+            Annuler
           </Button>
-          <Button type="submit">Continue</Button>
+          <Button type="submit">Ajouter</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
