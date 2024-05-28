@@ -103,7 +103,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label="Select a team"
+            aria-label="Choisir une direction"
             className={cn("w-[200px] justify-between", className)}
           >
             <Avatar className="mr-2 h-5 w-5">
@@ -121,7 +121,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
         <PopoverContent className="w-[200px] p-0">
           <Command>
             <CommandList>
-              <CommandInput placeholder="Search team..." />
+              <CommandInput placeholder="Recherche..." />
               <CommandEmpty>Aucune résultat trouvé.</CommandEmpty>
               {groups.map((group) => (
                 <CommandGroup key={group.label} heading={group.label}>
@@ -167,7 +167,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
                     }}
                   >
                     <PlusCircledIcon className="mr-2 h-5 w-5" />
-                    Create Team
+                    Créer un direction
                   </CommandItem>
                 </DialogTrigger>
               </CommandGroup>
@@ -175,15 +175,15 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
           </Command>
         </PopoverContent>
       </Popover>
-      <DialogContent>
+      <DialogContent className="m-2">
         <DialogHeader>
-          <DialogTitle>Create team</DialogTitle>
+          <DialogTitle>Créer un direction</DialogTitle>
           <DialogDescription>
-            Add a new team to manage products and customers.
+            Ajouter une direction pour gérer les états de besoin et ordres de missions.
           </DialogDescription>
         </DialogHeader>
         <div>
-          <div className="space-y-4 py-2 pb-4">
+          <div className="space-y-4 py-1 pb-4">
             <div className="space-y-2">
               <Label htmlFor="name">Team name</Label>
               <Input id="name" placeholder="Acme Inc." />

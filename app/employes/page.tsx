@@ -1,6 +1,6 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import TeamSwitcher from "@/app/dashboard/components/team-switcher";
+import { ShowToast } from "@/components/ShowToast";
 
 export default function Employes (){
     return(
@@ -23,7 +23,7 @@ export default function Employes (){
             <p className="text-sm text-muted-foreground">
               Les données s&apos;afficheront ici une fois alimenté.
             </p>
-            <Button className="mt-4">Rafraichir</Button>
+            <ShowToast />
           </div>
         </div>
       </main>

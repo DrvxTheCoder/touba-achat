@@ -41,7 +41,7 @@ export default function Sidebar(){
                     key={index} 
                     href={link.href} 
                     className={clsx(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                        "flex items-center gap-3 rounded-lg px-3 py-2 my-1 transition-all hover:bg-muted",
                         {
                             "bg-muted text-primary": pathname === link.href,
                             "text-muted-foreground": pathname !== link.href,
