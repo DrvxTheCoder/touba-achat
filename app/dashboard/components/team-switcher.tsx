@@ -175,7 +175,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
           </Command>
         </PopoverContent>
       </Popover>
-      <DialogContent className="m-2">
+      <DialogContent className="">
         <DialogHeader>
           <DialogTitle>Créer un direction</DialogTitle>
           <DialogDescription>
