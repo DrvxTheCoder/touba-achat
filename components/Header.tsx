@@ -132,10 +132,13 @@ export default function Header (){
             </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <Link href={"/auth"}>
             <DropdownMenuItem>
-            Déconnexion
+              Déconnexion
+            
             <DropdownMenuShortcut><LogOut className="h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
+            </Link>
         </DropdownMenuContent>
         </DropdownMenu>
       </header>

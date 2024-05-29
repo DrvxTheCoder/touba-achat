@@ -241,9 +241,11 @@ export default function Dashboard (){
               </div>
             </TabsContent>
             {/* End Analytiques */}
+            {/* Start Notifications */}
             <TabsContent value="notifications">
-            <MailList items={mails.filter((item) => !item.read)} />
+              <MailList items={mails.filter((item) => !item.read)} />
             </TabsContent>
+            {/* Start Notifications */}
           </Tabs>
         </div>
       </main>

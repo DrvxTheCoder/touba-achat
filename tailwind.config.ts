@@ -22,6 +22,9 @@ const config = {
         sans: ["var(--font-geist-sans)"],
         mono: ["var(--font-geist-mono)"],
       },
+      backgroundImage: {
+        'cover-image': "url('@/app/touba-cover.jpeg')",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

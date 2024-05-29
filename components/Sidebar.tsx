@@ -15,10 +15,10 @@ export default function Sidebar(){
 
     const links = [
         { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
-        { href: "/etats", icon: Package, label: "États de Besoins", badgeCount: 6  },
-        { href: "/employes", icon: Users, label: "Employés", badgeCount: 0  },
-        { href: "/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0  },
-        { href: "/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0  }
+        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 6  },
+        { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0  },
+        { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0  },
+        { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0  }
     ];
     return (
         <aside className="absolute sticky left-0 h-full hidden border-r bg-muted/40 md:block">
@@ -27,7 +27,7 @@ export default function Sidebar(){
             <div className="flex items-center gap-2 font-semibold space-x-9">
               <div className="flex items-center gap-1">
               <CustomLogoSVG width="2rem" height="2rem" />
-              <Link href="/">Touba-Achat™</Link>
+              <Link href="/">Touba-App™</Link>
               </div>
               <ModeToggle />
             </div>

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 async function getTasks() {
   const data = await fs.readFile(
-    path.join(process.cwd(), "app/etats/data/tasks.json")
+    path.join(process.cwd(), "app/dashboard/etats/data/tasks.json")
   )
 
   const tasks = JSON.parse(data.toString())

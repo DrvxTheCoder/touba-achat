@@ -1,8 +1,17 @@
-import { ModeToggle } from "@/components/theme-toggle";
-import Dashboard from "./dashboard/page";
+"use client";
 
-export default function Home() {
-  return (
-    <Dashboard />
-  );
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+const Home: React.FC = () => {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/dashboard');
+  }, [router]);
+
+  return null;
 }
+
+export default Home;
+
