@@ -26,10 +26,10 @@ export default function Header (){
 
     const links = [
         { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
-        { href: "/etats", icon: Package, label: "États de Besoins", badgeCount: 6 },
-        { href: "/employes", icon: Users, label: "Employés", badgeCount: 0 },
-        { href: "/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
-        { href: "/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
+        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 6 },
+        { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
+        { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
+        { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
     ];
     return(
         <header className="absolute sticky w-full z-10 backdrop-blur-sm top-0 flex h-14 gap-4 items-center border-b bg-muted/60 px-4 lg:h-[60px] lg:px-6">
