@@ -6,6 +6,8 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Toaster } from "@/components/ui/toaster"
 import ProgressBar from '@/components/ProgressBar';
+import NextProgress from '@/components/next-progress';
+
 import './globals.css';
 
 export const metadata = {
@@ -29,6 +31,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <NextProgress />
             {children}
         </ThemeProvider>
       </body>

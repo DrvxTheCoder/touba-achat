@@ -1,5 +1,5 @@
 {
-  "name": "shadcn-ui-examples",
+  "name": "touba-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,6 +11,7 @@
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
     "@hookform/resolvers": "^3.4.2",
+    "@prisma/client": "^5.14.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-checkbox": "^1.0.4",
@@ -44,6 +45,7 @@
     "lucide-react": "^0.318.0",
     "next": "14.1.0",
     "next-themes": "^0.2.1",
+    "nextjs-toploader": "^1.6.12",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -64,6 +66,7 @@
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.14",
+    "prisma": "^5.14.0",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5"
   }
