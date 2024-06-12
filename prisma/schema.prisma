@@ -1,14 +1,105 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+model User {
+  id         Int        @id @default(autoincrement())
+  email      String     @unique
+  name       String?
+  role       Role
+  password   String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  employees  Employee[] @relation("UserEmployees")
+  edbs       EtatDeBesoin[]
+  odms       OrdreDeMission[]
+}
+
+enum Role {
+  USER
+  RESPONSABLE
+  DIRECTEUR
+  DIRECTEUR_GENERAL
+  MAGASINIER
+  HR
+}
+
+model Employee {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  departmentId Int
+  position     String
+  phoneNumber  String?
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id])
+}
+
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String
+  employees Employee[]
+}
+
+model Supplier {
+  id        Int       @id @default(autoincrement())
+  name      String
+  contact   String
+  phone     String?
+  email     String?
+  edbs      EtatDeBesoin[]
+}
+
+model EtatDeBesoin {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String
+  status       String
+  amount       Float
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  userId       Int
+  supplierId   Int
+  categoryId   Int
+  departmentId Int
+  budgetId     Int
+  user         User      @relation(fields: [userId], references: [id])
+  supplier     Supplier  @relation(fields: [supplierId], references: [id])
+  category     Category  @relation(fields: [categoryId], references: [id])
+  department   Department@relation(fields: [departmentId], references: [id])
+  budget       Budget    @relation(fields: [budgetId], references: [id])
+}
+
+model OrdreDeMission {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String
+  status       String
+  amount       Float
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  userId       Int
+  departmentId Int
+  budgetId     Int
+  user         User      @relation(fields: [userId], references: [id])
+  department   Department@relation(fields: [departmentId], references: [id])
+  budget       Budget    @relation(fields: [budgetId], references: [id])
+}
+
+model Budget {
+  id         Int       @id @default(autoincrement())
+  amount     Float
+  year       Int
+  edbs       EtatDeBesoin[]
+  odms       OrdreDeMission[]
+}
+
+model Category {
+  id    Int            @id @default(autoincrement())
+  name  String
+  edbs  EtatDeBesoin[]
 }

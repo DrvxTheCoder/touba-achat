@@ -1,16 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    remotePatterns: [
+    domains: ["avatars.githubusercontent.com", "images.unsplash.com"],
+  },
+  async rewrites() {
+    return [
       {
-        protocol: "https",
-        hostname: "avatars.githubusercontent.com",
+        source: '/service-worker.js',
+        destination: '/_next/static/service-worker.js',
       },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-    ],
+    ]
   },
 };
 
