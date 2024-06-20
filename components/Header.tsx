@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link";
+import { signOut } from 'next-auth/react';
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
@@ -133,9 +134,8 @@ export default function Header (){
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <Link href={"/auth"}>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut()}>
               Déconnexion
-            
             <DropdownMenuShortcut><LogOut className="h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
             </Link>

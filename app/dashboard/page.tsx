@@ -24,14 +24,27 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { MailList } from "@/app/dashboard/components/mail-list"
 import { accounts, mails } from "@/app/dashboard/components/data"
+import { useRouter } from 'next/navigation';
+import { getSession } from 'next-auth/react';
 
 export default function Dashboard (){
   const [badgeCount, setBadgeCount] = useState(1);
 
+  const router = useRouter();
+
   useEffect(() => {
+    const fetchSession = async () => {
+      const session = await getSession();
+      if (!session) {
+        router.replace('/auth'); // Redirect to the authentication page if the user is not authenticated
+      }
+    }; 
+
     const filtered = mails.filter((item) => !item.read);
     setBadgeCount(filtered.length);
-  }, [mails]);
+
+    fetchSession();
+  }, [router, mails]);
   
     return(
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">

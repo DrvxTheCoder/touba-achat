@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -8,98 +8,131 @@ generator client {
 }
 
 model User {
-  id         Int        @id @default(autoincrement())
-  email      String     @unique
-  name       String?
-  role       Role
-  password   String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  employees  Employee[] @relation("UserEmployees")
-  edbs       EtatDeBesoin[]
-  odms       OrdreDeMission[]
+  id            Int              @id @default(autoincrement())
+  email         String           @unique
+  name          String
+  role          Role
+  password      String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  employees     Employee[]       @relation("UserEmployees")
+  edbs          EtatDeBesoin[]
+  odms          OrdreDeMission[]
+  notifications Notification[]
 }
 
 enum Role {
+  ADMIN
   USER
   RESPONSABLE
   DIRECTEUR
   DIRECTEUR_GENERAL
   MAGASINIER
-  HR
+  RH
 }
 
+
+
 model Employee {
-  id           Int        @id @default(autoincrement())
+  id           Int              @id @default(autoincrement())
+  name         String
+  email        String           @unique
+  phoneNumber  String?
   userId       Int
   departmentId Int
-  position     String
-  phoneNumber  String?
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department   Department @relation(fields: [departmentId], references: [id])
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade, name: "UserEmployees")
+  department   Department       @relation(fields: [departmentId], references: [id])
+  edbs         EtatDeBesoin[]
+  odms         OrdreDeMission[]
 }
 
 model Department {
-  id        Int        @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   name      String
   employees Employee[]
+  edbs      EtatDeBesoin[]
+  odms      OrdreDeMission[]
 }
 
 model Supplier {
-  id        Int       @id @default(autoincrement())
-  name      String
-  contact   String
-  phone     String?
-  email     String?
-  edbs      EtatDeBesoin[]
+  id    Int            @id @default(autoincrement())
+  name  String
+  email String?
+  phone String?
+  edbs  EtatDeBesoin[]
 }
 
 model EtatDeBesoin {
-  id           Int       @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   title        String
   description  String
-  status       String
-  amount       Float
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   userId       Int
-  supplierId   Int
-  categoryId   Int
   departmentId Int
+  categoryId   Int
   budgetId     Int
-  user         User      @relation(fields: [userId], references: [id])
-  supplier     Supplier  @relation(fields: [supplierId], references: [id])
-  category     Category  @relation(fields: [categoryId], references: [id])
-  department   Department@relation(fields: [departmentId], references: [id])
-  budget       Budget    @relation(fields: [budgetId], references: [id])
+  supplierId   Int?
+  status       String
+  user         User       @relation(fields: [userId], references: [id])
+  department   Department @relation(fields: [departmentId], references: [id])
+  category     Category   @relation(fields: [categoryId], references: [id])
+  budget       Budget     @relation(fields: [budgetId], references: [id])
+  supplier     Supplier?  @relation(fields: [supplierId], references: [id])
+  orders       Order[]
+  Employee     Employee?  @relation(fields: [employeeId], references: [id])
+  employeeId   Int?
+  notifications Notification[]
 }
 
 model OrdreDeMission {
-  id           Int       @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   title        String
   description  String
-  status       String
-  amount       Float
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   userId       Int
   departmentId Int
   budgetId     Int
-  user         User      @relation(fields: [userId], references: [id])
-  department   Department@relation(fields: [departmentId], references: [id])
-  budget       Budget    @relation(fields: [budgetId], references: [id])
+  status       String
+  user         User       @relation(fields: [userId], references: [id])
+  department   Department @relation(fields: [departmentId], references: [id])
+  budget       Budget     @relation(fields: [budgetId], references: [id])
+  Employee     Employee?  @relation(fields: [employeeId], references: [id])
+  employeeId   Int?
+  notifications Notification[]
 }
 
 model Budget {
-  id         Int       @id @default(autoincrement())
-  amount     Float
-  year       Int
-  edbs       EtatDeBesoin[]
-  odms       OrdreDeMission[]
+  id     Int              @id @default(autoincrement())
+  amount Float
+  edbs   EtatDeBesoin[]
+  odms   OrdreDeMission[]
 }
 
 model Category {
-  id    Int            @id @default(autoincrement())
-  name  String
-  edbs  EtatDeBesoin[]
+  id   Int            @id @default(autoincrement())
+  name String
+  edbs EtatDeBesoin[]
+}
+
+model Order {
+  id             Int          @id @default(autoincrement())
+  amount         Float
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  etatDeBesoinId Int
+  etatDeBesoin   EtatDeBesoin @relation(fields: [etatDeBesoinId], references: [id])
+}
+
+model Notification {
+  id                    Int        @id @default(autoincrement())
+  message               String
+  userId                Int
+  etatDeBesoinId        Int?
+  ordreDeMissionId      Int?
+  createdAt             DateTime   @default(now())
+  user                  User       @relation(fields: [userId], references: [id])
+  etatDeBesoin          EtatDeBesoin? @relation(fields: [etatDeBesoinId], references: [id])
+  ordreDeMission        OrdreDeMission? @relation(fields: [ordreDeMissionId], references: [id])
 }

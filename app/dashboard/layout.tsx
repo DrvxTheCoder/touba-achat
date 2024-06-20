@@ -1,6 +1,7 @@
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Toaster } from "@/components/ui/toaster"
+import NextProgress from '@/components/next-progress';
 
 export const metadata = {
   title: 'Touba Service Achat',
@@ -18,6 +19,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps)  {
             <div className="flex flex-col">
               <Header />
               <Toaster />
+              <NextProgress />
               {children}
             </div>
         </div>
