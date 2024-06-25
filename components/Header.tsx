@@ -22,8 +22,19 @@ import {
     DropdownMenuShortcut
   } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession } from "next-auth/react";
+
 export default function Header (){
+    const { data: session } = useSession();
     const pathname = usePathname();
+
+    const getInitials = (name: any) => {
+      return name
+          .split(' ')
+          .map((word: any) => word[0])
+          .join('')
+          .toUpperCase();
+    };
 
     const links = [
         { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
@@ -39,7 +50,7 @@ export default function Header (){
             <Button
               variant="outline"
               size="icon"
-              className="shrink-0 md:hidden"
+              className="shrink-0 md:hidden mr-2"
             >
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle navigation menu</span>
@@ -105,22 +116,21 @@ export default function Header (){
             </div>
           </form>
         </div>
+        <ModeToggle/>
         <DropdownMenu>
         <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-9 w-9">
                 <AvatarImage src="assets/touba-logo-192x.png" alt="@shadcn" />
-                <AvatarFallback>PF</AvatarFallback>
+                <AvatarFallback>{session?.user?.name ? getInitials(session.user.name) : 'TT'}</AvatarFallback>
             </Avatar>
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Paul Flan</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                paul.flan@touba-oil.com
-                </p>
+            <p className="text-sm font-medium leading-none">{session?.user?.name || 'Utilisateur'}</p>
+            <p className="text-xs leading-none text-muted-foreground">{session?.user?.email}</p>
             </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

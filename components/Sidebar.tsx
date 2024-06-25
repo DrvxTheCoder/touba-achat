@@ -29,7 +29,6 @@ export default function Sidebar(){
               <CustomLogoSVG width="2rem" height="2rem" />
               <Link href="/">Touba-App™</Link>
               </div>
-              <ModeToggle />
             </div>
             
           </div>
