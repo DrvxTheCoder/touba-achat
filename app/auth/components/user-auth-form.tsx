@@ -14,32 +14,40 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoadingProvider, setIsLoadingProvider] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
   const router = useRouter();
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
-
+  
     const form = event.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-
+  
+    console.log('Form Data:', { email, password });
+  
     const res = await signIn('credentials', {
       redirect: false,
       email,
       password,
     });
-
+  
     setIsLoading(false);
-
+  
     if (res?.error) {
-      setError(res.error);
+      if (res.error === 'CredentialsSignin') {
+        setError('Email ou mot de passe invalide. Veuillez réessayer.');
+      } else {
+        setError('Une erreur inattendue s\'est produite. Veuillez réessayer ulterieurement.');
+      }
     } else {
       router.replace("/dashboard");
     }
   }
+  
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -96,10 +104,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       <Button
         variant="outline"
         type="button"
-        disabled={isLoading}
+        disabled={isLoadingProvider}
         onClick={() => signIn('outlook')}
       >
-        {isLoading ? (
+        {isLoadingProvider ? (
           <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
         ) : (
           <Icons.outlook className="mt-1 h-10 w-10" />
