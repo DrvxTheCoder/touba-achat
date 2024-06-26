@@ -25,17 +25,17 @@ import { Input } from "@/components/ui/input"
 import { MailList } from "@/app/dashboard/components/mail-list"
 import { accounts, mails } from "@/app/dashboard/components/data"
 import { useRouter } from 'next/navigation';
-import { getSession } from 'next-auth/react';
+import { getSession, useSession } from 'next-auth/react';
 
 export default function Dashboard (){
   const [badgeCount, setBadgeCount] = useState(1);
+  const { data: session, status } = useSession();
 
   const router = useRouter();
 
   useEffect(() => {
     const fetchSession = async () => {
-      const session = await getSession();
-      if (!session) {
+      if (status === 'unauthenticated') {
         router.replace('/auth'); // Redirect to the authentication page if the user is not authenticated
       }
     }; 
@@ -44,7 +44,11 @@ export default function Dashboard (){
     setBadgeCount(filtered.length);
 
     fetchSession();
-  }, [router, mails]);
+  }, []);
+  
+  if (status === 'loading') {
+    return <div>Chargement...</div>;
+  }
   
     return(
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">

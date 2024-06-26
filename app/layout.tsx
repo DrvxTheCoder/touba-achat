@@ -11,6 +11,7 @@ import NextProgress from '@/components/next-progress';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import AuthProvider from '@/app/api/auth/[...nextauth]/auth-provider';
+import React, { Suspense } from 'react';
 
 import './globals.css';
 
@@ -25,7 +26,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
-  console.log(session);
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>

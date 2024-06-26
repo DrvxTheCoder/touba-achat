@@ -35,7 +35,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       password,
     });
   
-    setIsLoading(false);
+    
   
     if (res?.error) {
       if (res.error === 'CredentialsSignin') {
@@ -44,7 +44,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         setError('Une erreur inattendue s\'est produite. Veuillez réessayer ulterieurement.');
       }
     } else {
-      router.replace("/dashboard");
+      await router.replace("/dashboard");
+      setIsLoading(false);
     }
   }
   
