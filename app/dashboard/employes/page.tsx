@@ -1,6 +1,7 @@
 import Link from "next/link"
 import TeamSwitcher from "@/app/dashboard/components/team-switcher";
 import { ShowToast } from "@/components/ShowToast";
+import AddUserDialog from "@/components/forms/add-user-dialog";
 
 export default function Employes (){
     return(
@@ -23,7 +24,8 @@ export default function Employes (){
             <p className="text-sm text-muted-foreground">
               Les données s&apos;afficheront ici une fois alimenté.
             </p>
-            <ShowToast />
+            {/* <ShowToast /> */}
+            <AddUserDialog/>
           </div>
         </div>
       </main>
