@@ -38,6 +38,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     
   
     if (res?.error) {
+      setIsLoading(false);
       if (res.error === 'CredentialsSignin') {
         setError('Email ou mot de passe invalide. Veuillez réessayer.');
       } else {

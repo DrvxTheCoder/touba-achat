@@ -40,6 +40,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <NextProgress />
             {children}
          </ThemeProvider>
       </AuthProvider>

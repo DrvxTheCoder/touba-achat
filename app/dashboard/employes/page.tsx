@@ -1,7 +1,7 @@
 import Link from "next/link"
 import TeamSwitcher from "@/app/dashboard/components/team-switcher";
 import { ShowToast } from "@/components/ShowToast";
-import AddUserDialog from "@/components/forms/add-user-dialog";
+import { AddEmployeeForm } from "@/components/forms/add-user-form";
 
 export default function Employes (){
     return(
@@ -25,7 +25,7 @@ export default function Employes (){
               Les données s&apos;afficheront ici une fois alimenté.
             </p>
             {/* <ShowToast /> */}
-            <AddUserDialog/>
+            <AddEmployeeForm />
           </div>
         </div>
       </main>
