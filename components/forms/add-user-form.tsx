@@ -23,24 +23,21 @@ import {
 } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Icons } from "../icons"
 
 const employeeFormSchema = z
   .object({
     name: z
       .string()
-      .min(2, { message: "Le nom doit comporter au moins 2 caractères." })
-      .max(30, { message: "Le nom ne doit pas dépasser 30 caractères." }),
-    department: z
-      .string()
-      .min(2, { message: "Le département doit comporter au moins 2 caractères." })
-      .max(30, { message: "Le département ne doit pas dépasser 30 caractères." }),
+      .min(2, { message: "Le nom doit comporter au moins 2 caractères." }),
+    department: z.string().min(1, { message: "Veuillez sélectionner une direction." }),
     matriculation: z
       .string()
       .min(2, { message: "La matricule doit comporter au moins 2 caractères." })
-      .max(30, { message: "La matricule ne doit pas dépasser 30 caractères." }),
+      .max(10, { message: "La matricule ne doit pas dépasser 10 caractères." }),
     phone: z
       .string()
-      .min(10, { message: "Le téléphone doit comporter au moins 10 caractères." })
+      .min(9, { message: "Le téléphone doit comporter au moins 10 caractères." })
       .max(15, { message: "Le téléphone ne doit pas dépasser 15 caractères." }),
     email: z
       .string()
@@ -51,7 +48,7 @@ const employeeFormSchema = z
     confirmPassword: z.string().min(6, {
       message: "Le mot de passe de confirmation doit comporter au moins 6 caractères.",
     }),
-    role: z.string().min(1, { message: "Veuillez sélectionner un rôle." }),
+    role: z.string({ message: "Veuillez sélectionner un rôle." }).min(1, { message: "Veuillez sélectionner un rôle." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas.",
@@ -62,6 +59,7 @@ const employeeFormSchema = z
 type EmployeeFormValues = z.infer<typeof employeeFormSchema>
 
 export function AddEmployeeForm() {
+  const [employeeButtonLoading, setEmployeeButtonLoading] = useState(false)
   const [section, setSection] = useState<"employee" | "credentials">("employee")
 
   const form = useForm<EmployeeFormValues>({
@@ -70,15 +68,20 @@ export function AddEmployeeForm() {
   })
 
   const onSubmit = (data: EmployeeFormValues) => {
-    toast({
-      title: "Données soumises",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
-  }
+    setEmployeeButtonLoading(true);
+    
+    setTimeout(() => {
+      toast({
+        title: "Données soumises",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white" style={{ fontSize: '0.60rem' }}>{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        ),
+      });
+      setEmployeeButtonLoading(false);
+    }, 1000); // 2000 milliseconds = 2 seconds
+  };
 
   return (
         <Dialog>
@@ -116,10 +119,39 @@ export function AddEmployeeForm() {
                       name="department"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Département :</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
+                          <FormLabel className="text-sm text-muted-foreground" >Direction :</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner une direction" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Direction Generale">Direction Generale</SelectItem>
+                              <SelectItem value="Direction Ressources Humaines">
+                                Direction Ressources Humaines
+                              </SelectItem>
+                              <SelectItem value="Direction Commerciale Marketing">
+                                Direction Commerciale Marketing
+                              </SelectItem>
+                              <SelectItem value="Direction Administrative et Financière">
+                                Direction Administrative et Financière
+                              </SelectItem>
+                              <SelectItem value="Direction Opération Gaz">Direction Opération Gaz</SelectItem>
+                              <SelectItem value="Touba Gaz Bouteille">Touba Gaz Bouteille</SelectItem>
+                              <SelectItem value="Holding">Holding</SelectItem>
+                              <SelectItem value="Touba Oil Carburant">Touba Oil Carburant</SelectItem>
+                              <SelectItem value="Darou Khoudoss Gaz">Darou Khoudoss Gaz</SelectItem>
+                              <SelectItem value="Darou Khoudoss Oil">Darou Khoudoss Oil</SelectItem>
+                              <SelectItem value="Prestataire">Prestataire</SelectItem>
+                              <SelectItem value="NSIA Banque">NSIA Banque</SelectItem>
+                              <SelectItem value="Connect Interim">Connect&apos;Interim</SelectItem>
+                              <SelectItem value="AMD Corporation">AMD Corporation</SelectItem>
+                              <SelectItem value="Service Transit">Service Transit</SelectItem>
+                              <SelectItem value="Baity Group SA">Baity Group SA</SelectItem>
+                              <SelectItem value="Elite RH">Elite RH</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -239,9 +271,15 @@ export function AddEmployeeForm() {
                     />
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" type="button" onClick={() => setSection("employee")} className="mt-2">
-                        Retour
+                        <b>Retour</b>
                       </Button>
-                      <Button type="submit" className="mt-2">Ajouter</Button>
+                      
+                      <Button type="submit" className="mt-2" disabled={employeeButtonLoading}>
+                      {employeeButtonLoading && (
+                        <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      <b>Ajouter</b>
+                    </Button>
 
                     </div>
                   </>

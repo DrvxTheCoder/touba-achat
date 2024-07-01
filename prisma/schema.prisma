@@ -15,10 +15,24 @@ model User {
   password      String
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  employees     Employee[]       @relation("UserEmployees")
+  employee      Employee?        @relation(fields: [employeeId], references: [id])
+  employeeId    Int?             @unique
   edbs          EtatDeBesoin[]
   odms          OrdreDeMission[]
   notifications Notification[]
+}
+
+model Employee {
+  id           Int              @id @default(autoincrement())
+  name         String
+  email        String           @unique
+  phoneNumber  String?
+  user         User?            @relation
+  userId       Int?
+  departmentId Int
+  department   Department       @relation(fields: [departmentId], references: [id])
+  edbs         EtatDeBesoin[]
+  ordreDeMissions OrdreDeMission[]
 }
 
 enum Role {
@@ -31,20 +45,6 @@ enum Role {
   RH
 }
 
-
-
-model Employee {
-  id           Int              @id @default(autoincrement())
-  name         String
-  email        String           @unique
-  phoneNumber  String?
-  userId       Int
-  departmentId Int
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade, name: "UserEmployees")
-  department   Department       @relation(fields: [departmentId], references: [id])
-  edbs         EtatDeBesoin[]
-  odms         OrdreDeMission[]
-}
 
 model Department {
   id        Int              @id @default(autoincrement())
@@ -80,7 +80,7 @@ model EtatDeBesoin {
   budget       Budget     @relation(fields: [budgetId], references: [id])
   supplier     Supplier?  @relation(fields: [supplierId], references: [id])
   orders       Order[]
-  Employee     Employee?  @relation(fields: [employeeId], references: [id])
+  employee     Employee?  @relation(fields: [employeeId], references: [id])
   employeeId   Int?
   notifications Notification[]
 }
@@ -98,7 +98,7 @@ model OrdreDeMission {
   user         User       @relation(fields: [userId], references: [id])
   department   Department @relation(fields: [departmentId], references: [id])
   budget       Budget     @relation(fields: [budgetId], references: [id])
-  Employee     Employee?  @relation(fields: [employeeId], references: [id])
+  employee     Employee?  @relation(fields: [employeeId], references: [id])
   employeeId   Int?
   notifications Notification[]
 }
@@ -126,13 +126,13 @@ model Order {
 }
 
 model Notification {
-  id                    Int        @id @default(autoincrement())
+  id                    Int                @id @default(autoincrement())
   message               String
   userId                Int
   etatDeBesoinId        Int?
   ordreDeMissionId      Int?
-  createdAt             DateTime   @default(now())
-  user                  User       @relation(fields: [userId], references: [id])
-  etatDeBesoin          EtatDeBesoin? @relation(fields: [etatDeBesoinId], references: [id])
-  ordreDeMission        OrdreDeMission? @relation(fields: [ordreDeMissionId], references: [id])
+  createdAt             DateTime           @default(now())
+  user                  User               @relation(fields: [userId], references: [id])
+  etatDeBesoin          EtatDeBesoin?      @relation(fields: [etatDeBesoinId], references: [id])
+  ordreDeMission        OrdreDeMission?    @relation(fields: [ordreDeMissionId], references: [id])
 }

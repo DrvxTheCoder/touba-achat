@@ -5,7 +5,9 @@ import { AddEmployeeForm } from "@/components/forms/add-user-form";
 
 export default function Employes (){
     return(
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <>
+      <title>Employés - Touba App™</title>
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div>
         <div className="flex items-center justify-between space-y-2">
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Employés</h2>
@@ -29,5 +31,6 @@ export default function Employes (){
           </div>
         </div>
       </main>
+      </>
     );
 }

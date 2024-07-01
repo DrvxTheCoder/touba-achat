@@ -22,11 +22,12 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.idToken as string,
-        },
+      ...session,
+      user: {
+        ...session.user,
+        id: token.idToken as string,
+        role: token.role as string, // Add the user role
+      },
       };
     },
     async jwt({ token, user }) {
