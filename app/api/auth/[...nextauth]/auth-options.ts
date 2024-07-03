@@ -1,14 +1,37 @@
-import { type NextAuthOptions } from 'next-auth';
+import { DefaultSession, type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import isEqual from 'lodash/isEqual';
 import { pagesOptions } from './pages-options';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import { JWT } from 'next-auth/jwt';
+import { Session, User } from 'next-auth';
 
 dotenv.config({ path: '.env.local' });
 
 const prisma = new PrismaClient();
+
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    role: string;
+  }
+
+  interface Session {
+    user: {
+      id: string;
+      role: string;
+    } & DefaultSession['user'];
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: string;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   // debug: true,
@@ -35,6 +58,7 @@ export const authOptions: NextAuthOptions = {
         // return user as JWT
         token.email = user.email;
         token.name = user.name;
+        token.role = user.role;
       }
       return token;
     },

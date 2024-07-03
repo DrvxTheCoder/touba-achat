@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -24,6 +24,9 @@ import {
 import { toast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Icons } from "../icons"
+import { PrismaClient } from '@prisma/client'
+import { ToastAction } from "@/components/ui/toast"
+import Link from "next/link"
 
 const employeeFormSchema = z
   .object({
@@ -62,6 +65,23 @@ export function AddEmployeeForm() {
   const [employeeButtonLoading, setEmployeeButtonLoading] = useState(false)
   const [section, setSection] = useState<"employee" | "credentials">("employee")
 
+  const [departments, setDepartments] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/departments')
+      .then((res) => res.json())
+      .then((data) => {
+        const departments = data.map((dept: { id: number, name: string }) => ({
+          id: dept.id,
+          name: dept.name,
+        }));
+        setDepartments(departments);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch departments:', error);
+      });
+  }, []);
+
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
     mode: "onChange",
@@ -69,18 +89,46 @@ export function AddEmployeeForm() {
 
   const onSubmit = (data: EmployeeFormValues) => {
     setEmployeeButtonLoading(true);
-    
-    setTimeout(() => {
-      toast({
-        title: "Données soumises",
-        description: (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-            <code className="text-white" style={{ fontSize: '0.60rem' }}>{JSON.stringify(data, null, 2)}</code>
-          </pre>
-        ),
+
+    const formData = {
+      ...data,
+      department: parseInt(data.department, 10)
+    };
+  
+    // Prepare the request options
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    };
+  
+    // Send the POST request to the server
+    fetch('/api/employee', requestOptions)
+      .then(response => response.json()) // First, convert the response to JSON
+      .then(result => {
+        if (result.error) {
+          // If there is an error message in the result, throw it to catch block
+          throw new Error(result.error);
+        }
+        // Handle success with the message from the server
+        toast({
+          title: "Succès - Ajout réussi!",
+          description: result.message || "Employé ajouté avec succès.",
+          action: <ToastAction altText="Voir employé"><Link href={"/"}>Voir l&apos;employé</Link></ToastAction>
+        });
+      })
+      .catch(error => {
+        // Handle error with the message from the server or a generic message
+        toast({
+          title: "Erreur - Échec de l\'ajout!",
+          description: error.message || "Une erreur s'est produite.",
+          variant: 'destructive'
+        });
+        console.error('There was an error!', error);
+      })
+      .finally(() => {
+        setEmployeeButtonLoading(false);
       });
-      setEmployeeButtonLoading(false);
-    }, 1000); // 2000 milliseconds = 2 seconds
   };
 
   return (
@@ -127,29 +175,11 @@ export function AddEmployeeForm() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Direction Generale">Direction Generale</SelectItem>
-                              <SelectItem value="Direction Ressources Humaines">
-                                Direction Ressources Humaines
-                              </SelectItem>
-                              <SelectItem value="Direction Commerciale Marketing">
-                                Direction Commerciale Marketing
-                              </SelectItem>
-                              <SelectItem value="Direction Administrative et Financière">
-                                Direction Administrative et Financière
-                              </SelectItem>
-                              <SelectItem value="Direction Opération Gaz">Direction Opération Gaz</SelectItem>
-                              <SelectItem value="Touba Gaz Bouteille">Touba Gaz Bouteille</SelectItem>
-                              <SelectItem value="Holding">Holding</SelectItem>
-                              <SelectItem value="Touba Oil Carburant">Touba Oil Carburant</SelectItem>
-                              <SelectItem value="Darou Khoudoss Gaz">Darou Khoudoss Gaz</SelectItem>
-                              <SelectItem value="Darou Khoudoss Oil">Darou Khoudoss Oil</SelectItem>
-                              <SelectItem value="Prestataire">Prestataire</SelectItem>
-                              <SelectItem value="NSIA Banque">NSIA Banque</SelectItem>
-                              <SelectItem value="Connect Interim">Connect&apos;Interim</SelectItem>
-                              <SelectItem value="AMD Corporation">AMD Corporation</SelectItem>
-                              <SelectItem value="Service Transit">Service Transit</SelectItem>
-                              <SelectItem value="Baity Group SA">Baity Group SA</SelectItem>
-                              <SelectItem value="Elite RH">Elite RH</SelectItem>
+                              {departments.map((department) => (
+                                <SelectItem key={department.id} value={department.id.toString()}>
+                                  {department.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />

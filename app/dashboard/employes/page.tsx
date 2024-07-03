@@ -1,9 +1,17 @@
+"use client"
 import Link from "next/link"
 import TeamSwitcher from "@/app/dashboard/components/team-switcher";
 import { ShowToast } from "@/components/ShowToast";
 import { AddEmployeeForm } from "@/components/forms/add-user-form";
+import { useSession } from "next-auth/react";
+import { allowedRoles } from "@/app/hooks/use-allowed-roles";
 
 export default function Employes (){
+  const { data: session } = useSession(); // Access session data
+
+  // Check if the user's role is one of the allowed roles
+  const hasAccess = session && allowedRoles.includes(session.user.role);
+
     return(
       <>
       <title>Employés - Touba App™</title>
@@ -12,22 +20,35 @@ export default function Employes (){
         <div className="flex items-center justify-between space-y-2">
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Employés</h2>
             <div className="flex items-center space-x-2">
-            <TeamSwitcher />
+              {hasAccess && (<TeamSwitcher />)}
             </div>
           </div>
         </div>
         <div
           className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm"
         >
+
           <div className="flex flex-col items-center gap-1 text-center">
-            <h3 className="text-2xl font-bold tracking-tight">
-              Aucune donnée disponible
-            </h3>
+          {hasAccess ? (
+            <>
+              <h3 className="text-2xl font-bold tracking-tight">
+                Aucune donnée disponible
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Les données s&apos;afficheront ici une fois alimenté.
+              </p>
+              <AddEmployeeForm />
+            </>            
+          ):(
+            <>
+            <h3 className="text-2xl font-bold tracking-tight">Accès interdit</h3>
             <p className="text-sm text-muted-foreground">
-              Les données s&apos;afficheront ici une fois alimenté.
+            Vous n&apos;avez pas les permissions nécessaires pour accéder à ce contenu.
             </p>
-            {/* <ShowToast /> */}
-            <AddEmployeeForm />
+            </>
+
+          )}
+
           </div>
         </div>
       </main>
