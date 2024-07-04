@@ -80,7 +80,7 @@ return (
                 <CommandGroup heading="Liens">
                     <CommandItem>Tableau de Bord</CommandItem>
                     <CommandItem>Ajouter un état de besoin</CommandItem>
-                    <CommandItem>Émmetre une demande d'ordre de mission</CommandItem>
+                    <CommandItem>Émmetre une demande d&apos;ordre de mission</CommandItem>
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Thème">
