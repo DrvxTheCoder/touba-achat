@@ -3,11 +3,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
+import CustomLogoSVGTwo from "@/components/logos/CustomLogoSVGTwo";
 import { ModeToggle } from "@/components/theme-toggle";
 import { Home, Package, ShoppingCart, Users, SettingsIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+
 
 export default function Sidebar(){
 
@@ -21,13 +23,14 @@ export default function Sidebar(){
         { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0  }
     ];
     return (
-        <aside className="absolute sticky left-0 h-full hidden border-r bg-muted/40 md:block">
+        <aside className="absolute sticky left-0 h-full hidden border-r md:block">
         <div className="fixed flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <div className="flex items-center gap-2 font-semibold space-x-9">
               <div className="flex items-center gap-1">
               <CustomLogoSVG width="2rem" height="2rem" />
               <Link href="/">Touba-App™</Link>
+              {/* <CustomLogoSVGTwo width="8rem" /> */}
               </div>
             </div>
             

@@ -4,13 +4,16 @@ import TeamSwitcher from "@/app/dashboard/components/team-switcher";
 import { ShowToast } from "@/components/ShowToast";
 import { AddEmployeeForm } from "@/components/forms/add-user-form";
 import { useSession } from "next-auth/react";
-import { allowedRoles } from "@/app/hooks/use-allowed-roles";
+import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
+import { SpinnerCircularFixed } from "spinners-react";
+import { DataTableDemo } from "./components/table-reference";
 
 export default function Employes (){
   const { data: session } = useSession(); // Access session data
 
   // Check if the user's role is one of the allowed roles
-  const hasAccess = session && allowedRoles.includes(session.user.role);
+  const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
+  const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
 
     return(
       <>
@@ -20,7 +23,8 @@ export default function Employes (){
         <div className="flex items-center justify-between space-y-2">
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Employés</h2>
             <div className="flex items-center space-x-2">
-              {hasAccess && (<TeamSwitcher />)}
+              {hasWriteAccess && (<AddEmployeeForm />)}
+              {hasReadAccess && (<TeamSwitcher />)}
             </div>
           </div>
         </div>
@@ -29,15 +33,18 @@ export default function Employes (){
         >
 
           <div className="flex flex-col items-center gap-1 text-center">
-          {hasAccess ? (
+          {hasReadAccess ? (
             <>
-              <h3 className="text-2xl font-bold tracking-tight">
+              {/* <h3 className="text-2xl font-bold tracking-tight">
                 Aucune donnée disponible
               </h3>
               <p className="text-sm text-muted-foreground">
                 Les données s&apos;afficheront ici une fois alimenté.
               </p>
-              <AddEmployeeForm />
+              <AddEmployeeForm /> */}
+              {/* <SpinnerCircularFixed size={90} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
+              <small className="text-xs animated-dots mt-1">Chargement...</small> */}
+              <DataTableDemo />
             </>            
           ):(
             <>

@@ -158,6 +158,9 @@ dependencies:
   recharts:
     specifier: ^2.12.7
     version: 2.12.7(react-dom@18.3.1)(react@18.3.1)
+  spinners-react:
+    specifier: ^1.0.7
+    version: 1.0.7(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1)(react@18.3.1)
   tailwind-merge:
     specifier: ^2.3.0
     version: 2.3.0
@@ -8457,6 +8460,20 @@ packages:
   /sourcemap-codec@1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
     deprecated: Please use @jridgewell/sourcemap-codec instead
+    dev: false
+
+  /spinners-react@1.0.7(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-Xcgpc7Ybm6HOrpCVJjbH1G/NV852HaV4Zc9T1sJ2+S2hn05lGiBZS1dBOKGLc1kp8wv2sd3wtt94I/NNqDjs3Q==}
+    peerDependencies:
+      '@types/react': ^16.x || ^17.x || ^18.x
+      '@types/react-dom': ^16.x || ^17.x || ^18.x
+      react: ^16.x || ^17.x || ^18.x
+      react-dom: ^16.x || ^17.x || ^18.x
+    dependencies:
+      '@types/react': 18.3.3
+      '@types/react-dom': 18.3.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
     dev: false
 
   /split-string@3.1.0:

@@ -70,3 +70,14 @@
       scrollbar-width: none;  /* Firefox */
 }
 }
+
+.animated-dots {
+  clip-path: inset(0 1ch 0 0); /* Reduced from 3ch to 1ch */
+  animation: dots 1.5s steps(4) infinite;
+}
+
+@keyframes dots {
+  to {
+    clip-path: inset(0 0ch 0 0); /* Adjusted to 0ch for tiny text */
+  }
+}

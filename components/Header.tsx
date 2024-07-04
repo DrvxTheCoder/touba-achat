@@ -23,6 +23,8 @@ import {
   } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "next-auth/react";
+import CustomLogoSVGTwo from "./logos/CustomLogoSVGTwo";
+import { CommandMenu } from "@/components/command-menu";
 
 export default function Header (){
     const { data: session } = useSession();
@@ -44,7 +46,7 @@ export default function Header (){
         { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
     ];
     return(
-        <header className="absolute sticky w-full z-10 backdrop-blur-sm top-0 flex h-14 gap-4 items-center border-b bg-muted/60 px-4 lg:h-[60px] lg:px-6">
+        <header className="absolute sticky w-full z-10 backdrop-blur-sm top-0 flex h-14 gap-4 items-center border-b px-4 lg:h-[60px] lg:px-6">
         <Sheet>
           <SheetTrigger asChild>
             <Button
@@ -62,8 +64,8 @@ export default function Header (){
                 href="#"
                 className="flex items-center gap-2 text-lg font-semibold pb-3"
               >
-                <CustomLogoSVG width="2rem" height="2rem" />
-                Touba-Achat™
+                <CustomLogoSVGTwo width="5rem" />
+                {/* Touba-App™ */}
               </Link>
               {links.map((link, index) => (
 
@@ -105,16 +107,7 @@ export default function Header (){
           </SheetContent>
         </Sheet>
         <div className="w-full flex-1">
-          <form>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Recherche..."
-                className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-              />
-            </div>
-          </form>
+          <CommandMenu />
         </div>
         <ModeToggle/>
         <DropdownMenu>

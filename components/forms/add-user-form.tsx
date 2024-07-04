@@ -27,6 +27,7 @@ import { Icons } from "../icons"
 import { PrismaClient } from '@prisma/client'
 import { ToastAction } from "@/components/ui/toast"
 import Link from "next/link"
+import { PlusCircle } from "lucide-react"
 
 const employeeFormSchema = z
   .object({
@@ -134,7 +135,7 @@ export function AddEmployeeForm() {
   return (
         <Dialog>
         <DialogTrigger asChild>
-            <Button variant="outline" className="mt-3">Ajouter</Button>
+            <Button variant="secondary" className="font-weight">Nouveau +</Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
           e.preventDefault();
