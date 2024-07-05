@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useState, useEffect } from 'react';
 import {
   ColumnFiltersState,
   SortingState,
@@ -32,8 +33,8 @@ import {
 import { columns } from "./columns"
 import { Employee, getEmployees } from "./data"
 
-export function DataTableDemo() {
-  const [data, setData] = React.useState<Employee[]>([])
+export function DataTableDemo({ initialData }: { initialData: any }) {
+  const [data, setData] = useState(initialData)
   const [totalPages, setTotalPages] = React.useState(0)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -83,12 +84,12 @@ export function DataTableDemo() {
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="w-64 lg:max-w-sm"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Columns
+              Colonnes
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -112,7 +113,7 @@ export function DataTableDemo() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border w-[22.2rem] lg:w-full">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -140,7 +141,7 @@ export function DataTableDemo() {
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="text-left">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -149,7 +150,7 @@ export function DataTableDemo() {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  Aucun resultat.
                 </TableCell>
               </TableRow>
             )}
@@ -158,7 +159,7 @@ export function DataTableDemo() {
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          Page {currentPage} of {totalPages}
+          Page {currentPage} de {totalPages}
         </div>
         <div className="space-x-2">
           <Button
@@ -167,7 +168,7 @@ export function DataTableDemo() {
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            Précédent
           </Button>
           <Button
             variant="outline"
@@ -175,7 +176,7 @@ export function DataTableDemo() {
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
-            Next
+            Suivant
           </Button>
         </div>
       </div>

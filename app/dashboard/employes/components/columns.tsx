@@ -22,7 +22,7 @@ export const columns: ColumnDef<Employee>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          Nom Complet
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
@@ -34,15 +34,15 @@ export const columns: ColumnDef<Employee>[] = [
   },
   {
     accessorKey: "matriculation",
-    header: "Matriculation",
+    header: "Matricule",
   },
   {
     accessorKey: "phoneNumber",
-    header: "Phone Number",
+    header: "Téléphone",
   },
   {
     accessorKey: "department",
-    header: "Department",
+    header: "Départment",
   },
   {
     id: "actions",
@@ -52,21 +52,21 @@ export const columns: ColumnDef<Employee>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Ouvrir le menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(employee.id.toString())}
-            >
-              Copy employee ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View employee details</DropdownMenuItem>
-            <DropdownMenuItem>Edit employee</DropdownMenuItem>
+        <DropdownMenuLabel className="text-bold">ACTIONS</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => navigator.clipboard.writeText(employee.id.toString())}
+        >
+          Copier l&apos;ID
+        </DropdownMenuItem>
+        <DropdownMenuItem>Détails de l&apos;employé</DropdownMenuItem>
+        <DropdownMenuItem>Modifier l&apos;employé</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

@@ -135,7 +135,7 @@ export function AddEmployeeForm() {
   return (
         <Dialog>
         <DialogTrigger asChild>
-            <Button variant="secondary" className="font-weight">Nouveau +</Button>
+            <Button variant="secondary" className="font-weight">+</Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
           e.preventDefault();
