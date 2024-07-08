@@ -34,7 +34,7 @@ export default function AuthenticationPage() {
             </blockquote>
           </div>
         </div>
-        <div className="lg:p-8 mt-12 justify-center">
+        <div className="lg:p-8 mt-36 justify-center lg:mt-12">
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
             <div className="flex flex-col space-y-2 text-center">
               

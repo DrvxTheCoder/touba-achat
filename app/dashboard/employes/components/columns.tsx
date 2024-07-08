@@ -42,7 +42,11 @@ export const columns: ColumnDef<Employee>[] = [
   },
   {
     accessorKey: "department",
-    header: "Départment",
+    header: "Département",
+    cell: ({ row }) => {
+      const department = row.original.department
+      return department ? department.name : 'N/A'
+    },
   },
   {
     id: "actions",

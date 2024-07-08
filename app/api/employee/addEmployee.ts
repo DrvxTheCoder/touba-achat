@@ -50,9 +50,9 @@ export async function addEmployee(body: any) {
       },
     });
 
-    return { message: 'Employee and user created successfully', status: 200 };
+    return { message: 'Employé ajouté avec succès', status: 200 };
   } catch (error) {
     console.error(error);
-    return { error: 'An error occurred while creating the employee and user', status: 500 };
+    return { error: 'Une erreur s\'est produite lors de la création du compte employé', status: 500 };
   }
 }

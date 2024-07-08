@@ -24,7 +24,7 @@ export default function Sidebar(){
     ];
     return (
         <aside className="absolute sticky left-0 h-full hidden border-r md:block">
-        <div className="fixed flex h-full max-h-screen flex-col gap-2">
+        <div className="fixed flex h-full max-h-screen flex-col gap-2 w-[17.5rem]">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <div className="flex items-center gap-2 font-semibold space-x-9">
               <div className="flex items-center gap-1">
@@ -36,7 +36,7 @@ export default function Sidebar(){
             
           </div>
           <div className="flex">
-          <nav className="grid items-start px-2 pt-4 text-sm font-medium lg:px-4 lg:w-7/12">
+          <nav className="grid items-start px-2 pt-4 text-sm font-medium lg:px-4 w-full">
             {links.map((link, index) => (
 
                 <Link
@@ -60,17 +60,17 @@ export default function Sidebar(){
                 ))}
             </nav>
           </div>
-          <div className="mt-auto p-4 w-7/12">
+          <div className="mt-auto p-4 w-full">
             <Card x-chunk="dashboard-02-chunk-0">
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Documentation</CardTitle>
-                <CardDescription>
-                  Accedez à la documentation de cette application en cliquant içi.
+              <CardHeader className="p-3 pt-0 md:p-4">
+                <CardTitle>Feedback</CardTitle>
+                <CardDescription className="w-full">
+                  Votre opinion compte! N&apos;hesitez pas à donner votre avis sur l&apos;appli.
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
                 <Button size="sm" className="w-full">
-                  Github
+                  Donner un avis
                 </Button>
               </CardContent>
             </Card>

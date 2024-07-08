@@ -23,6 +23,7 @@ import { CardsMetric2 } from "@/app/dashboard/components/cards/metrics-2";
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { MailList } from "@/app/dashboard/components/mail-list"
+import OverviewChart from "@/app/dashboard/components/overview-two"
 import { accounts, mails } from "@/app/dashboard/components/data"
 import { useRouter } from 'next/navigation';
 import { getSession, useSession } from 'next-auth/react';
@@ -52,7 +53,7 @@ export default function Dashboard (){
   
     return(
       <>
-            <title>Dashboard</title>
+      <title>Dashboard</title>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex-1 space-y-4">
           <div className="flex items-center justify-between space-y-2">
@@ -61,20 +62,21 @@ export default function Dashboard (){
             <TeamSwitcher />
             </div>
           </div>
-          <Tabs defaultValue="edb" className="space-y-4 flex flex-col items-center sm:max-w-90">
+          <Tabs defaultValue="edb" className="space-y-2 flex flex-col items-center sm:max-w-90">
             <TabsList className="max-w-md">
               <TabsTrigger value="edb">EDB</TabsTrigger>
               <TabsTrigger value="odm">ODM</TabsTrigger>
               <TabsTrigger value="analytics">Analytiques</TabsTrigger>
               <TabsTrigger value="notifications">
-                Notifications
-                {badgeCount > 0 && (
+                Alertes
+                {/* {badgeCount > 0 && (
                     <Badge className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                        {badgeCount} 
-                    </Badge>)}
+                    </Badge>)} */}
               </TabsTrigger>
             </TabsList>
-            {/* Start Etats de besoins */}
+            <ScrollArea className="w-full h-[40rem] p-2 rounded-lg">
+                          {/* Start Etats de besoins */}
             <TabsContent value="edb" className="space-y-4 w-full">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -244,7 +246,6 @@ export default function Dashboard (){
               </div>
             </TabsContent>
             {/* End Ordres de Missions */}
-            
             {/* Start Analytiques */}
             <TabsContent value="analytics" className="space-y-4 w-full">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -257,6 +258,7 @@ export default function Dashboard (){
                   </CardContent>
                 </Card>
                 <CardsMetric2 />
+                <OverviewChart />
               </div>
             </TabsContent>
             {/* End Analytiques */}
@@ -265,6 +267,7 @@ export default function Dashboard (){
               <MailList items={mails.filter((item) => !item.read)} />
             </TabsContent>
             {/* Start Notifications */}
+            </ScrollArea>
           </Tabs>
         </div>
       </main>

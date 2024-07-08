@@ -1,99 +1,124 @@
-"use client";
-
 import * as React from "react";
-import {
-  CaretSortIcon,
-  CheckIcon,
-  PlusCircledIcon,
-} from "@radix-ui/react-icons";
-
+import { useSession } from "next-auth/react";
+import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
+import { CaretSortIcon, CheckIcon, PlusCircledIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useToast } from "@/components/ui/use-toast";
+import { Icons } from "@/components/icons";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-const groups = [
-  {
-    label: "",
-    teams: [
-      {
-        label: "Afficher tout",
-        value: "all",
-      },
-    ],
-  },
-  {
-    label: "Directions",
-    teams: [
-      {
-        label: "DGLE",
-        value: "DGLE",
-      },
-      {
-        label: "DRH",
-        value: "DRH",
-      },
-      {
-        label: "DAF",
-        value: "DAF",
-      },
-      {
-        label: "DCM",
-        value: "DAF",
-      },
-      {
-        label: "DOG",
-        value: "DOG",
-      },
-    ],
-  },
-];
+interface Department {
+  id: number;
+  name: string;
+}
 
-type Team = (typeof groups)[number]["teams"][number];
+interface TeamSwitcherProps {
+  className?: string;
+  onDepartmentChange?: (department: Department | null) => void;
+}
 
-type PopoverTriggerProps = React.ComponentPropsWithoutRef<
-  typeof PopoverTrigger
->;
+const MAX_DISPLAY_LENGTH = 20;
 
-interface TeamSwitcherProps extends PopoverTriggerProps {}
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return `${text.substring(0, maxLength - 3)}...`;
+};
 
-export default function TeamSwitcher({ className }: TeamSwitcherProps) {
+const ALL_DEPARTMENTS: Department = { id: -1, name: "Afficher Tout" };
+
+export default function TeamSwitcher({ className, onDepartmentChange }: TeamSwitcherProps) {
+  const { data: session } = useSession();
+  const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
+  const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
+  const [addButtonloading, setAddButtonLoading] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
-  const [selectedTeam, setSelectedTeam] = React.useState<Team>(
-    groups[0].teams[0],
-  );
+  const [departments, setDepartments] = React.useState<Department[]>([ALL_DEPARTMENTS]);
+  const [selectedDepartment, setSelectedDepartment] = React.useState<Department>(ALL_DEPARTMENTS);
+  const [newDepartmentName, setNewDepartmentName] = React.useState("");
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch('/api/departments');
+      if (!response.ok) throw new Error('Failed to fetch departments');
+      const data: Department[] = await response.json();
+      setDepartments([ALL_DEPARTMENTS, ...data]);
+      setSelectedDepartment(ALL_DEPARTMENTS);
+      onDepartmentChange && onDepartmentChange(null);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      toast({
+        title: "Erreur",
+        description: "Échec de la récupération des départements. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+  const createDepartment = async () => {
+    setAddButtonLoading(true);
+    if (!newDepartmentName.trim()) {
+      setAddButtonLoading(false);
+      toast({
+        title: "Erreur",
+        description: "Le champ ne pas être vide!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/departments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newDepartmentName }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Échec de lors de la création');
+      }
+
+      const newDepartment = await response.json();
+      setDepartments([...departments, newDepartment]);
+      setSelectedDepartment(newDepartment);
+      onDepartmentChange && onDepartmentChange(newDepartment);
+      setNewDepartmentName("");
+      setShowNewTeamDialog(false);
+      toast({
+        title: "Succès",
+        description: "Une nouvelle direction a été créé avec succèes.",
+      });
+      setAddButtonLoading(false);
+    } catch (error) {
+      setAddButtonLoading(false);
+      console.error('Error creating department:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s\'est produite lors de l\'ajout. Veuillez ressayer.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDepartmentSelect = (department: Department) => {
+    console.log('Department selected:', department); // Log the selected department
+    setSelectedDepartment(department);
+    setOpen(false);
+    onDepartmentChange && onDepartmentChange(department.id === -1 ? null : department);
+  };
 
   return (
     <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
@@ -106,117 +131,100 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
             aria-label="Choisir une direction"
             className={cn("w-[200px] justify-between", className)}
           >
-            <Avatar className="mr-2 h-5 w-5">
+            <Avatar className="mr-2 h-5 w-5 flex-shrink-0">
               <AvatarImage
-                src={`https://avatar.vercel.sh/${selectedTeam.value}.png`}
-                alt={selectedTeam.label}
+                src={`https://avatar.vercel.sh/${selectedDepartment?.name || 'TO'}.png`}
+                alt={selectedDepartment?.name || 'Touba Oil'}
                 className="grayscale"
               />
               <AvatarFallback>TO</AvatarFallback>
             </Avatar>
-            {selectedTeam.label}
+            <span className="truncate">
+              {selectedDepartment ? truncateText(selectedDepartment.name, MAX_DISPLAY_LENGTH) : 'Select Department'}
+            </span>
             <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0">
           <Command>
+            <CommandInput placeholder="Recherche..." />
+            <ScrollArea>
             <CommandList>
-              <CommandInput placeholder="Recherche..." />
               <CommandEmpty>Aucune résultat trouvé.</CommandEmpty>
-              {groups.map((group) => (
-                <CommandGroup key={group.label} heading={group.label}>
-                  {group.teams.map((team) => (
-                    <CommandItem
-                      key={team.value}
-                      onSelect={() => {
-                        setSelectedTeam(team);
-                        setOpen(false);
-                      }}
-                      className="text-sm"
-                    >
-                      <Avatar className="mr-2 h-5 w-5">
-                        <AvatarImage
-                          src={`https://avatar.vercel.sh/${team.value}.png`}
-                          alt={team.label}
-                          className="grayscale"
-                        />
-                        <AvatarFallback>SC</AvatarFallback>
-                      </Avatar>
-                      {team.label}
-                      <CheckIcon
-                        className={cn(
-                          "ml-auto h-4 w-4",
-                          selectedTeam.value === team.value
-                            ? "opacity-100"
-                            : "opacity-0",
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              ))}
-            </CommandList>
-            <CommandSeparator />
-            <CommandList>
-              <CommandGroup>
-                <DialogTrigger asChild>
+              <CommandGroup heading="Directions">
+                {departments.map((dept) => (
                   <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      setShowNewTeamDialog(true);
-                    }}
+                    key={dept.id}
+                    onSelect={() => handleDepartmentSelect(dept)}
                   >
-                    <PlusCircledIcon className="mr-2 h-5 w-5" />
-                    Créer un direction
+                    <Avatar className="mr-2 h-5 w-5 flex-shrink-0">
+                      <AvatarImage
+                        src={`https://avatar.vercel.sh/${dept.name}.png`}
+                        alt={dept.name}
+                        className="grayscale"
+                      />
+                      <AvatarFallback>TO</AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{truncateText(dept.name, MAX_DISPLAY_LENGTH)}</span>
+                    <CheckIcon
+                      className={cn(
+                        "ml-auto h-4 w-4 flex-shrink-0",
+                        selectedDepartment?.id === dept.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
                   </CommandItem>
-                </DialogTrigger>
+                ))}
               </CommandGroup>
             </CommandList>
+            </ScrollArea>
+            
+            {hasWriteAccess && (
+              <>
+              <CommandSeparator />
+              <CommandList>
+                <CommandGroup>
+                  <DialogTrigger asChild>
+                    <CommandItem
+                      onSelect={() => {
+                        setOpen(false);
+                        setShowNewTeamDialog(true);
+                      }}
+                    >
+                      <PlusCircledIcon className="mr-2 h-5 w-5" />
+                      Créer un direction
+                    </CommandItem>
+                  </DialogTrigger>
+                </CommandGroup>
+              </CommandList>
+              </>
+            )}
           </Command>
         </PopoverContent>
       </Popover>
-      <DialogContent className="rounded-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Créer un direction</DialogTitle>
           <DialogDescription>
             Ajouter une direction pour gérer les états de besoin et ordres de missions.
           </DialogDescription>
         </DialogHeader>
-        <div>
-          <div className="space-y-4 py-1 pb-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nom de la direction</Label>
-              <Input id="name" placeholder="Touba Oil SAU." />
-            </div>
-            {/* <div className="space-y-2">
-              <Label htmlFor="plan">Subscription plan</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">
-                    <span className="font-medium">Free</span> -{" "}
-                    <span className="text-muted-foreground">
-                      Trial for two weeks
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="pro">
-                    <span className="font-medium">Pro</span> -{" "}
-                    <span className="text-muted-foreground">
-                      $9/month per user
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div> */}
+        <div className="space-y-4 py-2 pb-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nom de la direction</Label>
+            <Input
+              id="name"
+              placeholder="Touba Oil SAU."
+              value={newDepartmentName}
+              onChange={(e) => setNewDepartmentName(e.target.value)}
+            />
           </div>
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter>
           <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
             Annuler
           </Button>
-          <Button type="submit">Ajouter</Button>
+          <Button onClick={createDepartment} disabled={addButtonloading}>
+            {addButtonloading && (<Icons.spinner className="mr-2 h-4 w-4 animate-spin" />)}Ajouter</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -13,6 +13,7 @@ export type Employee = {
     employees: Employee[];
     totalPages: number;
     currentPage: number;
+    totalCount: number;  // Add this line
   };
   
   export async function getEmployees(
@@ -32,7 +33,7 @@ export type Employee = {
   
     const response = await fetch(`/api/employee?${params}`);
     if (!response.ok) {
-      throw new Error('Failed to fetch employees');
+      throw new Error('Échec de la récupération des employés');
     }
   
     return response.json();

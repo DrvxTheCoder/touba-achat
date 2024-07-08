@@ -53,7 +53,7 @@ export function CardsMetric2() {
   return (
     <Card className="md:col-span-3 col-span-4 space-y-12">
       <CardHeader>
-        <CardTitle>Fréquence EDB</CardTitle>
+        <CardTitle>Fréquence ODM</CardTitle>
         <CardDescription>
           Hebdomadaire
         </CardDescription>
