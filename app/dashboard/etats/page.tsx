@@ -22,11 +22,15 @@ async function getTasks() {
 export default async function Etats(){
   const tasks = await getTasks()
     return(
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-5 lg:p-5">
+      <>
+      <title>États de Besoins - Touba App™</title>
+      <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-5 lg:p-5">
         <div className="flex items-center">
           <h1 className="text-lg font-semibold md:text-2xl">États de besoins</h1>
         </div>
         <DataTable data={tasks} columns={columns} />
       </main>
+      </>
+
     );
 }

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ColumnFiltersState,
   SortingState,
@@ -36,49 +36,59 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { columns } from "./columns"
-import { Employee, getEmployees } from "./data"
+import { Employee, EmployeeResponse, getEmployees } from "./data"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { SpinnerCircular } from "spinners-react";
 
-export function EmployeeDataTable({ initialData }: { initialData: any }) {
-  const [data, setData] = useState(initialData.employees)
-  const [totalPages, setTotalPages] = React.useState(0)
-  const [currentPage, setCurrentPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(5)
-  const [totalCount, setTotalCount] = React.useState(0)
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
+interface EmployeeDataTableProps {
+  initialData: EmployeeResponse;
+  selectedDepartmentId: number | null;
+}
 
-  const fetchData = React.useCallback(async () => {
-    const sortField = sorting.length > 0 ? sorting[0].id : 'name'
-    const sortOrder = sorting.length > 0 ? sorting[0].desc ? 'desc' : 'asc' : 'asc'
-    const searchTerm = columnFilters.find(filter => filter.id === 'name')?.value as string || ''
+export function EmployeeDataTable({ initialData, selectedDepartmentId }: EmployeeDataTableProps) {
+  const [data, setData] = useState<Employee[]>(initialData.employees)
+  const [totalPages, setTotalPages] = useState(initialData.totalPages)
+  const [currentPage, setCurrentPage] = useState(initialData.currentPage)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalCount, setTotalCount] = useState(initialData.totalCount)
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
 
-    const response = await getEmployees(currentPage, pageSize, searchTerm, sortField, sortOrder)
-    setData(response.employees)
-    setTotalPages(response.totalPages)
-    setTotalCount(response.totalCount)
-  }, [currentPage, pageSize, sorting, columnFilters])
+  const fetchData = useCallback(async (page: number, size: number, filters: ColumnFiltersState, sort: SortingState) => {
+    setIsLoading(true);
+    const sortField = sort.length > 0 ? sort[0].id : 'name'
+    const sortOrder = sort.length > 0 ? (sort[0].desc ? 'desc' : 'asc') : 'asc'
+    const searchTerm = filters.find(filter => filter.id === 'name')?.value as string || ''
+
+    try {
+      const response = await getEmployees(page, size, searchTerm, sortField, sortOrder, selectedDepartmentId)
+      setData(response.employees)
+      setTotalPages(response.totalPages)
+      setCurrentPage(response.currentPage)
+      setTotalCount(response.totalCount)
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDepartmentId])
 
   useEffect(() => {
-    console.log('EmployeeDataTable initialData changed:', initialData);
     setData(initialData.employees);
     setTotalPages(initialData.totalPages);
-    setCurrentPage(initialData.currentPage);
-    setTotalCount(initialData.totalCount || 0);
-    // Reset pagination, sorting, and filtering when initialData changes
     setCurrentPage(1);
+    setTotalCount(initialData.totalCount);
     setSorting([]);
     setColumnFilters([]);
-  }, [initialData]);
+    fetchData(1, pageSize, [], []);
+  }, [initialData, selectedDepartmentId, pageSize, fetchData]);
 
   useEffect(() => {
-    // Only fetch data if it's not the initial render or if we're changing page/sorting/filtering
-    if (currentPage !== 1 || sorting.length > 0 || columnFilters.length > 0) {
-      fetchData();
-    }
-  }, [fetchData, currentPage, sorting, columnFilters]);
+    fetchData(currentPage, pageSize, columnFilters, sorting);
+  }, [fetchData, currentPage, pageSize, columnFilters, sorting]);
 
   const table = useReactTable({
     data,
@@ -104,6 +114,12 @@ export function EmployeeDataTable({ initialData }: { initialData: any }) {
     manualPagination: true,
     pageCount: totalPages,
   })
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+    fetchData(1, newPageSize, columnFilters, sorting);
+  };
 
   return (
     <div className="w-full">
@@ -144,7 +160,7 @@ export function EmployeeDataTable({ initialData }: { initialData: any }) {
         </DropdownMenu>
       </div>
       <div className="rounded-md border w-[22.2rem] lg:w-full">
-      <Table>
+        <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -164,7 +180,13 @@ export function EmployeeDataTable({ initialData }: { initialData: any }) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <div className="items-center gap-1 justify-items-center text-center"><SpinnerCircular className="justify-self-center" size={30} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" /></div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -193,18 +215,15 @@ export function EmployeeDataTable({ initialData }: { initialData: any }) {
             <p className="text-sm font-medium">Lignes par page</p>
             <Select
               value={`${pageSize}`}
-              onValueChange={(value) => {
-                setPageSize(Number(value))
-                setCurrentPage(1)
-              }}
+              onValueChange={(value) => handlePageSizeChange(Number(value))}
             >
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue placeholder={pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
-                {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
+                {[10, 20, 30, 40, 50].map((size) => (
+                  <SelectItem key={size} value={`${size}`}>
+                    {size}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -226,7 +245,7 @@ export function EmployeeDataTable({ initialData }: { initialData: any }) {
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev: number) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
               <span className="sr-only">Page précédente</span>
@@ -235,7 +254,7 @@ export function EmployeeDataTable({ initialData }: { initialData: any }) {
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() => setCurrentPage((prev: number) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
             >
               <span className="sr-only">Page Suivante</span>

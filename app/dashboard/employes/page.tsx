@@ -1,59 +1,45 @@
 // app/dashboard/employes/page.tsx
 "use client"
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import TeamSwitcher from "@/app/dashboard/components/team-switcher";
 import { AddEmployeeForm } from "@/components/forms/add-user-form";
 import { useSession } from "next-auth/react";
 import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
 import { SpinnerCircularFixed } from "spinners-react";
 import { EmployeeDataTable } from "./components/employee-table";
-
-async function getEmployees(departmentId: number | null) {
-  const url = new URL('/api/employee', window.location.origin);
-  if (departmentId !== null && departmentId !== -1) {
-    url.searchParams.append('departmentId', departmentId.toString());
-  }
-  console.log('Fetching from URL:', url.toString()); // Log the URL being fetched
-  const res = await fetch(url, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch employees');
-  }
-  const data = await res.json();
-  console.log('Fetched data:', data); // Log the fetched data
-  return data;
-}
+import { getEmployees, EmployeeResponse } from "./components/data";
 
 export default function Employes() {
   const { data: session } = useSession();
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
-  const [employeeData, setEmployeeData] = useState(null);
+  const [employeeData, setEmployeeData] = useState<EmployeeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
   const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
 
-  const handleDepartmentChange = useCallback((department: { id: number; name: string } | null) => {
-    console.log('Department changed:', department); // Log the selected department
+  const handleDepartmentChange = (department: { id: number; name: string } | null) => {
     setSelectedDepartmentId(department?.id ?? null);
-  }, []);
+  };
 
   useEffect(() => {
-    console.log('Effect triggered. Selected Department ID:', selectedDepartmentId); // Log when effect is triggered
-    setIsLoading(true);
-    getEmployees(selectedDepartmentId)
-      .then((fetchedData) => {
-        console.log('Data fetched successfully:', fetchedData); // Log the fetched data
-        setEmployeeData(fetchedData);
+    const fetchInitialData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getEmployees(1, 10, '', 'name', 'asc', selectedDepartmentId);
+        setEmployeeData(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching employee data:', err);
+        setError('An error occurred while fetching employee data');
+        setEmployeeData(null);
+      } finally {
         setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error('Error fetching data:', err); // Log any errors
-        setError(err.message);
-        setIsLoading(false);
-      });
+      }
+    };
+
+    fetchInitialData();
   }, [selectedDepartmentId]);
 
   return(
@@ -80,14 +66,18 @@ export default function Employes() {
           ) : error ? (
             <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
               <div className="flex flex-col items-center gap-1 text-center">
-                <h3 className="text-2xl font-bold tracking-tight">Erreur Interne du Serveur</h3>
-                <p className="text-sm text-muted-foreground">
-                  Une erreur inattendue s&apos;est produite lors du chargement des données. Réessayez plus tard.
-                </p>
+                <h3 className="text-2xl font-bold tracking-tight">Erreur</h3>
+                <p className="text-sm text-muted-foreground">{error}</p>
               </div>
             </div>
           ) : (
-            employeeData && <EmployeeDataTable key={selectedDepartmentId} initialData={employeeData} />
+            employeeData && (
+              <EmployeeDataTable 
+                key={selectedDepartmentId} 
+                initialData={employeeData} 
+                selectedDepartmentId={selectedDepartmentId}
+              />
+            )
           )
         ) : (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">

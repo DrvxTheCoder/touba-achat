@@ -8,14 +8,14 @@
 	"theme_color": "#000000",
 	"icons": [
 		{
-			"src": "./assets/touba-logo-192x.jpg",
+			"src": "/assets/img/touba-logo-192x.png",
 			"sizes": "192x192",
-			"type": "image/jpg"
+			"type": "image/png"
 		},
 		{
-			"src": "./assets/touba-logo-512x.jpg",
+			"src": "/assets/img/touba-logo-512x.png",
 			"sizes": "512x512",
-			"type": "image/jpg"
+			"type": "image/png"
 		}
 	]
 }

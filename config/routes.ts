@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 
 export const routes = {
+    home: '/',
     dashboard: {
       home: '/dashboard',
       commandes: '/dashboard/commandes',
