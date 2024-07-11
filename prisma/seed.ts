@@ -100,7 +100,7 @@ export async function main() {
         matriculation: userData.matriculation,
         phoneNumber: '+1234567890', // Placeholder phone number
         userId: user.id,
-        departmentId: department.id,
+        currentDepartmentId: department.id,
       },
     });
 

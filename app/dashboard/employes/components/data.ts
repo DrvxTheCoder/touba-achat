@@ -3,10 +3,13 @@ export type Employee = {
   name: string;
   email: string;
   matriculation: string;
-  phoneNumber: string | null;
-  department: {
-    name: string;
+  phoneNumber: string;
+  userId: number;
+  currentDepartmentId: number;
+  status: string;
+  currentDepartment: {
     id: number;
+    name: string;
   };
 };
 
@@ -23,7 +26,7 @@ export async function getEmployees(
   search: string = '',
   sortBy: string = 'name',
   sortOrder: 'asc' | 'desc' = 'asc',
-  departmentId: number | null = null
+  currentdepartmentId: number | null = null
 ): Promise<EmployeeResponse> {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -33,8 +36,8 @@ export async function getEmployees(
     sortOrder,
   });
 
-  if (departmentId !== null) {
-    params.append('departmentId', departmentId.toString());
+  if (currentdepartmentId !== null) {
+    params.append('departmentId', currentdepartmentId.toString());
   }
 
   console.log(`Fetching employees with params: ${params.toString()}`);

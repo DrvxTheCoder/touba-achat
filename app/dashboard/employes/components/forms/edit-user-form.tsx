@@ -24,6 +24,8 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Icons } from "@/components/icons"
 import { Employee } from "../data"
+import { useToast } from "@/components/ui/use-toast"
+import { result } from "lodash"
 
 const employeeUpdateSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit comporter au moins 2 caractères." }),
@@ -39,13 +41,15 @@ type EmployeeUpdateValues = z.infer<typeof employeeUpdateSchema>
 
 interface UpdateEmployeeFormProps {
   employee: Employee
-  onUpdate: (updatedEmployee: Employee) => void
+  onUpdate: () => void
 }
 
 export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormProps) {
   const [updateButtonLoading, setUpdateButtonLoading] = useState(false)
   const [departments, setDepartments] = useState<{ id: number; name: string }[]>([]);
   const [section, setSection] = useState<"employee" | "credentials">("employee")
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetch('/api/departments')
@@ -63,15 +67,52 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
     defaultValues: {
       ...employee,
       phoneNumber: employee.phoneNumber || "",
-      department: employee.department.id,
+      department: employee.currentDepartmentId,
     },
     mode: "onChange",
   })
 
-  const onSubmit = (data: EmployeeUpdateValues) => {
+  const onSubmit = async (data: EmployeeUpdateValues) => {
     setUpdateButtonLoading(true);
-    onUpdate({ ...employee, ...data, department: { name: "", id: data.department } });
-    setUpdateButtonLoading(false);
+    try {
+      const response = await fetch('/api/employee', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: employee.id, ...data }),
+      }).then((res) => res.json()).then(result => {        if (result.error) {
+        // If there is an error message in the result, throw it to catch block
+        throw new Error(result.error);
+      }
+      // Handle success with the message from the server
+      toast({
+        title: "Succès",
+        description: result.message || "Les informations de l'employé ont été mises à jour avec succès.",
+      });
+      // Close the dialog and refresh the employee list
+      setIsDialogOpen(false);
+      onUpdate();  // Refresh the employee list
+    }).catch((error) => {
+      toast({
+        title: "Erreur - Échec de la modification!",
+        description: error.message || "Une erreur s'est produite.",
+        variant: 'destructive'
+      });
+      console.error('There was an error!', error);
+    }).finally(() => {
+      setUpdateButtonLoading(false);
+    });
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      toast({
+        title: "Erreur",
+        description: "Erreur interne du serveur",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdateButtonLoading(false);
+    }
   };
 
   return (
@@ -79,9 +120,7 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
       <DialogTrigger asChild>
         <div className="w-full">Modifier</div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
-        e.preventDefault();
-      }}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-xl">Modifier l&apos;employé</DialogTitle>
           <DialogDescription>
@@ -99,7 +138,7 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     <FormItem>
                       <FormLabel className="text-sm text-muted-foreground">Nom :</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} type="text" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

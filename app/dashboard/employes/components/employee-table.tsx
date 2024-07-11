@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ColumnFiltersState,
   SortingState,
@@ -35,10 +35,11 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { columns } from "./columns"
+import { createColumns } from "./columns"
 import { Employee, EmployeeResponse, getEmployees } from "./data"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { SpinnerCircular } from "spinners-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EmployeeDataTableProps {
   initialData: EmployeeResponse;
@@ -75,6 +76,13 @@ export function EmployeeDataTable({ initialData, selectedDepartmentId }: Employe
       setIsLoading(false);
     }
   }, [selectedDepartmentId])
+
+  
+  const refreshData = useCallback(() => {
+    fetchData(currentPage, pageSize, columnFilters, sorting);
+  }, [fetchData, currentPage, pageSize, columnFilters, sorting]);
+
+  const columns = useMemo(() => createColumns(refreshData), [refreshData]);
 
   useEffect(() => {
     setData(initialData.employees);
@@ -159,6 +167,7 @@ export function EmployeeDataTable({ initialData, selectedDepartmentId }: Employe
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <ScrollArea className="lg:h-[40rem] w-full rounded-md border">
       <div className="rounded-md border w-[22.2rem] lg:w-full">
         <Table>
           <TableHeader>
@@ -183,7 +192,7 @@ export function EmployeeDataTable({ initialData, selectedDepartmentId }: Employe
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  <div className="items-center gap-1 justify-items-center text-center"><SpinnerCircular className="justify-self-center" size={30} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" /></div>
+                  <div className="items-center gap-1 justify-items-center text-center"><SpinnerCircular className="left-1/2" size={30} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" /></div>
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -209,6 +218,8 @@ export function EmployeeDataTable({ initialData, selectedDepartmentId }: Employe
           </TableBody>
         </Table>
       </div>
+      </ScrollArea>
+
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">

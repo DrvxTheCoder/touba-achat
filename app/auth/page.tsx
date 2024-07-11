@@ -54,7 +54,7 @@ export default function AuthenticationPage() {
               </p>
             </div>
             <UserAuthForm />
-            <p className="px-8 text-center text-sm text-muted-foreground">
+            <small className="px-8 text-xs text-center text-muted-foreground">
             En cliquant sur Continuer, vous acceptez nos{" "}
               <Link
                 href="/terms"
@@ -70,7 +70,7 @@ export default function AuthenticationPage() {
                 Politique de confidentialité
               </Link>
               .
-            </p>
+            </small>
           </div>
         </div>
       </div>

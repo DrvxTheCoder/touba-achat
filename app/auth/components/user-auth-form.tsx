@@ -27,7 +27,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
   
-    console.log('Form Data:', { email, password });
+    // console.log('Form Data:', { email, password });
   
     const res = await signIn('credentials', {
       redirect: false,

@@ -18,6 +18,17 @@ enum Role {
   AUDIT
 }
 
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum NotificationType {
   EDB_CREATED
   EDB_APPROVED_SUPERIOR
@@ -50,84 +61,98 @@ enum ODMStatus {
 }
 
 model User {
-  id                Int              @id @default(autoincrement())
-  email             String           @unique
-  name              String
-  role              Role
-  password          String
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  employee          Employee?
-  createdEdbs       EtatDeBesoin[]   @relation("Creator")
-  approvedEdbs      EtatDeBesoin[]   @relation("Approver")
-  createdOdms       OrdreDeMission[] @relation("Creator")
-  approvedOdms      OrdreDeMission[] @relation("Approver")
-  sentNotifications Notification[]   @relation("Sender")
-  receivedNotifications Notification[] @relation("Receiver")
+  id                    Int              @id @default(autoincrement())
+  email                 String           @unique
+  name                  String
+  role                  Role
+  password              String
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  employee              Employee?
+  status                UserStatus       @default(ACTIVE)
+  createdEdbs           EtatDeBesoin[]   @relation("UserCreator")
+  approvedEdbs          EtatDeBesoin[]   @relation("Approver")
+  createdOdms           OrdreDeMission[] @relation("UserCreator")
+  approvedOdms          OrdreDeMission[] @relation("Approver")
+  sentNotifications     Notification[]   @relation("Sender")
+  receivedNotifications Notification[]   @relation("Receiver")
 }
 
 model Employee {
-  id              Int              @id @default(autoincrement())
-  name            String
-  email           String           @unique
-  matriculation   String           @unique
-  phoneNumber     String?
-  user            User             @relation(fields: [userId], references: [id])
-  userId          Int              @unique
-  departmentId    Int
-  department      Department       @relation(fields: [departmentId], references: [id])
-  createdEdbs     EtatDeBesoin[]
-  createdOdms     OrdreDeMission[]
+  id                  Int                         @id @default(autoincrement())
+  name                String
+  email               String                      @unique
+  matriculation       String                      @unique
+  phoneNumber         String?
+  user                User                        @relation(fields: [userId], references: [id])
+  userId              Int                         @unique
+  currentDepartmentId Int
+  currentDepartment   Department                  @relation("CurrentEmployees", fields: [currentDepartmentId], references: [id])
+  status              EmployeeStatus              @default(ACTIVE)
+  departmentHistory   EmployeeDepartmentHistory[]
+  createdEdbs         EtatDeBesoin[]              @relation("EmployeeCreator")
+  createdOdms         OrdreDeMission[]            @relation("EmployeeCreator")
 }
 
 model Department {
-  id        Int              @id @default(autoincrement())
-  name      String
-  employees Employee[]
-  edbs      EtatDeBesoin[]
-  odms      OrdreDeMission[]
+  id               Int                         @id @default(autoincrement())
+  name             String
+  currentEmployees Employee[]                  @relation("CurrentEmployees")
+  edbs             EtatDeBesoin[]
+  odms             OrdreDeMission[]
+  employeeHistory  EmployeeDepartmentHistory[]
+}
+
+model EmployeeDepartmentHistory {
+  id           Int        @id @default(autoincrement())
+  employeeId   Int
+  employee     Employee   @relation(fields: [employeeId], references: [id])
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  startDate    DateTime
+  endDate      DateTime?
 }
 
 model EtatDeBesoin {
-  id               Int        @id @default(autoincrement())
-  title            String
-  description      String
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  status           EDBStatus  @default(DRAFT)
-  creatorId        Int
-  creator          User       @relation("Creator", fields: [creatorId], references: [id])
-  employee         Employee   @relation(fields: [employeeId], references: [id])
-  employeeId       Int
-  departmentId     Int
-  department       Department @relation(fields: [departmentId], references: [id])
-  approverId       Int?
-  approver         User?      @relation("Approver", fields: [approverId], references: [id])
-  categoryId       Int
-  category         Category   @relation(fields: [categoryId], references: [id])
-  orders           Order[]
-  notifications    Notification[]
-  isEscalated      Boolean    @default(false)
-  references       String?
-  attachments      String[]
+  id            Int            @id @default(autoincrement())
+  title         String
+  description   String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  status        EDBStatus      @default(DRAFT)
+  departmentId  Int
+  department    Department     @relation(fields: [departmentId], references: [id])
+  creatorId     Int
+  creator       Employee       @relation("EmployeeCreator", fields: [creatorId], references: [id])
+  userCreatorId Int
+  userCreator   User           @relation("UserCreator", fields: [userCreatorId], references: [id])
+  approverId    Int?
+  approver      User?          @relation("Approver", fields: [approverId], references: [id])
+  categoryId    Int
+  category      Category       @relation(fields: [categoryId], references: [id])
+  orders        Order[]
+  notifications Notification[]
+  isEscalated   Boolean        @default(false)
+  references    String?
+  attachments   String[]
 }
 
 model OrdreDeMission {
-  id               Int        @id @default(autoincrement())
-  title            String
-  description      String
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  status           ODMStatus  @default(DRAFT)
-  creatorId        Int
-  creator          User       @relation("Creator", fields: [creatorId], references: [id])
-  employee         Employee   @relation(fields: [employeeId], references: [id])
-  employeeId       Int
-  departmentId     Int
-  department       Department @relation(fields: [departmentId], references: [id])
-  approverId       Int?
-  approver         User?      @relation("Approver", fields: [approverId], references: [id])
-  notifications    Notification[]
+  id            Int            @id @default(autoincrement())
+  title         String
+  description   String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  status        ODMStatus      @default(DRAFT)
+  departmentId  Int
+  department    Department     @relation(fields: [departmentId], references: [id])
+  creatorId     Int
+  creator       Employee       @relation("EmployeeCreator", fields: [creatorId], references: [id])
+  userCreatorId Int
+  userCreator   User           @relation("UserCreator", fields: [userCreatorId], references: [id])
+  approverId    Int?
+  approver      User?          @relation("Approver", fields: [approverId], references: [id])
+  notifications Notification[]
 }
 
 model Category {
@@ -146,18 +171,18 @@ model Order {
 }
 
 model Notification {
-  id               Int             @id @default(autoincrement())
+  id               Int              @id @default(autoincrement())
   message          String
   type             NotificationType
   senderId         Int
-  sender           User            @relation("Sender", fields: [senderId], references: [id])
+  sender           User             @relation("Sender", fields: [senderId], references: [id])
   receiverId       Int
-  receiver         User            @relation("Receiver", fields: [receiverId], references: [id])
+  receiver         User             @relation("Receiver", fields: [receiverId], references: [id])
   etatDeBesoinId   Int?
-  etatDeBesoin     EtatDeBesoin?   @relation(fields: [etatDeBesoinId], references: [id])
+  etatDeBesoin     EtatDeBesoin?    @relation(fields: [etatDeBesoinId], references: [id])
   ordreDeMissionId Int?
-  ordreDeMission   OrdreDeMission? @relation(fields: [ordreDeMissionId], references: [id])
-  createdAt        DateTime        @default(now())
-  isRead           Boolean         @default(false)
-  emailSent        Boolean         @default(false)
+  ordreDeMission   OrdreDeMission?  @relation(fields: [ordreDeMissionId], references: [id])
+  createdAt        DateTime         @default(now())
+  isRead           Boolean          @default(false)
+  emailSent        Boolean          @default(false)
 }

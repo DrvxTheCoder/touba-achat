@@ -71,6 +71,12 @@
     --destructive-foreground: 11 93% 89%;
     --ring: 151 80% 42%;
     --radius: 0.5rem;
+    --chart-1: 151 65% 20%;
+    --chart-2: 140 74% 44%;
+    --chart-3: 142 88% 28%;
+    --chart-4: 137 55% 15%;
+    --chart-5: 141 40% 9%;
+
   }
 
   .dark {
@@ -93,6 +99,11 @@
     --destructive: 11 93% 48%;
     --destructive-foreground: 0 0% 100%;
     --ring: 151 80% 42%;
+    --chart-1: 151 88% 28%;
+    --chart-2: 151 65% 20%;
+    --chart-3: 140 74% 24%;
+    --chart-4: 137 55% 15%;
+    --chart-5: 141 40% 9%;
   }
 }
 
@@ -117,6 +128,9 @@
       -ms-overflow-style: none;  /* IE and Edge */
       scrollbar-width: none;  /* Firefox */
 }
+}
+html, body{
+  overscroll-behavior: none;
 }
 
 .animated-dots {

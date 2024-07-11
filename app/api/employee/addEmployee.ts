@@ -46,7 +46,7 @@ export async function addEmployee(body: any) {
         matriculation,
         phoneNumber: phone,
         userId: user.id,
-        departmentId: department,
+        currentDepartmentId: department,
       },
     });
 

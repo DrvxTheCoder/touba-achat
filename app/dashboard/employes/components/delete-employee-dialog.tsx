@@ -4,45 +4,67 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Icons } from "@/components/icons"
+import { toast } from "@/components/ui/use-toast"
+import { Trash2 } from "lucide-react"
 
 interface DeleteEmployeeDialogProps {
-  employeeName: string
-  onDelete: () => void
+  employeeId: number;
+  employeeName: string;
+  onDelete: () => void;
 }
 
-export function DeleteEmployeeDialog({ employeeName, onDelete }: DeleteEmployeeDialogProps) {
-  const [deleteButtonLoading, setDeleteButtonLoading] = useState(false)
+export function DeleteEmployeeDialog({ employeeId, employeeName, onDelete }: DeleteEmployeeDialogProps) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDelete = () => {
-    setDeleteButtonLoading(true);
-    onDelete();
-    setDeleteButtonLoading(false);
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/employee/${employeeId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete employee');
+      }
+
+      onDelete();
+      setIsDialogOpen(false);
+      toast({
+        title: "Succès",
+        description: "L'employé a été supprimé avec succès.",
+      });
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la suppression de l'employé.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-      <div className="w-full text-destructive"><b>Supprimer</b></div>
+        <div className="text-destructive w-full">Supprimer</div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
-        e.preventDefault();
-      }}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-xl">Supprimer l&apos;employé</DialogTitle>
+          <DialogTitle>Confirmer la suppression</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer l&apos;employé {employeeName} ? Cette action est irréversible.
+            Êtes-vous sûr de vouloir supprimer <b className="text-destructive">{employeeName}</b> de la base ?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => {}}>Annuler</Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleteButtonLoading}>
-            {deleteButtonLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            <b>Supprimer</b>
+          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
+          <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? 'Suppression...' : 'Supprimer'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

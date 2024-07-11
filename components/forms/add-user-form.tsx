@@ -65,6 +65,7 @@ type EmployeeFormValues = z.infer<typeof employeeFormSchema>
 export function AddEmployeeForm() {
   const [employeeButtonLoading, setEmployeeButtonLoading] = useState(false)
   const [section, setSection] = useState<"employee" | "credentials">("employee")
+  const [open, setOpen] = useState(false); // State to manage dialog open/close
 
   const [departments, setDepartments] = useState<{ id: number; name: string }[]>([]);
 
@@ -114,9 +115,10 @@ export function AddEmployeeForm() {
         // Handle success with the message from the server
         toast({
           title: "Succès - Ajout réussi!",
-          description: result.message || "Employé ajouté avec succès.",
-          action: <ToastAction altText="Voir employé"><Link href={"/"}>Voir l&apos;employé</Link></ToastAction>
+          description: result.message || "Employé ajouté avec succès."
         });
+        form.reset(); // Reset form on successful submit
+        setOpen(false); // Close the dialog on successful submit
       })
       .catch(error => {
         // Handle error with the message from the server or a generic message
@@ -133,7 +135,13 @@ export function AddEmployeeForm() {
   };
 
   return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen) {
+            form.reset();
+            setSection("employee");
+          }
+        }}>
         <DialogTrigger asChild>
             <Button variant="secondary" className="font-weight">+</Button>
         </DialogTrigger>
@@ -287,7 +295,7 @@ export function AddEmployeeForm() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="ADMIN">Administrateur</SelectItem>
+                            <SelectItem value="ADMIN">Administrateur</SelectItem>
                               <SelectItem value="USER">Utilisateur</SelectItem>
                               <SelectItem value="RESPONSABLE">Responsable</SelectItem>
                               <SelectItem value="DIRECTEUR">Directeur / Directrice</SelectItem>
@@ -301,25 +309,30 @@ export function AddEmployeeForm() {
                       )}
                     />
                     <div className="flex justify-end space-x-2">
-                      <Button variant="outline" type="button" onClick={() => setSection("employee")} className="mt-2">
-                        <b>Retour</b>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setSection("employee")}
+                        className="mt-2"
+                      >
+                        Précédent
                       </Button>
-                      
-                      <Button type="submit" className="mt-2" disabled={employeeButtonLoading}>
-                      {employeeButtonLoading && (
-                        <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      <b>Ajouter</b>
-                    </Button>
-
+                      <Button
+                        type="submit"
+                        className="mt-2"
+                        disabled={!form.formState.isValid}
+                      >
+                        {employeeButtonLoading && (
+                          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Ajouter
+                      </Button>
                     </div>
                   </>
                 )}
-
-
               </form>
             </Form>
         </DialogContent>
-    </Dialog>
+        </Dialog>
   )
 }

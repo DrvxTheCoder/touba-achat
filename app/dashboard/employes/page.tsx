@@ -25,22 +25,25 @@ export default function Employes() {
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getEmployees(1, 10, '', 'name', 'asc', selectedDepartmentId);
-        setEmployeeData(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching employee data:', err);
-        setError('An error occurred while fetching employee data');
-        setEmployeeData(null);
-      } finally {
-        setIsLoading(false);
+      if(hasReadAccess || hasWriteAccess){
+        setIsLoading(true);
+        try {
+          const data = await getEmployees(1, 10, '', 'name', 'asc', selectedDepartmentId);
+          setEmployeeData(data);
+          setError(null);
+        } catch (err) {
+          console.error('Error fetching employee data:', err);
+          setError('Une erreur s\'est produite lors de la récupération des données des employés');
+          setEmployeeData(null);
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
-
-    fetchInitialData();
+  fetchInitialData();
   }, [selectedDepartmentId]);
+
+
 
   return(
     <>

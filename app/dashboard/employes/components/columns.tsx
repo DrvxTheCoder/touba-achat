@@ -1,7 +1,6 @@
 "use client"
-
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, Copy, DeleteIcon, Edit2Icon, FilePenLine, Info, MoreHorizontal, Trash2, UserMinus, FilePen, KeyRound, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -9,13 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Employee } from "./data"
 import { UpdateEmployeeForm } from "./forms/edit-user-form"
 import { DeleteEmployeeDialog } from "./delete-employee-dialog"
+import { toast } from "@/components/ui/use-toast"
 
-export const columns: ColumnDef<Employee>[] = [
+export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -43,32 +44,20 @@ export const columns: ColumnDef<Employee>[] = [
     header: "Téléphone",
   },
   {
-    accessorKey: "department",
+    accessorKey: "currentDepartment.name",
     header: "Département",
-    cell: ({ row }) => {
-      const department = row.original.department
-      return department ? department.name : 'N/A'
-    },
+    cell: ({ row }) => row.original.currentDepartment?.name || 'N/A',
   },
   {
     id: "actions",
     cell: ({ row }) => {
       const employee = row.original
-
-      const handleUpdate = (updatedEmployee: Employee) => {
-        // Implement your update logic here
-        console.log("Updating employee:", updatedEmployee);
-        // You might want to call an API endpoint to update the employee
-        // and then refresh the table data
+      const handleUpdate = () => {
+        refreshData();
       };
-
-      const handleDelete = () => {
-        // Implement your delete logic here
-        console.log("Deleting employee:", employee.id);
-        // You might want to call an API endpoint to delete the employee
-        // and then refresh the table data
+      const handleDelete = async () => {
+        refreshData();
       };
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -80,17 +69,37 @@ export const columns: ColumnDef<Employee>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel className="text-bold">ACTIONS</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(employee.id.toString())}
-            >
-              Copier l&apos;ID
+            <DropdownMenuItem>
+              Voir EDB
+              <DropdownMenuShortcut><ExternalLink className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem>Info</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                navigator.clipboard.writeText(employee.id.toString())
+                toast({
+                  title: "ID Copié",
+                  description: `L'ID ${employee.id} a été copié dans le presse-papier.`,
+                })
+              }}
+            >
+              Changer le mot de passe
+              <DropdownMenuShortcut><KeyRound className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              Info
+              <DropdownMenuShortcut><Info className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               <UpdateEmployeeForm employee={employee} onUpdate={handleUpdate} />
+              <DropdownMenuShortcut><FilePen className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <DeleteEmployeeDialog employeeName={employee.name} onDelete={handleDelete} />
+              <DeleteEmployeeDialog 
+                employeeId={employee.id} 
+                employeeName={employee.name} 
+                onDelete={handleDelete} 
+              />
+              <DropdownMenuShortcut><Trash2 className="text-destructive ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

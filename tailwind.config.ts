@@ -23,7 +23,7 @@ const config = {
         mono: ["var(--font-geist-mono)"],
       },
       backgroundImage: {
-        'cover-image': "url('@/app/touba-cover.jpeg')",
+        'cover-image': "url('/assets/img/touba-cover.jpeg')",
       },
       colors: {
         border: "hsl(var(--border))",
