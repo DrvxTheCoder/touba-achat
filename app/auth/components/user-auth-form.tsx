@@ -12,44 +12,74 @@ import { Label } from "@/components/ui/label";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
+async function customSignIn(email: string, password: string) {
+  try {
+    const res = await fetch('/api/auth/signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(JSON.stringify(errorData));
+    }
+
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+    });
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    let errorMessage = "Une erreur s'est produite lors de la connexion";
+    let errorCode = "unknown_error";
+
+    if (typeof error.message === 'string') {
+      try {
+        const parsedError = JSON.parse(error.message);
+        errorMessage = parsedError.message || errorMessage;
+        errorCode = parsedError.error || errorCode;
+      } catch {
+        // If parsing fails, use the error message as is
+        errorMessage = error.message;
+      }
+    }
+
+    return { success: false, error: errorCode, message: errorMessage };
+  }
+}
+
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [isLoadingProvider, setIsLoadingProvider] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
   const router = useRouter();
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
-  
+    setError(null);
+
     const form = event.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-  
-    // console.log('Form Data:', { email, password });
-  
-    const res = await signIn('credentials', {
-      redirect: false,
-      email,
-      password,
-    });
-  
-    
-  
-    if (res?.error) {
-      setIsLoading(false);
-      if (res.error === 'CredentialsSignin') {
-        setError('Email ou mot de passe invalide. Veuillez réessayer.');
-      } else {
-        setError('Une erreur inattendue s\'est produite. Veuillez réessayer ulterieurement.');
-      }
-    } else {
+
+    const result = await customSignIn(email, password);
+
+    if (result.success) {
       await router.replace("/");
-      setIsLoading(false);
+    } else {
+      setError(result.message || "Une erreur inattendue s'est produite");
     }
+
+    setIsLoading(false);
   }
-  
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>

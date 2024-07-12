@@ -1,14 +1,9 @@
 import { DefaultSession, type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import isEqual from 'lodash/isEqual';
 import { pagesOptions } from './pages-options';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
 import { JWT } from 'next-auth/jwt';
-import { Session, User } from 'next-auth';
-
-dotenv.config({ path: '.env.local' });
 
 const prisma = new PrismaClient();
 
@@ -16,12 +11,14 @@ declare module 'next-auth' {
   interface User {
     id: string;
     role: string;
+    status: UserStatus;
   }
 
   interface Session {
     user: {
       id: string;
       role: string;
+      status: UserStatus;
     } & DefaultSession['user'];
   }
 }
@@ -30,11 +27,11 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
     role: string;
+    status: UserStatus;
   }
 }
 
 export const authOptions: NextAuthOptions = {
-  // debug: true,
   pages: {
     ...pagesOptions,
   },
@@ -45,65 +42,84 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       return {
-      ...session,
-      user: {
-        ...session.user,
-        id: token.idToken as string,
-        role: token.role as string, // Add the user role
-      },
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          role: token.role,
+          status: token.status,
+        },
       };
     },
     async jwt({ token, user }) {
       if (user) {
-        // return user as JWT
+        token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
+        token.status = user.status;
       }
       return token;
     },
     async redirect({ url, baseUrl }) {
-      // const parsedUrl = new URL(url, baseUrl);
-      // if (parsedUrl.searchParams.has('callbackUrl')) {
-      //   return `${baseUrl}${parsedUrl.searchParams.get('callbackUrl')}`;
-      // }
-      // if (parsedUrl.origin === baseUrl) {
-      //   return url;
-      // }
       return baseUrl;
     },
   },
   providers: [
     CredentialsProvider({
-      id: 'credentials',
       name: 'Credentials',
-      credentials: {},
-      async authorize(credentials: any) {
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials, req) {
+        if (!credentials) {
+          throw new Error(JSON.stringify({ 
+            error: "auth_error", 
+            message: "Aucune information d'identification fournie" 
+          }));
+        }
+
         try {
           const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email,
-            },
+            where: { email: credentials.email },
           });
-          console.log('User found:', user);
-      
-          if (user) {
-            const isMatch = await bcrypt.compare(credentials.password, user.password);
-            console.log(`Password match: ${isMatch}`);
-            if (isMatch) {
-              return user as any;
-            } else {
-              console.log('Password mismatch');
-            }
-          } else {
-            console.log('No user found with that email');
+
+          if (!user) {
+            throw new Error(JSON.stringify({ 
+              error: "user_not_found", 
+              message: "Aucun utilisateur trouvé avec cet email" 
+            }));
           }
+
+          if (user.status !== UserStatus.ACTIVE) {
+            throw new Error(JSON.stringify({ 
+              error: "inactive_account", 
+              message: "Ce compte n'est pas actif. Veuillez consulter l'administrateur du système." 
+            }));
+          }
+
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+
+          if (!isPasswordValid) {
+            throw new Error(JSON.stringify({ 
+              error: "invalid_credentials", 
+              message: "Mot de passe incorrect" 
+            }));
+          }
+
+          return {
+            id: user.id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            status: user.status,
+          };
         } catch (error) {
-          console.error('Error during authorization:', error);
+          console.error('Erreur lors de l\'autorisation:', error);
+          throw error;
         }
-        return null;
-      }
-      ,
+      },
     }),
   ],
 };

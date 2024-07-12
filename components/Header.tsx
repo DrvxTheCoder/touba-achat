@@ -23,6 +23,7 @@ import {
   } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "next-auth/react";
+import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
 import CustomLogoSVGTwo from "./logos/CustomLogoSVGTwo";
 import { CommandMenu } from "@/components/command-menu";
 
@@ -30,20 +31,30 @@ export default function Header (){
     const { data: session } = useSession();
     const pathname = usePathname();
 
-    const getInitials = (name: any) => {
-      return name
-          .split(' ')
-          .map((word: any) => word[0])
-          .join('')
-          .toUpperCase();
+    const getInitials = (name: string) => {
+      const words = name.split(' ');
+      if (words.length > 1) {
+        return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+      }
+      return words[0][0].toUpperCase();
     };
 
-    const links = [
+    const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
+    const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
+    
+
+
+    const links =  hasReadAccess ? [
         { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
         { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 6 },
         { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
         { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
         { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
+    ] : [
+      { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
+      { href: "/dashboard/mes-edbs", icon: Package, label: "États de Besoins", badgeCount: 0 },
+      { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
+      { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
     ];
     return(
         <header className="absolute sticky w-full z-10 backdrop-blur-sm top-0 flex h-14 gap-4 items-center border-b px-4 lg:h-[60px] lg:px-6">
@@ -64,8 +75,8 @@ export default function Header (){
                 href="#"
                 className="flex items-center gap-2 text-lg font-semibold pb-3"
               >
-                <CustomLogoSVGTwo width="5rem" />
-                {/* Touba-App™ */}
+                <CustomLogoSVG width="5rem" />
+                Touba-App™
               </Link>
               {links.map((link, index) => (
 

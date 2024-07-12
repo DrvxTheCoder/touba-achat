@@ -266,7 +266,7 @@ export default function Dashboard (){
             <TabsContent value="notifications">
               <MailList items={mails.filter((item) => !item.read)} />
             </TabsContent>
-            {/* Start Notifications */}
+            {/* Ends Notifications */}
             </ScrollArea>
           </Tabs>
         </div>

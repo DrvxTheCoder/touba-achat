@@ -1,6 +1,8 @@
 "use client"
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
 import CustomLogoSVGTwo from "@/components/logos/CustomLogoSVGTwo";
@@ -14,14 +16,23 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 export default function Sidebar(){
 
     const pathname = usePathname();
-
-    const links = [
+    const { data: session } = useSession();
+    const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
+    const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
+    
+    const links =  hasReadAccess ? [
         { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
-        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 6  },
-        { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0  },
-        { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0  },
-        { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0  }
+        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 6 },
+        { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
+        { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
+        { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
+    ] : [
+      { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
+      { href: "/dashboard/mes-edbs", icon: Package, label: "Mes EDBs", badgeCount: 6 },
+      { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
+      { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
     ];
+
     return (
         <aside className="absolute sticky left-0 h-full hidden border-r md:block">
         <div className="fixed flex h-full max-h-screen flex-col gap-2 w-[17.5rem]">

@@ -12,6 +12,8 @@ export const routes = {
       etatsPage: '/dashboard/etats/page',
       parametres: '/dashboard/parametres',
       parametresPage: '/dashboard/parametres/page',
+      myEdbs: '/dashboard/mes-edbs',
+      myEdbsPage: '/dashboard/mes-edbs/page',
     },
     auth: "/auth",
   };
