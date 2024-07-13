@@ -63,7 +63,7 @@ export default function Header (){
             <Button
               variant="outline"
               size="icon"
-              className="shrink-0 md:hidden mr-2"
+              className="shrink-0 lg:hidden mr-2"
             >
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle navigation menu</span>
@@ -75,7 +75,7 @@ export default function Header (){
                 href="#"
                 className="flex items-center gap-2 text-lg font-semibold pb-3"
               >
-                <CustomLogoSVG width="5rem" />
+                <CustomLogoSVG width="2rem" />
                 Touba-App™
               </Link>
               {links.map((link, index) => (

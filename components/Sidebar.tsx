@@ -34,7 +34,7 @@ export default function Sidebar(){
     ];
 
     return (
-        <aside className="absolute sticky left-0 h-full hidden border-r md:block">
+        <aside className="absolute sticky left-0 h-full hidden border-r lg:block">
         <div className="fixed flex h-full max-h-screen flex-col gap-2 w-[17.5rem]">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <div className="flex items-center gap-2 font-semibold space-x-9">

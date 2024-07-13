@@ -1,6 +1,6 @@
 {
-	"name": "ToubaApp™",
-	"short_name": "touba-app",
+	"name": "ToubaApp™ - Touba Oil SAU",
+	"short_name": "ToubaApp™",
 	"description": "L'application web officiel de Touba Oil SAU",
 	"start_url": "/",
 	"display": "standalone",

@@ -1,5 +1,6 @@
 "use client"
 import * as React from "react"
+import { useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -90,48 +91,53 @@ import {
 } from "@/components/ui/chart"
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer } from "recharts"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { edbData, EDB } from './data-two/data'
+import { EDBTableRow } from './data-two/EDBTableRow'
 
-const data = [
-  {
-    revenue: 10400,
-    subscription: 240,
-  },
-  {
-    revenue: 14405,
-    subscription: 300,
-  },
-  {
-    revenue: 9400,
-    subscription: 200,
-  },
-  {
-    revenue: 8200,
-    subscription: 278,
-  },
-  {
-    revenue: 7000,
-    subscription: 189,
-  },
-  {
-    revenue: 9600,
-    subscription: 239,
-  },
-  {
-    revenue: 11244,
-    subscription: 278,
-  },
-  {
-    revenue: 26475,
-    subscription: 189,
-  },
-]
+const ITEMS_PER_PAGE = 5;
 
-export default function Etats(){
-    return(
-      <>
+export default function Etats() {
+  const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const filteredData = useMemo(() => {
+    return edbData.filter(edb => 
+      (edb.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       edb.id.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (statusFilter.length === 0 || statusFilter.includes(edb.status))
+    );
+  }, [searchTerm, statusFilter]);
+
+  const pageCount = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleRowClick = (edb: EDB) => {
+    setSelectedEDB(prevSelected => prevSelected?.id === edb.id ? null : edb);
+  }
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setCurrentPage(1);
+  }
+
+  const handleFilterChange = (value: string) => {
+    setStatusFilter(prev => 
+      prev.includes(value) 
+        ? prev.filter(item => item !== value)
+        : [...prev, value]
+    );
+    setCurrentPage(1);
+  }
+  return (
+    <>
       <title>États de Besoins - Touba App™</title>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div>
+      <div>
           <div className="flex items-center justify-between space-y-2">
               <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins</h2>
               <div className="flex items-center space-x-2">
@@ -139,10 +145,9 @@ export default function Etats(){
                 </div>
           </div>
         </div>
-        <div className="grid flex-1 items-start  md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
-          {/* start main */}
+        <div className="grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
           <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
               <Card className="sm:col-span-2">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
@@ -209,225 +214,137 @@ export default function Etats(){
                 </Card>
 
               </div>
-                      <Tabs defaultValue="week">
-                      <div className="flex items-center">
-                        <TabsList>
-                        <TabsTrigger value="week">Semaine</TabsTrigger>
-                        <TabsTrigger value="month">Mois</TabsTrigger>
-                        <TabsTrigger value="year">Année</TabsTrigger>
-                        </TabsList>
-                        <div className="ml-auto flex items-center gap-2">
-                        <Input placeholder="Recherche..." className="h-7 w-sm lg:max-w-sm ml-2"/>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 gap-1 text-sm"
-                          >
-                            <ListFilter className="h-3.5 w-3.5" />
-                            <span className="sr-only sm:not-sr-only">Filtrer</span>
-                          </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Filtrer par</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuCheckboxItem checked>
-                            Tout
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem>
-                            Delivré
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem>
-                            En cours
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem>
-                            Validé
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem>
-                            Non Validé
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem>
-                            Rejeté
-                          </DropdownMenuCheckboxItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 gap-1 text-sm"
+            <Tabs defaultValue="week">
+              <div className="flex items-center">
+                <TabsList>
+                  <TabsTrigger value="week">Semaine</TabsTrigger>
+                  <TabsTrigger value="month">Mois</TabsTrigger>
+                  <TabsTrigger value="year">Année</TabsTrigger>
+                </TabsList>
+                <div className="ml-auto flex items-center gap-2">
+                  <Input 
+                    placeholder="Recherche..." 
+                    className="h-7 w-sm lg:max-w-sm ml-2"
+                    value={searchTerm}
+                    onChange={handleSearch}
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1 text-sm"
+                      >
+                        <ListFilter className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only">Filtrer</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Filtrer par</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {['Non-validé', 'Validé', 'Rejeté', 'Délivré', 'En cours'].map((status) => (
+                        <DropdownMenuCheckboxItem 
+                          key={status}
+                          checked={statusFilter.includes(status)}
+                          onCheckedChange={() => handleFilterChange(status)}
                         >
-                          <File className="h-3.5 w-3.5" />
-                          <span className="sr-only sm:not-sr-only">Exporter</span>
-                        </Button>
-                        </div>
-                      </div>
-                      <TabsContent value="week">
-                        <Card x-chunk="dashboard-05-chunk-3">
-                        {/* <CardHeader className="px-7">
-                          <CardTitle>Etats de Besoins</CardTitle>
-                          <CardDescription>
-                          EDB récentes de votre département.
-                          </CardDescription>
-                        </CardHeader> */}
-                        <CardContent className="pt-5">
-                          <Table>
-                          <TableHeader className="bg-muted">
-                            <TableRow className="rounded-lg border-0">
-                            <TableHead className="rounded-l-lg">
-                              ID
-                            </TableHead>
-                            <TableHead className="hidden sm:table-cell">
-                              Catégorie
-                            </TableHead>
-                            <TableHead className="hidden sm:table-cell">
-                              Statut
-                            </TableHead>
-                            <TableHead className="hidden md:table-cell">
-                              Département
-                            </TableHead>
-                            <TableHead className="text-right rounded-r-lg">
-                              Montant (XOF)
-                            </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            <TableRow>
-                            <TableCell>
-                              <div className="font-medium"># EDB-5212377</div>
-                              <div className="hidden text-xs text-muted-foreground md:inline">
-                              paul.flan@touba-oil.com
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              Fournitures de Bureau
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge className="text-xs" variant="secondary">
-                              Non-validé
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              Direction Administrative & Financière
-                            </TableCell>
-                            <TableCell className="text-right">56040</TableCell>
-                            </TableRow>
-                            <TableRow>
-                            <TableCell>
-                              <div className="font-medium"># EDB-5612098</div>
-                              <div className="hidden text-xs text-muted-foreground md:inline">
-                              kemo.camara@touba-oil.com
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              Matériel Industriel
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge className="text-xs text-white bg-destructive/50">
-                              Rejeté
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              Direction Générale
-                            </TableCell>
-                            <TableCell className="text-right">275000</TableCell>
-                            </TableRow>
-                          <TableRow>
-                            <TableCell>
-                              <div className="font-medium"># EDB-8232397</div>
-                              <div className="hidden text-xs text-muted-foreground md:inline">
-                                noah.lunsi@touba-oil.com
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              Fournitures de Bureau
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge className="text-xs" variant="secondary">
-                                Fulfilled
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              Direction Générale
-                            </TableCell>
-                            <TableCell className="text-right">75000</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>
-                              <div className="font-medium"># EDB-12122775</div>
-                              <div className="hidden text-xs text-muted-foreground md:inline">
-                                djamila.sylla@touba-oil.com
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              Équipement Informatique
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge className="text-xs" variant="outline">
-                                Validé
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              Direction Administrative & Financière
-                            </TableCell>
-                            <TableCell className="text-right">89900</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>
-                              <div className="font-medium"># EDB-12135654</div>
-                              <div className="hidden text-xs text-muted-foreground md:inline">
-                                emma.louhess@touba-oil.com
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                            Équipement Informatique
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge className="text-xs bg-primary/50 text-white">
-                                Délivré
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              Direction Ressources Humaines
-                            </TableCell>
-                            <TableCell className="text-right">1500000</TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                    <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
-                      <div className="text-xs text-muted-foreground">
-                        Mis à jour: <time dateTime="2024-11-23">12 Juillet 2024</time>
-                      </div>
-                      <Pagination className="ml-auto mr-0 w-auto">
-                        <PaginationContent>
-                          <PaginationItem>
-                            <Button size="icon" variant="outline" className="h-6 w-6">
-                              <ChevronLeft className="h-3.5 w-3.5" />
-                              <span className="sr-only">Précédent</span>
-                            </Button>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <Button size="icon" variant="outline" className="h-6 w-6">
-                              <ChevronRight className="h-3.5 w-3.5" />
-                              <span className="sr-only">Suivant</span>
-                            </Button>
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+                          {status}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 text-sm"
+                  >
+                    <File className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only">Exporter</span>
+                  </Button>
+                </div>
+              </div>
+              <TabsContent value="week">
+                <Card>
+                  <CardContent className="pt-5">
+                    <Table>
+                    <TableHeader className="bg-muted">
+                        <TableRow className="rounded-lg border-0">
+                        <TableHead className="rounded-l-lg">
+                            ID
+                        </TableHead>
+                        <TableHead className="hidden sm:table-cell">
+                            Catégorie
+                        </TableHead>
+                        <TableHead className="hidden sm:table-cell">
+                            Statut
+                        </TableHead>
+                        <TableHead className="hidden md:table-cell">
+                            Département
+                        </TableHead>
+                        <TableHead className="text-right rounded-r-lg">
+                            Montant (XOF)
+                        </TableHead>
+                        </TableRow>
+                        </TableHeader>
+                      <TableBody>
+                        {paginatedData.map((edb) => (
+                          <EDBTableRow 
+                            key={edb.id} 
+                            edb={edb} 
+                            onRowClick={handleRowClick}
+                            isSelected={selectedEDB?.id === edb.id}
+                          />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                  <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
+                    <div className="text-xs text-muted-foreground">
+                      Mis à jour: <time dateTime="2024-11-23">12 Juillet 2024</time>
+                    </div>
+                    <Pagination className="ml-auto mr-0 w-auto">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <Button 
+                            size="icon" 
+                            variant="outline" 
+                            className="h-6 w-6"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <span className="sr-only">Précédent</span>
+                          </Button>
+                        </PaginationItem>
+                        <PaginationItem>
+                          <Button 
+                            size="icon" 
+                            variant="outline" 
+                            className="h-6 w-6"
+                            onClick={() => setCurrentPage(prev => Math.min(pageCount, prev + 1))}
+                            disabled={currentPage === pageCount}
+                          >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                            <span className="sr-only">Suivant</span>
+                          </Button>
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
+          
+          {/* Right-side card for EDB details */}
           <div>
-              <Card
-                className="overflow-hidden lg:block hidden" x-chunk="dashboard-05-chunk-4"
-              >
+            <Card className="overflow-hidden lg:block hidden">
+              {selectedEDB ? (
+                <>
                 <CardHeader className="flex flex-row items-start border-b">
                   <div className="grid gap-0.5">
                     <CardTitle className="group flex items-center gap-2 text-lg hover:underline underline-offset-2">
-                      # EDB-12122775
+                      # {selectedEDB.id}
                       <Button
                         size="icon"
                         variant="outline"
@@ -437,7 +354,15 @@ export default function Etats(){
                         <span className="sr-only">Copier ID EDB</span>
                       </Button>
                     </CardTitle>
-                    <CardDescription>Statut: <Badge className="text-xs ml-1" variant="outline"> Validé </Badge></CardDescription>
+                    <CardDescription>Statut: 
+                    <Badge className="text-xs ml-1"
+                      variant={selectedEDB.status === "Rejeté" ? "destructive" : 
+                        selectedEDB.status === "Validé" ? "outline" :
+                        selectedEDB.status === "Délivré" ? "default" : "secondary"}
+                      >
+                     {selectedEDB.status}
+                    </Badge>
+                    </CardDescription>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
                     <Button size="sm" variant="outline" className="h-8 gap-1">
@@ -463,40 +388,39 @@ export default function Etats(){
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 text-sm">
+                
                   <div className="grid gap-3">
+                    <small className="text-xs text-muted-foreground"><b>Titre:</b> {selectedEDB.title}</small>
                     <ul className="grid gap-3">
-                    <li className="flex items-center justify-between">
+                    <li className="flex items-center justify-between px-3">
                       <span className="font-semibold">Désignation</span>
                       <span className="font-semibold">QTE</span>
                     </li>
                     </ul>
                     <ul className="grid gap-3">
-                      <li className="flex items-center justify-between">
-                        <span className="text-muted-foreground">
-                          Moniteur HP 24 Pouces - HP24Zn
-                        </span>
-                        <span>x 1</span>
-                      </li>
-                      <li className="flex items-center justify-between">
-                        <span className="text-muted-foreground">
-                          Adaptateur USB-C
-                        </span>
-                        <span>x 1</span>
-                      </li>
+                      <ScrollArea className="w-full rounded-md h-14 p-2 border">
+                      {selectedEDB.items.map((item, index) => (
+                        <li className="flex items-center justify-between" key={index}>
+                          <span className="text-muted-foreground">{item.name}</span>
+                          <span>x {item.quantity}</span>
+                        </li>
+                      ))}
+                      </ScrollArea>
+
                     </ul>
                     <Separator className="my-2" />
                     <ul className="grid gap-3">
                       <li className="flex items-center justify-between">
                         <span className="text-muted-foreground">Subtotal - Estimé</span>
-                        <span>En cours</span>
+                        <span>{selectedEDB.amount}</span>
                       </li>
                       <li className="flex items-center justify-between">
                         <span className="text-muted-foreground">Livraison - Estimé</span>
-                        <span>En cours</span>
+                        <span>{2000}</span>
                       </li>
                       <li className="flex items-center justify-between font-semibold">
                         <span className="text-muted-foreground">Total - Estimé</span>
-                        <span>$0.00</span>
+                        <span>{selectedEDB.amount - 2000}</span>
                       </li>
                     </ul>
                   </div>
@@ -506,18 +430,18 @@ export default function Etats(){
                     <dl className="grid gap-3">
                       <div className="flex items-center justify-between">
                         <dt className="text-muted-foreground">Nom et Prenom</dt>
-                        <dd>Djamila Sylla</dd>
+                        <dd>{selectedEDB.employee.name}</dd>
                       </div>
                       <div className="flex items-center justify-between">
                         <dt className="text-muted-foreground">Departement</dt>
                         <dd>
-                          <dd>Direction Administrative & Financière</dd>
+                          <dd>{selectedEDB.department}</dd>
                         </dd>
                       </div>
                       <div className="flex items-center justify-between">
                         <dt className="text-muted-foreground">Email</dt>
                         <dd>
-                          <a href="mailto:djamilla.sylla@touba-oil.com">djamilla.sylla@touba-oil.com</a>
+                          <a href="mailto:djamilla.sylla@touba-oil.com">{selectedEDB.email}</a>
                         </dd>
                       </div>
                     </dl>
@@ -526,26 +450,31 @@ export default function Etats(){
                     <div className="font-semibold">Document Rattaché</div>
                     <ScrollArea className="w-full whitespace-nowrap rounded-md py-3">
                       <div className="flex w-max space-x-1 p-1 justify-start gap-1 ">
-                         <Button variant="outline" className="text-xs"> <Paperclip className="h-4 w-4 mr-1"/> Pro Forma #1</Button>
-                         <Button variant="outline" className="text-xs"> <Paperclip className="h-4 w-4 mr-1"/> Pro Forma #2</Button>
-                         <Button variant="outline" className="text-xs"> <Paperclip className="h-4 w-4 mr-1"/> Bon de Decaissement</Button> 
+                      {selectedEDB.documents.map((document, index) => (
+                        <>
+                         <Button variant="outline" className="text-xs"> <Paperclip className="h-4 w-4 mr-1" key={index}/>{document}</Button>
+                         </>
+                      ))}
                       </div>
+                    
                       <ScrollBar orientation="horizontal" />
                       </ScrollArea>
                 </CardContent>
                 <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
                   <div className="text-xs text-muted-foreground">
-                    Date: <time dateTime="2024-06-06">2024-06-06</time>
+                    Date: <time dateTime={selectedEDB.date}>{selectedEDB.date}</time>
                   </div>
                 </CardFooter>
-              </Card>
+                </>
+              ) : (
+                <CardContent className="p-6 text-sm text-center text-muted-foreground">
+                  Sélectionnez un EDB pour voir les détails
+                </CardContent>
+              )}
+            </Card>
           </div>
-          {/* end main */}
         </div>
-
-
       </main>
-      </>
-
-    );
+    </>
+  );
 }
