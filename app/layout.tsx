@@ -29,7 +29,7 @@ export default async function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="user-scalable=no"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans no-scrollbar`}>
