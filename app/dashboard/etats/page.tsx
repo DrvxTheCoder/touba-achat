@@ -24,7 +24,9 @@ import {
   TrendingDown,
   TrendingUp,
   Paperclip,
-  PackageIcon
+  PackageIcon,
+  RefreshCcwIcon,
+  RefreshCwIcon
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -93,6 +95,10 @@ import { Bar, BarChart, Line, LineChart, ResponsiveContainer } from "recharts"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { edbData, EDB } from './data-two/data'
 import { EDBTableRow } from './data-two/EDBTableRow'
+import { CategoriesDialog } from "./components/categories-dialog"
+import { TooltipProvider } from "@radix-ui/react-tooltip"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 
 const ITEMS_PER_PAGE = 5;
 
@@ -141,8 +147,9 @@ export default function Etats() {
           <div className="flex items-center justify-between space-y-2">
               <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins</h2>
               <div className="flex items-center space-x-2">
+                <CategoriesDialog />
                 <Button variant="outline">Nouveau <PlusCircle className="ml-2 h-4 w-4"/></Button>
-                </div>
+              </div>
           </div>
         </div>
         <div className="grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
@@ -214,13 +221,28 @@ export default function Etats() {
                 </Card>
 
               </div>
-            <Tabs defaultValue="week">
               <div className="flex items-center">
-                <TabsList>
+                <RadioGroup>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="jour" id="jour" className="h-3.5 w-3.5"/>
+                      <Label htmlFor="jour"><text className="lg:hidden">S</text><text className="hidden lg:block text-xs">Semaine</text></Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="mois" id="mois" className="h-3.5 w-3.5"/>
+                      <Label htmlFor="mois"><text className="lg:hidden">M</text><text className="hidden lg:block text-xs">Mois</text></Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="annee" id="annee" className="h-3.5 w-3.5"/>
+                      <Label htmlFor="annee"><text className="lg:hidden">A</text><text className="hidden lg:block text-xs">Année</text></Label>
+                    </div>
+                  </div>   
+                </RadioGroup>
+                {/* <TabsList>
                   <TabsTrigger value="week">Semaine</TabsTrigger>
                   <TabsTrigger value="month">Mois</TabsTrigger>
                   <TabsTrigger value="year">Année</TabsTrigger>
-                </TabsList>
+                </TabsList> */}
                 <div className="ml-auto flex items-center gap-2">
                   <Input 
                     placeholder="Recherche..." 
@@ -237,6 +259,7 @@ export default function Etats() {
                       >
                         <ListFilter className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only">Filtrer</span>
+                        {statusFilter.length !== 0 && (<small>{statusFilter.length}</small>)}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -263,7 +286,7 @@ export default function Etats() {
                   </Button>
                 </div>
               </div>
-              <TabsContent value="week">
+              <div>
                 <Card>
                   <CardContent className="pt-5">
                     <Table>
@@ -275,7 +298,7 @@ export default function Etats() {
                         <TableHead className="hidden sm:table-cell">
                             Catégorie
                         </TableHead>
-                        <TableHead className="hidden sm:table-cell">
+                        <TableHead className="hidden md:table-cell">
                             Statut
                         </TableHead>
                         <TableHead className="hidden md:table-cell">
@@ -283,6 +306,9 @@ export default function Etats() {
                         </TableHead>
                         <TableHead className="text-right rounded-r-lg">
                             Montant (XOF)
+                        </TableHead>
+                        <TableHead className="lg:hidden">
+                            {''}
                         </TableHead>
                         </TableRow>
                         </TableHeader>
@@ -299,8 +325,12 @@ export default function Etats() {
                     </Table>
                   </CardContent>
                   <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
-                    <div className="text-xs text-muted-foreground">
-                      Mis à jour: <time dateTime="2024-11-23">12 Juillet 2024</time>
+                    <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground">
+                    <Button size="icon" variant="outline" className="h-6 w-6">
+                        <RefreshCwIcon className="h-3 w-3 animate-spin" />
+                        <span className="sr-only">Précédent</span>
+                    </Button>
+                      <div>Mis à jour: <time dateTime="2024-11-23">12 Juillet 2024</time></div>
                     </div>
                     <Pagination className="ml-auto mr-0 w-auto">
                       <PaginationContent>
@@ -332,8 +362,7 @@ export default function Etats() {
                     </Pagination>
                   </CardFooter>
                 </Card>
-              </TabsContent>
-            </Tabs>
+              </div>
           </div>
           
           {/* Right-side card for EDB details */}
@@ -420,7 +449,7 @@ export default function Etats() {
                       </li>
                       <li className="flex items-center justify-between font-semibold">
                         <span className="text-muted-foreground">Total - Estimé</span>
-                        <span>{selectedEDB.amount - 2000}</span>
+                        <span>{selectedEDB.amount + 2000}</span>
                       </li>
                     </ul>
                   </div>

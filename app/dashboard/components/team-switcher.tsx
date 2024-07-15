@@ -219,7 +219,7 @@ export default function TeamSwitcher({ className, onDepartmentChange }: TeamSwit
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
             Annuler
           </Button>

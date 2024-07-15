@@ -15,6 +15,7 @@ import { Employee } from "./data"
 import { UpdateEmployeeForm } from "./forms/edit-user-form"
 import { DeleteEmployeeDialog } from "./delete-employee-dialog"
 import { toast } from "@/components/ui/use-toast"
+import { ResetPasswordSheet } from "./forms/password-reset"
 
 export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] => [
   {
@@ -38,6 +39,10 @@ export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] =>
   {
     accessorKey: "matriculation",
     header: "Matricule",
+  },
+  {
+    accessorKey: "status",
+    header: "Statut",
   },
   {
     accessorKey: "phoneNumber",
@@ -73,16 +78,8 @@ export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] =>
               Voir EDB
               <DropdownMenuShortcut><ExternalLink className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(employee.id.toString())
-                toast({
-                  title: "ID Copié",
-                  description: `L'ID ${employee.id} a été copié dans le presse-papier.`,
-                })
-              }}
-            >
-              Changer le mot de passe
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <ResetPasswordSheet userEmail={employee.email} userId={employee.userId}/>
               <DropdownMenuShortcut><KeyRound className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem>
@@ -107,3 +104,11 @@ export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] =>
     },
   },
 ]
+
+// onClick={() => {
+//   navigator.clipboard.writeText(employee.id.toString())
+//   toast({
+//     title: "ID Copié",
+//     description: `L'ID ${employee.id} a été copié dans le presse-papier.`,
+//   })
+// }}

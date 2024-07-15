@@ -3,6 +3,7 @@ import React from 'react';
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EDB } from './data';
+import { MoreVertical } from 'lucide-react';
 
 interface EDBTableRowProps {
   edb: EDB;
@@ -30,13 +31,15 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
                    edb.status === "Validé" ? "outline" :
                    edb.status === "Délivré" ? "default" : "secondary"}
         >
-          {edb.status}
+          <small>{edb.status}</small>
+          
         </Badge>
       </TableCell>
       <TableCell className="hidden md:table-cell">{edb.department}</TableCell>
       <TableCell className="text-right">{edb.amount.toLocaleString('fr-FR')} XOF</TableCell>
       <TableCell className="lg:hidden">
         {/* MobileEDBDetails component can be added here if needed */}
+        <MoreVertical className="w-4 h-4" />
       </TableCell>
     </TableRow>
   );

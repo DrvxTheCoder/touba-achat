@@ -35,6 +35,8 @@ const employeeUpdateSchema = z.object({
   phoneNumber: z.string().min(9, { message: "Le téléphone doit comporter au moins 10 caractères." })
     .max(15, { message: "Le téléphone ne doit pas dépasser 15 caractères." }),
   department: z.number(),
+  status: z.string({ message: "Veuillez choisir le statut de l\'employé." }),
+  userId: z.number(),
 })
 
 type EmployeeUpdateValues = z.infer<typeof employeeUpdateSchema>
@@ -68,6 +70,7 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
       ...employee,
       phoneNumber: employee.phoneNumber || "",
       department: employee.currentDepartmentId,
+      userId: employee.userId,
     },
     mode: "onChange",
   })
@@ -186,6 +189,19 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                 />
                 <FormField
                   control={form.control}
+                  name="userId"
+                  render={({ field }) => (
+                    <FormItem className="hidden">
+                      <FormLabel className="text-sm text-muted-foreground" >Username :</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
@@ -221,6 +237,37 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm text-muted-foreground" >Statut :</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value)} 
+                        value={field.value?.toString()}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir le statut" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem  value="ACTIVE">
+                              ACTIF
+                            </SelectItem>
+                            <SelectItem  value="INACTIVE">
+                              INACTIF
+                            </SelectItem>
+                            <SelectItem  value="ARCHIVED">
+                              ARCHIVÉ
+                            </SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

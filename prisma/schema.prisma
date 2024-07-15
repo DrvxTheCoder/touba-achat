@@ -60,6 +60,11 @@ enum ODMStatus {
   COMPLETED
 }
 
+enum CategoryType {
+  DEFAULT
+  CUSTOM
+}
+
 model User {
   id                    Int              @id @default(autoincrement())
   email                 String           @unique
@@ -157,8 +162,9 @@ model OrdreDeMission {
 
 model Category {
   id   Int            @id @default(autoincrement())
-  name String
+  name String         @unique
   edbs EtatDeBesoin[]
+  type CategoryType @default(CUSTOM)
 }
 
 model Order {

@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
     if (departmentId && departmentId !== '-1') {
       where.currentDepartmentId = parseInt(departmentId);
     }
+    // where.status = 'ACTIVE'; // Only fetch active employees
 
     console.log('Where clause:', where); // Log the where clause
 
@@ -132,11 +133,21 @@ export async function PUT(request: NextRequest) {
         matriculation: updateData.matriculation,
         phoneNumber: updateData.phoneNumber,
         currentDepartmentId: updateData.department, // Assuming department is the department ID
+        status: updateData.status, // Update the status if needed
         // Add any other fields that can be updated
       },
       include: {
         currentDepartment: true,
       },
+    });
+    const updatedUser = await prisma.user.update({
+      where: { id: Number(updateData.userId) },
+      data: {
+        name: updateData.name,
+        email: updateData.email,
+        status: updateData.status, // Update the status if needed
+        // Add any other fields that can be updated
+      }
     });
 
 
