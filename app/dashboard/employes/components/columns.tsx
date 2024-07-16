@@ -1,5 +1,6 @@
 "use client"
 import { ColumnDef } from "@tanstack/react-table"
+import { useSession } from "next-auth/react"
 import { ArrowUpDown, Copy, DeleteIcon, Edit2Icon, FilePenLine, Info, MoreHorizontal, Trash2, UserMinus, FilePen, KeyRound, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +17,9 @@ import { UpdateEmployeeForm } from "./forms/edit-user-form"
 import { DeleteEmployeeDialog } from "./delete-employee-dialog"
 import { toast } from "@/components/ui/use-toast"
 import { ResetPasswordSheet } from "./forms/password-reset"
+import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
+
+
 
 export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] => [
   {
@@ -56,6 +60,7 @@ export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] =>
   {
     id: "actions",
     cell: ({ row }) => {
+      const { hasWriteAccess } = useAllowedRoles()
       const employee = row.original
       const handleUpdate = () => {
         refreshData();
@@ -75,29 +80,33 @@ export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] =>
             <DropdownMenuLabel className="text-bold">ACTIONS</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              Voir EDB
+              Voir EDBs
               <DropdownMenuShortcut><ExternalLink className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <ResetPasswordSheet userEmail={employee.email} userId={employee.userId}/>
-              <DropdownMenuShortcut><KeyRound className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem>
               Info
               <DropdownMenuShortcut><Info className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <UpdateEmployeeForm employee={employee} onUpdate={handleUpdate} />
-              <DropdownMenuShortcut><FilePen className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <DeleteEmployeeDialog 
-                employeeId={employee.id} 
-                employeeName={employee.name} 
-                onDelete={handleDelete} 
-              />
-              <DropdownMenuShortcut><Trash2 className="text-destructive ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem>
+            {hasWriteAccess && 
+                <>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <ResetPasswordSheet userEmail={employee.email} userId={employee.userId}/>
+                  <DropdownMenuShortcut><KeyRound className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <UpdateEmployeeForm employee={employee} onUpdate={handleUpdate} />
+                  <DropdownMenuShortcut><FilePen className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <DeleteEmployeeDialog 
+                    employeeId={employee.id} 
+                    employeeName={employee.name} 
+                    onDelete={handleDelete} 
+                  />
+                <DropdownMenuShortcut><Trash2 className="text-destructive ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                </DropdownMenuItem>
+                </>
+            }
           </DropdownMenuContent>
         </DropdownMenu>
       )

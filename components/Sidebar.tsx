@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
+import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
 import CustomLogoSVGTwo from "@/components/logos/CustomLogoSVGTwo";
@@ -17,8 +17,8 @@ export default function Sidebar(){
 
     const pathname = usePathname();
     const { data: session } = useSession();
-    const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
-    const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
+    const { hasReadAccess, hasWriteAccess } = useAllowedRoles();
+
     
     const links =  hasReadAccess ? [
         { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },

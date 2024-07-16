@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSession } from "next-auth/react";
-import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
+import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import { CaretSortIcon, CheckIcon, PlusCircledIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,8 +35,7 @@ const ALL_DEPARTMENTS: Department = { id: -1, name: "Afficher Tout" };
 
 export default function TeamSwitcher({ className, onDepartmentChange }: TeamSwitcherProps) {
   const { data: session } = useSession();
-  const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
-  const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
+  const { hasReadAccess, hasWriteAccess } = useAllowedRoles()
   const [addButtonloading, setAddButtonLoading] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);

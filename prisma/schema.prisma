@@ -16,6 +16,16 @@ enum Role {
   MAGASINIER
   RH
   AUDIT
+  IT_ADMIN
+}
+
+enum Access {
+  APPROVE_EDB
+  ATTACH_DOCUMENTS
+  CHOOSE_SUPPLIER
+  IT_APPROVAL
+  FINAL_APPROVAL
+  // Add other specific access types as needed
 }
 
 enum EmployeeStatus {
@@ -40,14 +50,28 @@ enum NotificationType {
   ODM_APPROVED_RH
 }
 
+enum AttachmentType {
+  INITIAL
+  MAGASINIER
+  OTHER
+}
+
+
+
 enum EDBStatus {
   DRAFT
   SUBMITTED
   APPROVED_RESPONSABLE
   APPROVED_DIRECTEUR
+  AWAITING_MAGASINIER
+  MAGASINIER_ATTACHED
+  AWAITING_SUPPLIER_CHOICE
+  SUPPLIER_CHOSEN
+  AWAITING_IT_APPROVAL
+  IT_APPROVED
+  AWAITING_FINAL_APPROVAL
   APPROVED_DG
   REJECTED
-  IN_PROGRESS
   COMPLETED
 }
 
@@ -66,21 +90,26 @@ enum CategoryType {
 }
 
 model User {
-  id                    Int              @id @default(autoincrement())
-  email                 String           @unique
+  id                    Int             @id @default(autoincrement())
+  email                 String          @unique
   name                  String
   role                  Role
+  access                Access[]        // New field for flexible access control
   password              String
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
   employee              Employee?
-  status                UserStatus       @default(ACTIVE)
-  createdEdbs           EtatDeBesoin[]   @relation("UserCreator")
-  approvedEdbs          EtatDeBesoin[]   @relation("Approver")
+  status                UserStatus      @default(ACTIVE)
+  createdEdbs           EtatDeBesoin[]  @relation("UserCreator")
+  approvedEdbs          EtatDeBesoin[]  @relation("Approver")
   createdOdms           OrdreDeMission[] @relation("UserCreator")
   approvedOdms          OrdreDeMission[] @relation("Approver")
-  sentNotifications     Notification[]   @relation("Sender")
-  receivedNotifications Notification[]   @relation("Receiver")
+  sentNotifications     Notification[]  @relation("Sender")
+  receivedNotifications Notification[]  @relation("Receiver")
+  itApprovedEdbs        EtatDeBesoin[]  @relation("ITApprover")
+  finalApprovedEdbs     EtatDeBesoin[]  @relation("FinalApprover")
+  uploadedAttachments   Attachment[]    @relation("Uploader")
+  chosenSuppliers       FinalSupplier[] @relation("Chooser")
 }
 
 model Employee {
@@ -118,28 +147,66 @@ model EmployeeDepartmentHistory {
   endDate      DateTime?
 }
 
+
+
 model EtatDeBesoin {
-  id            Int            @id @default(autoincrement())
-  title         String
-  description   String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  status        EDBStatus      @default(DRAFT)
-  departmentId  Int
-  department    Department     @relation(fields: [departmentId], references: [id])
-  creatorId     Int
-  creator       Employee       @relation("EmployeeCreator", fields: [creatorId], references: [id])
-  userCreatorId Int
-  userCreator   User           @relation("UserCreator", fields: [userCreatorId], references: [id])
-  approverId    Int?
-  approver      User?          @relation("Approver", fields: [approverId], references: [id])
-  categoryId    Int
-  category      Category       @relation(fields: [categoryId], references: [id])
-  orders        Order[]
-  notifications Notification[]
-  isEscalated   Boolean        @default(false)
-  references    String?
-  attachments   String[]
+  id                    Int            @id @default(autoincrement())
+  edbId                 String         @unique
+  title                 String
+  description           String[]
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  status                EDBStatus      @default(DRAFT)
+  departmentId          Int
+  department            Department     @relation(fields: [departmentId], references: [id])
+  creatorId             Int
+  creator               Employee       @relation("EmployeeCreator", fields: [creatorId], references: [id])
+  userCreatorId         Int
+  userCreator           User           @relation("UserCreator", fields: [userCreatorId], references: [id])
+  approverId            Int?
+  approver              User?          @relation("Approver", fields: [approverId], references: [id])
+  categoryId            Int
+  category              Category       @relation(fields: [categoryId], references: [id])
+  orders                Order[]
+  notifications         Notification[]
+  isEscalated           Boolean        @default(false)
+  references            String?
+  attachments           Attachment[]
+  finalSupplier         FinalSupplier?
+  magasinierAttachedAt  DateTime?
+  itApprovalRequired    Boolean        @default(false)
+  itApprovedAt          DateTime?
+  itApprovedBy          Int?
+  itApprover            User?          @relation("ITApprover", fields: [itApprovedBy], references: [id])
+  finalApprovedAt       DateTime?
+  finalApprovedBy       Int?
+  finalApprover         User?          @relation("FinalApprover", fields: [finalApprovedBy], references: [id])
+}
+
+model Attachment {
+  id           Int      @id @default(autoincrement())
+  edbId        Int
+  edb          EtatDeBesoin @relation(fields: [edbId], references: [id])
+  filePath     String
+  fileName     String
+  supplierName String
+  totalAmount  Float
+  uploadedAt   DateTime @default(now())
+  uploadedBy   Int
+  uploader     User     @relation("Uploader", fields: [uploadedBy], references: [id])
+  type         AttachmentType
+}
+
+model FinalSupplier {
+  id           Int      @id @default(autoincrement())
+  edbId        Int      @unique
+  edb          EtatDeBesoin @relation(fields: [edbId], references: [id])
+  filePath     String
+  supplierName String
+  amount       Float
+  chosenAt     DateTime @default(now())
+  chosenBy     Int
+  chooser      User     @relation("Chooser", fields: [chosenBy], references: [id])
 }
 
 model OrdreDeMission {

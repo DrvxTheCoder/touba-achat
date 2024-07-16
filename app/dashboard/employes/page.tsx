@@ -3,21 +3,17 @@
 import { useState, useEffect } from "react";
 import TeamSwitcher from "@/app/dashboard/components/team-switcher";
 import { AddEmployeeForm } from "@/components/forms/add-user-form";
-import { useSession } from "next-auth/react";
-import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
+import { useAllowedRoles } from "@/app/hooks/use-allowed-roles";
 import { SpinnerCircularFixed } from "spinners-react";
 import { EmployeeDataTable } from "./components/employee-table";
 import { getEmployees, EmployeeResponse } from "./components/data";
 
 export default function Employes() {
-  const { data: session } = useSession();
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
   const [employeeData, setEmployeeData] = useState<EmployeeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
-  const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
+  const { hasReadAccess, hasWriteAccess } = useAllowedRoles()
 
   const handleDepartmentChange = (department: { id: number; name: string } | null) => {
     setSelectedDepartmentId(department?.id ?? null);

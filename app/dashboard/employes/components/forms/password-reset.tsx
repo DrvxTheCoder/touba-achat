@@ -114,7 +114,7 @@ export function ResetPasswordSheet({ userId, userEmail }: ResetPasswordSheetProp
             navigator.clipboard.writeText(textToCopy);
             toast({
               title: "Copie réussi",
-              description: `Les identifiants a été copié dans le presse-papier.`,
+              description: `Les identifiants ont été copié dans le presse-papier.`,
             })
           }}>
             <span className='flex items-center gap-2 text-sm text-primary'><Clipboard className="h-4 w-4 top-0 right-0"/> Copier dans le presse-papier</span>

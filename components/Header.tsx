@@ -23,13 +23,14 @@ import {
   } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "next-auth/react";
-import { allowedReadRoles, allowedWriteRoles } from "@/app/hooks/use-allowed-roles";
+import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import CustomLogoSVGTwo from "./logos/CustomLogoSVGTwo";
 import { CommandMenu } from "@/components/command-menu";
 
 export default function Header (){
     const { data: session } = useSession();
     const pathname = usePathname();
+    const { hasReadAccess, hasWriteAccess } = useAllowedRoles()
 
     const getInitials = (name: string) => {
       const words = name.split(' ');
@@ -39,8 +40,6 @@ export default function Header (){
       return words[0][0].toUpperCase();
     };
 
-    const hasReadAccess = session && allowedReadRoles.includes(session.user.role);
-    const hasWriteAccess = session && allowedWriteRoles.includes(session.user.role);
     
 
 
