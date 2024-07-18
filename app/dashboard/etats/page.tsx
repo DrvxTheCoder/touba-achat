@@ -26,7 +26,11 @@ import {
   Paperclip,
   PackageIcon,
   RefreshCcwIcon,
-  RefreshCwIcon
+  RefreshCwIcon,
+  Clock,
+  Ban,
+  FileCheck2,
+  BadgeCheck
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -54,6 +58,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -99,6 +104,7 @@ import { CategoriesDialog } from "./components/categories-dialog"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import MetricCard from "./components/metricCard"
 
 const ITEMS_PER_PAGE = 5;
 
@@ -139,23 +145,25 @@ export default function Etats() {
     );
     setCurrentPage(1);
   }
+  
   return (
     <>
       <title>États de Besoins - Touba App™</title>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
       <div>
           <div className="flex items-center justify-between space-y-2">
               <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins</h2>
               <div className="flex items-center space-x-2">
                 <CategoriesDialog />
-                <Button variant="outline">Nouveau <PlusCircle className="ml-2 h-4 w-4"/></Button>
+                <Link href="/dashboard/etats/nouveau"><Button variant="outline">Nouveau <PlusCircle className="ml-2 h-4 w-4"/></Button></Link>
               </div>
           </div>
         </div>
         <div className="grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
           <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-              <Card className="sm:col-span-2">
+            
+              {/* <Card className="sm:col-span-2">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Dépenses Totale
@@ -179,46 +187,56 @@ export default function Etats() {
                       +20.1% sur le mois passé
                     </p>
                   </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      États de Besoins
-                    </CardTitle>
-                    <PackageIcon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">60</div>
-                    <p className="text-xs text-muted-foreground">
-                      +18.1% sur le mois dernier
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Actif
-                    </CardTitle>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-muted-foreground"
-                    >
-                      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                    </svg>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">+30</div>
-                    <p className="text-xs text-muted-foreground">
-                    +5 depuis la dernière heure
-                    </p>
-                  </CardContent>
-                </Card>
+              </Card> */}
+              <MetricCard />
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total
+                  </CardTitle>
+                  <PackageIcon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">55</div>
+                  <p className="text-xs text-muted-foreground">
+                    +18.1% sur le mois dernier
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Actif
+                  </CardTitle>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    className="h-4 w-4 text-muted-foreground"
+                  >
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                  </svg>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">+30</div>
+                  <p className="text-xs text-muted-foreground">
+                  +5 depuis la dernière heure
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">En Attente</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">25</div>
+                </CardContent>
+              </Card>
 
               </div>
               <div className="flex items-center">
@@ -409,9 +427,21 @@ export default function Etats() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>Modifier</DropdownMenuItem>
-                        <DropdownMenuItem>Exporter</DropdownMenuItem>
+                        
+                        <DropdownMenuItem>Joindre document(s)
+                          <DropdownMenuShortcut><Paperclip className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled>Bon de Commande
+                        <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem disabled>Supprimer</DropdownMenuItem>
+                        <DropdownMenuItem className="text-primary">Valider
+                        <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">Rejeter
+                        <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -435,21 +465,14 @@ export default function Etats() {
                         </li>
                       ))}
                       </ScrollArea>
-
                     </ul>
+                    <span className="font-semibold">Références Techniques</span>
+                    <span className="text-muted-foreground">Non-renseigné</span>
                     <Separator className="my-2" />
                     <ul className="grid gap-3">
-                      <li className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Subtotal - Estimé</span>
-                        <span>{selectedEDB.amount}</span>
-                      </li>
-                      <li className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Livraison - Estimé</span>
-                        <span>{2000}</span>
-                      </li>
                       <li className="flex items-center justify-between font-semibold">
-                        <span className="text-muted-foreground">Total - Estimé</span>
-                        <span>{selectedEDB.amount + 2000}</span>
+                        <span className="text-muted-foreground">Total - Estimé (XOF)</span>
+                        <span>{selectedEDB.amount}</span>
                       </li>
                     </ul>
                   </div>
@@ -476,7 +499,7 @@ export default function Etats() {
                     </dl>
                   </div>
                   <Separator className="my-4" />
-                    <div className="font-semibold">Document Rattaché</div>
+                    <div className="font-semibold">Document Rattaché (Service ACHAT)</div>
                     <ScrollArea className="w-full whitespace-nowrap rounded-md py-3">
                       <div className="flex w-max space-x-1 p-1 justify-start gap-1 ">
                       {selectedEDB.documents.map((document, index) => (
@@ -487,7 +510,7 @@ export default function Etats() {
                       </div>
                     
                       <ScrollBar orientation="horizontal" />
-                      </ScrollArea>
+                    </ScrollArea>
                 </CardContent>
                 <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
                   <div className="text-xs text-muted-foreground">

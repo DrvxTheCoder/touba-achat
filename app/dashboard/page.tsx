@@ -56,8 +56,7 @@ export default function Dashboard (){
     return(
       <>
       <title>Dashboard - Touba App™</title>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-4 md:p-6">
-
+      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
         <div className="flex-1 space-y-4">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Dashboard</h2>
