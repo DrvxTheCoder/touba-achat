@@ -4,6 +4,8 @@ import Header from '@/components/Header';
 import { Toaster } from "@/components/ui/toaster"
 import NextProgress from '@/components/next-progress';
 import useRequireAuth from '../hooks/use-require-auth';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { ChevronRight, Slash } from 'lucide-react';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -28,6 +30,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps)  {
             <Sidebar />
             <div className="flex flex-col">
               <Header />
+              <Breadcrumb className='p-4'>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/">Acceuil</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>
+                    <ChevronRight />
+                  </BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>
+                    <ChevronRight />
+                  </BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Liens</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
               <Toaster />
               {/* <NextProgress /> */}
               {children}

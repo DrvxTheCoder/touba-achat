@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, ArrowUpRight, CheckCircle2Icon, Clock, CreditCard, DollarSign, LuggageIcon, Package2Icon, PackageIcon, Users, Search } from "lucide-react";
+import { Activity, ArrowUpRight, CheckCircle2Icon, Clock, CreditCard, DollarSign, LuggageIcon, Package2Icon, PackageIcon, Users, Search, Slash, ChevronRight } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,6 +27,8 @@ import OverviewChart from "@/app/dashboard/components/overview-two"
 import { accounts, mails } from "@/app/dashboard/components/data"
 import { useRouter } from 'next/navigation';
 import { getSession, useSession } from 'next-auth/react';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+
 
 export default function Dashboard (){
   const [badgeCount, setBadgeCount] = useState(1);
@@ -54,7 +56,8 @@ export default function Dashboard (){
     return(
       <>
       <title>Dashboard - Touba App™</title>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-4 md:p-6">
+
         <div className="flex-1 space-y-4">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Dashboard</h2>
