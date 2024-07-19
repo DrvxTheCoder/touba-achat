@@ -240,7 +240,7 @@ export default function Etats() {
 
               </div>
               <div className="flex items-center">
-                <RadioGroup>
+                {/* <RadioGroup>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center space-x-1">
                       <RadioGroupItem value="jour" id="jour" className="h-3.5 w-3.5"/>
@@ -255,7 +255,7 @@ export default function Etats() {
                       <Label htmlFor="annee"><text className="lg:hidden">A</text><text className="hidden lg:block text-xs">Année</text></Label>
                     </div>
                   </div>   
-                </RadioGroup>
+                </RadioGroup> */}
                 {/* <TabsList>
                   <TabsTrigger value="week">Semaine</TabsTrigger>
                   <TabsTrigger value="month">Mois</TabsTrigger>

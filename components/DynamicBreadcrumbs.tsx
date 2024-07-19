@@ -42,7 +42,15 @@ export default function DynamicBreadcrumbs() {
 
   if (!mounted) {
     // Return a placeholder or null when not mounted
-    return null;
+    return (
+      <Breadcrumb className='p-4 '>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/" className='text-xs'>Accueil</BreadcrumbLink>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+    );
   }
 
   const breadcrumbs = generateBreadcrumbs(pathname);
