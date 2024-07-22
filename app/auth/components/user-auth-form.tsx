@@ -49,6 +49,9 @@ async function customSignIn(email: string, password: string) {
         // If parsing fails, use the error message as is
         errorMessage = error.message;
       }
+    }else {
+      errorMessage = 'Erreur Interne du serveur. Veuillez ressayer plus tard';
+
     }
 
     return { success: false, error: errorCode, message: errorMessage };
@@ -113,7 +116,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             />
           </div>
           {error && (
-            <p className="text-red-500 text-sm">{error}</p>
+            <p className="text-red-500 text-xs">{error}</p>
           )}
           <Button type="submit" disabled={isLoading} className="mt-5">
             {isLoading && (

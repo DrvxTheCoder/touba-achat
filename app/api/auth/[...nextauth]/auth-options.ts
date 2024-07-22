@@ -117,7 +117,10 @@ export const authOptions: NextAuthOptions = {
           };
         } catch (error) {
           console.error('Erreur lors de l\'autorisation:', error);
-          throw error;
+          throw new Error(JSON.stringify({ 
+            error: "Erreur Interne", 
+            message: "Erreur interne du serveur" 
+          }));
         }
       },
     }),

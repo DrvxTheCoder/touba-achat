@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+// useEDBs.ts
+import { useState, useEffect, useCallback } from 'react';
 import { EDB } from '../data-two/data';
 
 interface PaginatedEDBs {
@@ -8,37 +9,48 @@ interface PaginatedEDBs {
   totalPages: number;
 }
 
-export const useEDBs = (page: number, pageSize: number, searchTerm: string, statusFilter: string[]) => {
+interface UserInfo {
+  role: string;
+}
+
+export const useEDBs = (
+  page: number, 
+  pageSize: number, 
+  searchTerm: string, 
+  statusFilter: string[],
+  userInfo: UserInfo
+) => {
   const [paginatedData, setPaginatedData] = useState<PaginatedEDBs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchEDBs = async () => {
-      setIsLoading(true);
-      try {
-        const queryParams = new URLSearchParams({
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-          search: searchTerm,
-          status: statusFilter.join(',')
-        });
-        const response = await fetch(`/api/edb?${queryParams}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch EDAs');
-        }
-        const data: PaginatedEDBs = await response.json();
-        setPaginatedData(data);
-      } catch (err) {
-        setError('An error occurred while fetching EDAs');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+  const fetchEDBs = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter.length > 0 && { status: statusFilter.join(',') }),
+        role: userInfo.role,
+      });
+      const response = await fetch(`/api/edb?${queryParams}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch EDAs');
       }
-    };
+      const data: PaginatedEDBs = await response.json();
+      setPaginatedData(data);
+    } catch (err) {
+      setError('Erreur lors de la récupération des données');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, pageSize, searchTerm, statusFilter, userInfo.role]);
 
+  useEffect(() => {
     fetchEDBs();
-  }, [page, pageSize, searchTerm, statusFilter]);
+  }, [fetchEDBs]);
 
-  return { paginatedData, isLoading, error };
+  return { paginatedData, isLoading, error, refetch: fetchEDBs };
 };

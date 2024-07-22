@@ -8,10 +8,12 @@ export const useAllowedRoles = () => {
         "DIRECTEUR_GENERALE",
         "RESPONSABLE",
         "RH",
-        "AUDIT"
+        "AUDIT",
+        "IT_ADMIN"
     ]
     const allowedWriteRoles = [
-        "ADMIN"
+        "ADMIN",
+        "IT_ADMIN"
     ];
     return {
       hasReadAccess: session && allowedReadRoles.includes(session.user.role),

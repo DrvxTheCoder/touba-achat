@@ -132,10 +132,17 @@ export default function Header (){
         <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{session?.user?.name || 'Utilisateur'}</p>
+            <p className="text-sm font-medium leading-none">{session?.user?.name || 'Utilisateur'} </p>
             <p className="text-xs leading-none text-muted-foreground">{session?.user?.email}</p>
             </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+            <p className="text-xs leading-none text-muted-foreground">Role :  ({session?.user?.role})</p>
+            </div>
+            </DropdownMenuLabel>
+              
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
             <DropdownMenuItem>

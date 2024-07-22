@@ -17,6 +17,6 @@ export default async function generateEDBId() {
       ? parseInt(latestEDB.edbId.split('-')[3]) 
       : 0;
   
-    return `EDB-${currentYear}-${currentMonth}-${(latestNumber + 1).toString().padStart(4, '0')}`;
+    return `EDB-${currentYear}${currentMonth}${(latestNumber + 1).toString().padStart(4, '0')}`;
   }
  // e.g., EDB-2023-07-0001

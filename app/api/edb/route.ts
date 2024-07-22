@@ -3,18 +3,87 @@ import { PrismaClient } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '../auth/[...nextauth]/auth-options';
 import generateEDBId from './utils/edb-id-generator';
+import { Prisma, EDBStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+
+
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+    const role = session.user.role;
     const skip = (page - 1) * pageSize;
+
+    const statusFilter = status ? status.split(',') as EDBStatus[] : [];
+
+    let where: Prisma.EtatDeBesoinWhereInput = {
+      OR: [
+        { edbId: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { hasSome: [search] } },
+      ],
+      ...(statusFilter.length > 0 ? { status: { in: statusFilter } } : {}),
+    };
+
+    // Role-based filtering
+    switch (role) {
+      case 'RESPONSABLE':
+      case 'DIRECTEUR':
+        const employee = await prisma.employee.findUnique({
+          where: { userId: parseInt(session.user.id) },
+          select: { currentDepartmentId: true }
+        });
+        if (employee) {
+          where.departmentId = employee.currentDepartmentId;
+        }
+        break;
+      case 'IT_ADMIN':
+        const itEmployee = await prisma.employee.findUnique({
+          where: { userId: parseInt(session.user.id) },
+          select: { currentDepartmentId: true }
+        });
+        where.OR = [
+          ...(where.OR || []),
+          { 
+            category: { 
+              name: { 
+                in: ['Logiciels & Licences', 'Matériel Informatique'] 
+              } 
+            } 
+          },
+          ...(itEmployee ? [{ departmentId: itEmployee.currentDepartmentId }] : [])
+        ];
+        break;
+      case 'ADMIN':
+      case 'DIRECTEUR_GENERAL':
+      case 'AUDIT':
+        // No additional filtering, they can see all EDAs
+        break;
+      default:
+        // For any other role, only show their own department's EDAs
+        const defaultEmployee = await prisma.employee.findUnique({
+          where: { userId: parseInt(session.user.id) },
+          select: { currentDepartmentId: true }
+        });
+        if (defaultEmployee) {
+          where.departmentId = defaultEmployee.currentDepartmentId;
+        }
+        break;
+    }
 
     const [edbs, totalCount] = await Promise.all([
       prisma.etatDeBesoin.findMany({
+        where,
         skip,
         take: pageSize,
         include: {
@@ -22,12 +91,13 @@ export async function GET(request: Request) {
           department: true,
           userCreator: true,
           orders: true,
+          attachments: true,
         },
         orderBy: {
           createdAt: 'desc',
         },
       }),
-      prisma.etatDeBesoin.count(),
+      prisma.etatDeBesoin.count({ where }),
     ]);
 
     const formattedEDBs = edbs.map(edb => ({
@@ -36,7 +106,7 @@ export async function GET(request: Request) {
       category: edb.category.name,
       status: edb.status,
       department: edb.department.name,
-      amount: edb.orders.reduce((sum, order) => sum + order.amount, 0),
+      amount: edb.orders.reduce((sum: number, order: { amount: number }) => sum + order.amount, 0),
       email: edb.userCreator.email,
       items: edb.description.map(desc => {
         const match = desc.match(/^(.+) \(Quantité: (\d+)\)$/);
@@ -47,7 +117,7 @@ export async function GET(request: Request) {
         department: edb.department.name,
         email: edb.userCreator.email,
       },
-      documents: [], // You'll need to fetch this separately if you're storing documents
+      documents: edb.attachments.map(attachment => attachment.fileName),
       date: edb.createdAt.toISOString().split('T')[0],
     }));
 
@@ -99,7 +169,7 @@ export async function POST(request: Request) {
         title,
         description,
         references: reference,
-        status: 'DRAFT',
+        status: 'SUBMITTED',
         department: { connect: { id: user.employee.currentDepartmentId } },
         creator: { connect: { id: user.employee.id } },
         userCreator: { connect: { id: user.id } },
