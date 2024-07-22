@@ -105,28 +105,17 @@ import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import MetricCard from "./components/metricCard"
+import { useEDBs } from "./components/use-edbs"
 
 const ITEMS_PER_PAGE = 5;
 
 export default function Etats() {
+  const [currentPage, setCurrentPage] = useState(1)
   const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
 
-  const filteredData = useMemo(() => {
-    return edbData.filter(edb => 
-      (edb.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       edb.id.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (statusFilter.length === 0 || statusFilter.includes(edb.status))
-    );
-  }, [searchTerm, statusFilter]);
-
-  const pageCount = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const { paginatedData, isLoading, error } = useEDBs(currentPage, ITEMS_PER_PAGE, searchTerm, statusFilter);
 
   const handleRowClick = (edb: EDB) => {
     setSelectedEDB(prevSelected => prevSelected?.id === edb.id ? null : edb);
@@ -330,16 +319,36 @@ export default function Etats() {
                         </TableHead>
                         </TableRow>
                         </TableHeader>
-                      <TableBody>
-                        {paginatedData.map((edb) => (
+                        <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            Chargement...
+                          </TableCell>
+                        </TableRow>
+                      ) : error ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center text-red-500">
+                            Erreur: {error}
+                          </TableCell>
+                        </TableRow>
+                      ) : paginatedData?.edbs.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            Aucun EDB trouvé
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedData?.edbs.map((edb) => (
                           <EDBTableRow 
                             key={edb.id} 
                             edb={edb} 
                             onRowClick={handleRowClick}
                             isSelected={selectedEDB?.id === edb.id}
                           />
-                        ))}
-                      </TableBody>
+                        ))
+                      )}
+                    </TableBody>
                     </Table>
                   </CardContent>
                   <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
@@ -351,33 +360,33 @@ export default function Etats() {
                       <div>Mis à jour: <time dateTime="2024-11-23">12 Juillet 2024</time></div>
                     </div>
                     <Pagination className="ml-auto mr-0 w-auto">
-                      <PaginationContent>
-                        <PaginationItem>
-                          <Button 
-                            size="icon" 
-                            variant="outline" 
-                            className="h-6 w-6"
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            <ChevronLeft className="h-3.5 w-3.5" />
-                            <span className="sr-only">Précédent</span>
-                          </Button>
-                        </PaginationItem>
-                        <PaginationItem>
-                          <Button 
-                            size="icon" 
-                            variant="outline" 
-                            className="h-6 w-6"
-                            onClick={() => setCurrentPage(prev => Math.min(pageCount, prev + 1))}
-                            disabled={currentPage === pageCount}
-                          >
-                            <ChevronRight className="h-3.5 w-3.5" />
-                            <span className="sr-only">Suivant</span>
-                          </Button>
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <Button 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-6 w-6"
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1 || isLoading}
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          <span className="sr-only">Précédent</span>
+                        </Button>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <Button 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-6 w-6"
+                          onClick={() => setCurrentPage(prev => Math.min(paginatedData?.totalPages || 1, prev + 1))}
+                          disabled={currentPage === paginatedData?.totalPages || isLoading}
+                        >
+                          <ChevronRight className="h-3.5 w-3.5" />
+                          <span className="sr-only">Suivant</span>
+                        </Button>
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                   </CardFooter>
                 </Card>
               </div>

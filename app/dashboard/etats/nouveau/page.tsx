@@ -19,12 +19,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 // Define the Zod schema
 const edbSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  category: z.string().min(1, "La catégorie est requise"),
+  title: z.string().min(1, "Ce champ est requis"),
+  category: z.string().min(1, "Ce champ est requis"),
   reference: z.string().optional(),
   description: z.array(z.object({
-    designation: z.string().min(1, "La désignation est requise"),
-    quantity: z.string().min(1, "Requise").regex(/^\d+$/, "La quantité doit être un nombre")
+    designation: z.string().min(1, "Ce champ est requis"),
+    quantity: z.string().min(1, "Requis").regex(/^\d+$/, "La quantité doit être un nombre")
   })).min(1, "Au moins un élément de description est requis")
 });
 
@@ -121,7 +121,7 @@ const CreateEDBPage = () => {
           {/* <CategoriesDialog /> */}
         </div>
 
-        <div className="flex  items-center justify-center rounded-lg shadow-sm">
+        <div className="flex  items-center justify-center ">
         <Card className='w-[22rem] lg:w-[50rem] mt-8'>
           <CardHeader className='border-b'>
             <CardTitle>Créer un EDB</CardTitle>
@@ -139,7 +139,7 @@ const CreateEDBPage = () => {
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
@@ -164,7 +164,7 @@ const CreateEDBPage = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
@@ -173,7 +173,7 @@ const CreateEDBPage = () => {
                   <FormLabel>Description</FormLabel>
                   <ScrollArea className="h-[200px] w-full border rounded-md p-4">
                     {form.watch('description').map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 mb-2">
+                      <div key={index} className="flex items-center gap-2 mb-2 p-1">
                         <FormField
                           control={form.control}
                           name={`description.${index}.designation`}
@@ -182,7 +182,7 @@ const CreateEDBPage = () => {
                               <FormControl>
                                 <Input {...field} placeholder="Désignation" />
                               </FormControl>
-                              <FormMessage />
+                              <FormMessage className="text-xs" />
                             </FormItem>
                           )}
                         />
@@ -194,21 +194,23 @@ const CreateEDBPage = () => {
                               <FormControl>
                                 <Input {...field} placeholder="QTE" type="number" />
                               </FormControl>
-                              <FormMessage />
+                              <FormMessage className="text-xs"  />
                             </FormItem>
                           )}
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const currentDescription = form.getValues('description');
-                            form.setValue('description', currentDescription.filter((_, i) => i !== index));
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {form.watch('description').length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const currentDescription = form.getValues('description');
+                              form.setValue('description', currentDescription.filter((_, i) => i !== index));
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                     <Button
@@ -235,7 +237,7 @@ const CreateEDBPage = () => {
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs"  />
                     </FormItem>
                   )}
                 />
