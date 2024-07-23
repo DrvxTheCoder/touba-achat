@@ -109,6 +109,10 @@ import { useEDBs } from "./use-edbs"
 import { SpinnerCircular } from "spinners-react"
 import { toast } from "@/components/ui/use-toast"
 import { useSession } from "next-auth/react"
+import { ValidationDialog } from "./ValidationDialog"
+import { RejectionDialog } from "./RejectionDialog"
+import { StatusBadge } from "./StatusBadge"
+import { canPerformAction } from "../utils/can-perform-action"
 
 const ITEMS_PER_PAGE = 5;
 const statusMapping = {
@@ -121,20 +125,50 @@ const statusMapping = {
   'Complété': ['COMPLETED']
 };
 
+type EDBStatus = 
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'APPROVED_RESPONSABLE'
+  | 'APPROVED_DIRECTEUR'
+  | 'AWAITING_MAGASINIER'
+  | 'MAGASINIER_ATTACHED'
+  | 'AWAITING_SUPPLIER_CHOICE'
+  | 'SUPPLIER_CHOSEN'
+  | 'AWAITING_IT_APPROVAL'
+  | 'IT_APPROVED'
+  | 'AWAITING_FINAL_APPROVAL'
+  | 'APPROVED_DG'
+  | 'REJECTED'
+  | 'COMPLETED';
+
+type UserRole = 'RESPONSABLE' | 'DIRECTEUR' | 'IT_ADMIN' | 'DIRECTEUR_GENERAL' | 'ADMIN' | 'MAGASINIER' | 'USER';
+
 
 export default function Etats() {
 
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string[]>([])
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+  const { data: session } = useSession();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
-  const { data: session } = useSession();
-  const userInfo = {
+
+  const userInfo = useMemo(() => ({
     role: session?.user?.role || '',
-  };
+  }), [session?.user?.role]);
+
+  const { canValidate, canReject } = useMemo(() => {
+    if (!selectedEDB || !session?.user?.role) return { canValidate: false, canReject: false };
+    return canPerformAction(
+      selectedEDB.status as EDBStatus, 
+      session.user.role as UserRole, 
+      selectedEDB.category
+    );
+  }, [selectedEDB, session?.user?.role]);
 
   const { paginatedData, isLoading, error, refetch } = useEDBs(
     currentPage, 
@@ -143,6 +177,100 @@ export default function Etats() {
     statusFilter,
     userInfo
   );
+
+  const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
+  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de rafraîchir les données. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleValidate = async () => {
+    setIsValidationDialogOpen(true);
+  };
+
+  const handleReject = async () => {
+    setIsRejectionDialogOpen(true);
+  };
+
+  const confirmValidation = async () => {
+    if (!selectedEDB) return;
+    setIsValidating(true);
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.queryId}/validate`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        setIsValidating(true);
+        throw new Error(errorData.message || 'Failed to validate EDB');
+      }
+      refetch();
+      toast({
+        title: "EDB Validé",
+        description: `L'EDB #${selectedEDB.id} a été validé avec succès.`,
+      });
+      setIsValidating(false);
+    } catch (error : any) {
+      console.error('Error validating EDB:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de la validation de l'EDB.",
+        variant: "destructive",
+      });
+      setIsValidating(false);
+    } finally {
+      setIsValidationDialogOpen(false);
+    }
+  };
+
+  const confirmRejection = async (reason: string) => {
+    if (!selectedEDB) return;
+    setIsRejecting(true);
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.queryId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        setIsRejecting(false);
+        throw new Error(errorData.message || 'Failed to reject EDB'); 
+      }
+      refetch();
+      toast({
+        title: "EDB Rejeté",
+        description: `L'EDB #${selectedEDB.id} a été rejeté.`,
+      });
+      setIsRejecting(false);
+    } catch (error : any) {
+      console.error('Error rejecting EDB:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors du rejet de l'EDB.",
+        variant: "destructive",
+      });
+      setIsRejecting(false);
+    } finally {
+      setIsRejectionDialogOpen(false);
+    }
+  };
 
   const handleRowClick = (edb: EDB) => {
     setSelectedEDB(prevSelected => prevSelected?.id === edb.id ? null : edb);
@@ -169,57 +297,8 @@ export default function Etats() {
     setCurrentPage(1);
   };
 
-  const handleValidate = async () => {
-    if (!selectedEDB) return;
-    setIsValidating(true);
-    try {
-      const response = await fetch(`/api/edb/${selectedEDB.queryId}/validate`, {
-        method: 'POST',
-      });
-      if (!response.ok) throw new Error('Failed to validate EDB');
-      // Refresh the EDB data
-      refetch();
-      toast({
-        title: "EDB Validé",
-        description: `L'EDB #${selectedEDB.id} a été validé avec succès.`,
-      });
-      setIsValidating(false);
-    } catch (error) {
-      console.error('Error validating EDB:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la validation de l'EDB.",
-        variant: "destructive",
-      });
-      setIsValidating(false);
-    }
-  };
   
-  const handleReject = async () => {
-    if (!selectedEDB) return;
-    setIsRejecting(true);
-    try {
-      const response = await fetch(`/api/edb/${selectedEDB.queryId}/reject`, {
-        method: 'POST',
-      });
-      if (!response.ok) throw new Error('Failed to reject EDB');
-      // Refresh the EDB data
-      refetch();
-      toast({
-        title: "EDB Rejeté",
-        description: `L'EDB #${selectedEDB.id} a été rejeté.`,
-      });
-      setIsRejecting(false);
-    } catch (error) {
-      console.error('Error rejecting EDB:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors du rejet de l'EDB.",
-        variant: "destructive",
-      });
-      setIsRejecting(false);
-    }
-  };
+
   
   return (
     <>
@@ -442,11 +521,27 @@ export default function Etats() {
                   </CardContent>
                   <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
                     <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground">
-                    <Button size="icon" variant="outline" className="h-6 w-6">
-                        <RefreshCwIcon className="h-3 w-3 animate-spin" />
-                        <span className="sr-only">Précédent</span>
-                    </Button>
-                      <div>Mis à jour: <time dateTime="2024-11-23">12 Juillet 2024</time></div>
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        className="h-6 w-6" 
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                      >
+                        <RefreshCwIcon className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span className="sr-only">Rafraîchir</span>
+                      </Button>
+                      <div>
+                        Mis à jour: <time dateTime={lastUpdated.toISOString()}>
+                          {new Intl.DateTimeFormat('fr-FR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }).format(lastUpdated)}
+                        </time>
+                      </div>
                     </div>
                     <Pagination className="ml-auto mr-0 w-auto">
                     <PaginationContent>
@@ -507,13 +602,7 @@ export default function Etats() {
                       </Button>
                     </CardTitle>
                     <CardDescription>Statut: 
-                    <Badge className="text-xs ml-1"
-                      variant={selectedEDB.status === "Rejeté" ? "destructive" : 
-                        selectedEDB.status === "Validé" ? "outline" :
-                        selectedEDB.status === "Délivré" ? "default" : "secondary"}
-                      >
-                     {selectedEDB.status}
-                    </Badge>
+                      <StatusBadge status={selectedEDB.status} />
                     </CardDescription>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
@@ -543,7 +632,7 @@ export default function Etats() {
                         <DropdownMenuItem 
                           className="text-primary"
                           onClick={handleValidate}
-                          disabled={isValidating}
+                          disabled={!canValidate}
                         >
                           Valider
                           <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
@@ -551,7 +640,7 @@ export default function Etats() {
                         <DropdownMenuItem 
                           className="text-destructive"
                           onClick={handleReject}
-                          disabled={isRejecting}
+                          disabled={!canReject}
                         >
                           Rejeter
                           <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
@@ -559,6 +648,24 @@ export default function Etats() {
 
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    {selectedEDB && (
+                      <>
+                        <ValidationDialog 
+                          isOpen={isValidationDialogOpen}
+                          onClose={() => setIsValidationDialogOpen(false)}
+                          onConfirm={confirmValidation}
+                          edbId={selectedEDB.queryId}
+                          isLoading={isValidating}
+                        />
+                        <RejectionDialog 
+                          isOpen={isRejectionDialogOpen}
+                          onClose={() => setIsRejectionDialogOpen(false)}
+                          onConfirm={confirmRejection}
+                          edbId={selectedEDB.queryId}
+                          isLoading={isRejecting}
+                        />
+                      </>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 text-sm">

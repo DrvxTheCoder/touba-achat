@@ -4,7 +4,7 @@ export interface EDB {
     queryId: string;
     title: string;
     category: string;
-    status: 'Non-validé' | 'Validé' | 'Rejeté' | 'Délivré' | 'En cours';
+    status: string;
     department: string;
     amount: number;
     email: string;

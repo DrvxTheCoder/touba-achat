@@ -3,9 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addEmployee } from './addEmployee';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/auth-options';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const result = await addEmployee(body);
     return NextResponse.json(result);
@@ -17,6 +23,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const role = session.user.role;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') ?? '1');
     const limit = parseInt(searchParams.get('limit') ?? '10');
@@ -24,6 +35,8 @@ export async function GET(request: NextRequest) {
     const sortBy = (searchParams.get('sortBy') ?? 'name') as keyof Prisma.EmployeeOrderByWithRelationInput;
     const sortOrder = (searchParams.get('sortOrder') ?? 'asc') as 'asc' | 'desc';
     const departmentId = searchParams.get('departmentId');
+
+    
 
     console.log('Received departmentId:', departmentId); // Log the received departmentId
 

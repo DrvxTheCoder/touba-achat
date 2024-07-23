@@ -4,6 +4,7 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EDB } from './data';
 import { MoreVertical } from 'lucide-react';
+import { StatusBadge } from '../components/StatusBadge';
 
 interface EDBTableRowProps {
   edb: EDB;
@@ -11,42 +12,8 @@ interface EDBTableRowProps {
   isSelected: boolean;
 }
 
-const statusMapping = {
-  'Brouillon': ['DRAFT'],
-  'Soumis': ['SUBMITTED'],
-  'Validé': ['APPROVED_RESPONSABLE', 'APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
-  'En attente': ['AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
-  'En cours': ['MAGASINIER_ATTACHED', 'SUPPLIER_CHOSEN'],
-  'Rejeté': ['REJECTED'],
-  'Complété': ['COMPLETED']
-};
-
-const getFrenchStatus = (status: string): string => {
-  for (const [frenchLabel, englishStatuses] of Object.entries(statusMapping)) {
-    if (englishStatuses.includes(status)) {
-      return frenchLabel;
-    }
-  }
-  return status; // fallback to original status if not found
-};
-
-const getStatusVariant = (status: string): "destructive" | "outline" | "default" | "secondary" => {
-  const frenchStatus = getFrenchStatus(status);
-  switch (frenchStatus) {
-    case 'Rejeté':
-      return "destructive";
-    case 'Validé':
-      return "outline";
-    case 'Complété':
-      return "default";
-    default:
-      return "secondary";
-  }
-};
-
 export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSelected }) => {
-  const frenchStatus = getFrenchStatus(edb.status);
-  const statusVariant = getStatusVariant(edb.status);
+
 
   return (
     <TableRow 
@@ -61,12 +28,7 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
       </TableCell>
       <TableCell className="hidden sm:table-cell">{edb.category}</TableCell>
       <TableCell className="hidden sm:table-cell">
-        <Badge 
-          className="text-xs" 
-          variant={statusVariant}
-        >
-          <small>{frenchStatus}</small>
-        </Badge>
+        <StatusBadge status={edb.status} textSize={"tiny"} />
       </TableCell>
       <TableCell className="hidden md:table-cell">{edb.department}</TableCell>
       <TableCell className="text-right">{edb.amount.toLocaleString('fr-FR')} XOF</TableCell>

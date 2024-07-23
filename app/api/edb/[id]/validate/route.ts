@@ -20,7 +20,7 @@ export async function POST(
   try {
     const edb = await prisma.etatDeBesoin.findUnique({
       where: { id: Number(id) },
-      include: { department: true },
+      include: { department: true, category: true },
     });
 
     if (!edb) {
@@ -34,14 +34,14 @@ export async function POST(
         if (edb.status === 'SUBMITTED') {
           newStatus = 'APPROVED_RESPONSABLE';
         } else {
-          return NextResponse.json({ message: 'Unauthorized to approve at this stage' }, { status: 403 });
+            return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });
         }
         break;
       case 'DIRECTEUR':
         if (edb.status === 'SUBMITTED') {
           newStatus = 'APPROVED_DIRECTEUR';
         } else {
-          return NextResponse.json({ message: 'Unauthorized to approve at this stage' }, { status: 403 });
+          return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });
         }
         break;
       case 'IT_ADMIN':
@@ -49,18 +49,18 @@ export async function POST(
             (edb.category.name === 'Logiciels et licences' || edb.category.name === 'Matériel informatique')) {
           newStatus = 'IT_APPROVED';
         } else {
-          return NextResponse.json({ message: 'Unauthorized to approve at this stage' }, { status: 403 });
+          return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });
         }
         break;
       case 'DIRECTEUR_GENERAL':
         if (edb.status === 'AWAITING_FINAL_APPROVAL') {
           newStatus = 'APPROVED_DG';
         } else {
-          return NextResponse.json({ message: 'Unauthorized to approve at this stage' }, { status: 403 });
+          return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });
         }
         break;
       default:
-        return NextResponse.json({ message: 'Unauthorized to approve EDBs' }, { status: 403 });
+        return NextResponse.json({ message: 'Action non autorisé' }, { status: 403 });
     }
 
     // Update the EDB with the new status

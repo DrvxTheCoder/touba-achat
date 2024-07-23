@@ -48,6 +48,7 @@ enum NotificationType {
   ODM_CREATED
   ODM_APPROVED_DIRECTOR
   ODM_APPROVED_RH
+  EDB_REJECTED
 }
 
 enum AttachmentType {
@@ -181,6 +182,7 @@ model EtatDeBesoin {
   finalApprovedAt       DateTime?
   finalApprovedBy       Int?
   finalApprover         User?          @relation("FinalApprover", fields: [finalApprovedBy], references: [id])
+  rejectionReason       String?
 }
 
 model Attachment {
