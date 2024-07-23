@@ -20,16 +20,18 @@ export const ValidationDialog: React.FC<ValidationDialogProps> = ({ isOpen, onCl
         <DialogHeader>
           <DialogTitle>Confirmer votre validation</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir valider l&apos;EDB #{edbId} ? <p className="text-sm mt-3">Nb: Votre identité sera lié à cet état de besoin.</p> 
+            Êtes-vous sûr de vouloir valider cet état de besoin ? <p className="text-sm mt-3">Nb: Votre identité sera lié à cet état de besoin.</p> 
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button onClick={onConfirm} disabled={isLoading}>
-          {isLoading && (
-                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-            Valider <BadgeCheck className="ml-1 h-4 w-4" />
+            Valider 
+            {isLoading ? (
+             <Icons.spinner className="ml-2 h-4 w-4 animate-spin" />
+            ) : (
+            <BadgeCheck className="ml-2 h-4 w-4" />
+            )}
             </Button>
         </DialogFooter>
       </DialogContent>

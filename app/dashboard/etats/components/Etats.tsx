@@ -659,7 +659,10 @@ export default function Etats() {
                         />
                         <RejectionDialog 
                           isOpen={isRejectionDialogOpen}
-                          onClose={() => setIsRejectionDialogOpen(false)}
+                          onClose={() => {
+                            setIsRejectionDialogOpen(false);
+                            setIsRejecting(false);
+                          }}
                           onConfirm={confirmRejection}
                           edbId={selectedEDB.queryId}
                           isLoading={isRejecting}

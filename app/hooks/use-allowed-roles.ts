@@ -5,7 +5,7 @@ export const useAllowedRoles = () => {
     const allowedReadRoles = [
         "ADMIN",
         "DIRECTEUR",
-        "DIRECTEUR_GENERALE",
+        "DIRECTEUR_GENERAL",
         "RESPONSABLE",
         "RH",
         "AUDIT",
