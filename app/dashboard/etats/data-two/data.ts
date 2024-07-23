@@ -1,6 +1,7 @@
 // data.ts
 export interface EDB {
     id: string;
+    queryId: string;
     title: string;
     category: string;
     status: 'Non-validé' | 'Validé' | 'Rejeté' | 'Délivré' | 'En cours';

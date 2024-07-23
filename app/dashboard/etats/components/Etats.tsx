@@ -123,11 +123,14 @@ const statusMapping = {
 
 
 export default function Etats() {
+
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+  const [isValidating, setIsValidating] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
   const { data: session } = useSession();
   const userInfo = {
     role: session?.user?.role || '',
@@ -164,6 +167,58 @@ export default function Etats() {
 
     setStatusFilter(newStatusFilter);
     setCurrentPage(1);
+  };
+
+  const handleValidate = async () => {
+    if (!selectedEDB) return;
+    setIsValidating(true);
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.queryId}/validate`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to validate EDB');
+      // Refresh the EDB data
+      refetch();
+      toast({
+        title: "EDB Validé",
+        description: `L'EDB #${selectedEDB.id} a été validé avec succès.`,
+      });
+      setIsValidating(false);
+    } catch (error) {
+      console.error('Error validating EDB:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la validation de l'EDB.",
+        variant: "destructive",
+      });
+      setIsValidating(false);
+    }
+  };
+  
+  const handleReject = async () => {
+    if (!selectedEDB) return;
+    setIsRejecting(true);
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.queryId}/reject`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to reject EDB');
+      // Refresh the EDB data
+      refetch();
+      toast({
+        title: "EDB Rejeté",
+        description: `L'EDB #${selectedEDB.id} a été rejeté.`,
+      });
+      setIsRejecting(false);
+    } catch (error) {
+      console.error('Error rejecting EDB:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors du rejet de l'EDB.",
+        variant: "destructive",
+      });
+      setIsRejecting(false);
+    }
   };
   
   return (
@@ -485,11 +540,21 @@ export default function Etats() {
                         <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-primary">Valider
-                        <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        <DropdownMenuItem 
+                          className="text-primary"
+                          onClick={handleValidate}
+                          disabled={isValidating}
+                        >
+                          Valider
+                          <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Rejeter
-                        <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={handleReject}
+                          disabled={isRejecting}
+                        >
+                          Rejeter
+                          <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
 
                       </DropdownMenuContent>

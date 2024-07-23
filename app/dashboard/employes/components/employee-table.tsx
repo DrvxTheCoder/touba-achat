@@ -192,7 +192,7 @@ export function EmployeeDataTable({ initialData, selectedDepartmentId }: Employe
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  <div className="items-center gap-1 justify-items-center text-center"><SpinnerCircular className="left-1/2" size={30} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" /></div>
+                  <div className="flex justify-center items-center h-24"><SpinnerCircular className="left-1/2" size={30} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" /></div>
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (

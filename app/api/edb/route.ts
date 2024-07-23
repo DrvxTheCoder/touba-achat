@@ -52,18 +52,24 @@ export async function GET(request: Request) {
           where: { userId: parseInt(session.user.id) },
           select: { currentDepartmentId: true }
         });
-        where.OR = [
-          ...(where.OR || []),
-          { 
-            category: { 
-              name: { 
-                in: ['Logiciels & Licences', 'Matériel Informatique'] 
-              } 
-            } 
-          },
-          ...(itEmployee ? [{ departmentId: itEmployee.currentDepartmentId }] : [])
-        ];
-        break;
+        where = {
+          AND: [
+            { ...where }, // Keep existing search and status filters
+            {
+              OR: [
+                { departmentId: itEmployee?.currentDepartmentId },
+                { 
+                  category: { 
+                    name: { 
+                      in: ['Logiciels et licences', 'Matériel informatique'] 
+                    } 
+                  } 
+                }
+              ]
+            }
+          ]
+        };
+      break;
       case 'ADMIN':
       case 'DIRECTEUR_GENERAL':
       case 'AUDIT':
@@ -102,6 +108,7 @@ export async function GET(request: Request) {
 
     const formattedEDBs = edbs.map(edb => ({
       id: edb.edbId,
+      queryId: edb.id,
       title: edb.title,
       category: edb.category.name,
       status: edb.status,
