@@ -143,6 +143,12 @@ type EDBStatus =
 
 type UserRole = 'RESPONSABLE' | 'DIRECTEUR' | 'IT_ADMIN' | 'DIRECTEUR_GENERAL' | 'ADMIN' | 'MAGASINIER' | 'USER';
 
+type StatusMappingKey = keyof typeof statusMapping;
+
+function isValidStatusMappingKey(key: string): key is StatusMappingKey {
+  return key in statusMapping;
+}
+
 
 export default function Etats() {
 
@@ -152,7 +158,6 @@ export default function Etats() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -160,6 +165,12 @@ export default function Etats() {
   const userInfo = useMemo(() => ({
     role: session?.user?.role || '',
   }), [session?.user?.role]);
+
+  const statusFilter = useMemo(() => {
+    return selectedFilters
+      .filter(isValidStatusMappingKey)
+      .flatMap(key => statusMapping[key]);
+  }, [selectedFilters]);
 
   const { canValidate, canReject } = useMemo(() => {
     if (!selectedEDB || !session?.user?.role) return { canValidate: false, canReject: false };
@@ -283,18 +294,16 @@ export default function Etats() {
   };
 
   const handleFilterChange = (filter: string) => {
-    setSelectedFilters(prev => 
-      prev.includes(filter) 
-        ? prev.filter(f => f !== filter)
-        : [...prev, filter]
-    );
-    
-    const newStatusFilter = Object.entries(statusMapping)
-      .filter(([key]) => selectedFilters.includes(key))
-      .flatMap(([_, values]) => values);
-
-    setStatusFilter(newStatusFilter);
-    setCurrentPage(1);
+    if (isValidStatusMappingKey(filter)) {
+      setSelectedFilters(prev => 
+        prev.includes(filter) 
+          ? prev.filter(f => f !== filter)
+          : [...prev, filter]
+      );
+      setCurrentPage(1);
+    } else {
+      console.warn(`Invalid filter: ${filter}`);
+    }
   };
 
   
@@ -659,7 +668,10 @@ export default function Etats() {
                         />
                         <RejectionDialog 
                           isOpen={isRejectionDialogOpen}
-                          onClose={() => setIsRejectionDialogOpen(false)}
+                          onClose={() => {
+                            setIsRejectionDialogOpen(false);
+                            setIsRejecting(false);
+                          }}
                           onConfirm={confirmRejection}
                           edbId={selectedEDB.queryId}
                           isLoading={isRejecting}
