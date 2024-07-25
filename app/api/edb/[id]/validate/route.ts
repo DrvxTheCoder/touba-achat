@@ -75,6 +75,6 @@ export async function POST(
     return NextResponse.json(updatedEdb);
   } catch (error) {
     console.error('Error validating EDB:', error);
-    return NextResponse.json({ message: 'Error validating EDB' }, { status: 500 });
+    return NextResponse.json({ message: 'Une erreur inattendue s\'est produite. Veuillez ressayer plus tard.' }, { status: 500 });
   }
 }

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Ban } from 'lucide-react';
+import { Icons } from '@/components/icons';
+import { set } from 'lodash';
 
 const rejectionReasons = [
   "Budget insuffisant",
@@ -29,6 +31,8 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({ isOpen, onClos
   const handleConfirm = () => {
     const finalReason = selectedReason === 'Autres' ? customReason : selectedReason;
     onConfirm(finalReason);
+    setSelectedReason('');
+    setCustomReason('');
   };
 
   return (
@@ -64,7 +68,12 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({ isOpen, onClos
             disabled={!selectedReason || (selectedReason === 'Autres' && !customReason.trim()) || isLoading}
             variant="destructive"
           >
-            Oui, rejeter <Ban className="ml-1 h-4 w-4" />
+            Oui, rejeter 
+            {isLoading ? (
+             <Icons.spinner className="ml-2 h-4 w-4 animate-spin" />
+            ) : (
+            <Ban className="ml-2 h-4 w-4" />
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

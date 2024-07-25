@@ -90,6 +90,20 @@ enum CategoryType {
   CUSTOM
 }
 
+enum EDBEventType {
+  CREATED
+  SUBMITTED
+  APPROVED_RESPONSABLE
+  APPROVED_DIRECTEUR
+  APPROVED_DG
+  REJECTED
+  UPDATED
+  ATTACHMENT_ADDED
+  ATTACHMENT_REMOVED
+  ESCALATED
+}
+
+
 model User {
   id                    Int             @id @default(autoincrement())
   email                 String          @unique
@@ -111,6 +125,7 @@ model User {
   finalApprovedEdbs     EtatDeBesoin[]  @relation("FinalApprover")
   uploadedAttachments   Attachment[]    @relation("Uploader")
   chosenSuppliers       FinalSupplier[] @relation("Chooser")
+  edbAuditLogs  EtatDeBesoinAuditLog[]
 }
 
 model Employee {
@@ -183,6 +198,18 @@ model EtatDeBesoin {
   finalApprovedBy       Int?
   finalApprover         User?          @relation("FinalApprover", fields: [finalApprovedBy], references: [id])
   rejectionReason       String?
+  auditLogs     EtatDeBesoinAuditLog[]
+}
+
+model EtatDeBesoinAuditLog {
+  id            Int           @id @default(autoincrement())
+  etatDeBesoinId Int
+  etatDeBesoin  EtatDeBesoin  @relation(fields: [etatDeBesoinId], references: [id])
+  userId        Int
+  user          User          @relation(fields: [userId], references: [id])
+  eventType     EDBEventType
+  eventAt       DateTime      @default(now())
+  details       Json?         // For storing any additional event-specific details
 }
 
 model Attachment {

@@ -45,16 +45,16 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
       canReject = true; // Can reject at any stage
       break;
     case 'ADMIN':
-      // Admins might have special privileges, adjust as needed
+      // Admins might have special privileges
       canValidate = true;
       canReject = true;
       break;
     case 'MAGASINIER':
-      // Magasiniers might have specific actions they can perform
       canValidate = status === 'AWAITING_MAGASINIER';
       break;
     case 'USER':
-      // Regular users typically can't validate or reject
+      canValidate = status === 'AWAITING_FINAL_APPROVAL';
+      canReject = false;
       break;
   }
 
