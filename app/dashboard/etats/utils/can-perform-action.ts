@@ -27,12 +27,12 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
 
   switch (role) {
     case 'RESPONSABLE':
-      canValidate = ['SUBMITTED', 'REJECTED'].includes(status);
+      canValidate = ['SUBMITTED', 'AWAITING_FINAL_APPROVAL'].includes(status);
       canReject = ['SUBMITTED'].includes(status);
       break;
     case 'DIRECTEUR':
-      canValidate = status === 'APPROVED_RESPONSABLE';
-      canReject = ['SUBMITTED', 'APPROVED_RESPONSABLE', 'APPROVED_DIRECTEUR'].includes(status);
+      canValidate = ['APPROVED_RESPONSABLE', 'AWAITING_FINAL_APPROVAL'].includes(status);
+      canReject = ['SUBMITTED', 'APPROVED_RESPONSABLE'].includes(status);
       break;
     case 'IT_ADMIN':
       if (category && ['Logiciels et licences', 'Matériel informatique'].includes(category)) {
@@ -41,13 +41,13 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
       }
       break;
     case 'DIRECTEUR_GENERAL':
-      canValidate = status === 'AWAITING_FINAL_APPROVAL';
-      canReject = true; // Can reject at any stage
+      canValidate = ['SUBMITTED','APPROVED_RESPONSABLE', 'APPROVED_DIRECTEUR', 'AWAITING_FINAL_APPROVAL'].includes(status);
+      canReject = !['APPROVED_DG', 'REJECTED'].includes(status); // Can reject at any stage except when already approved by DG
       break;
     case 'ADMIN':
-      // Admins might have special privileges
-      canValidate = true;
-      canReject = true;
+      // Admins might have special privileges but in this case, no special actions are allowed
+      canValidate = false;
+      canReject = false;
       break;
     case 'MAGASINIER':
       canValidate = status === 'AWAITING_MAGASINIER';

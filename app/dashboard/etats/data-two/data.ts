@@ -1,24 +1,22 @@
-// data.ts
 export interface EDB {
-    id: string;
-    queryId: string;
-    title: string;
-    category: string;
-    status: string;
+  id: string;
+  queryId: string;
+  title: string;
+  category: string;
+  status: string;
+  department: string;
+  amount: number;
+  email: string;
+  items: { designation: string; quantity: number }[]; // Changed from 'name' to 'designation'
+  employee: {
+    name: string;
     department: string;
-    amount: number;
     email: string;
-    items: { name: string; quantity: number }[];
-    employee: {
-      name: string;
-      department: string;
-      email: string;
-    };
-    documents: string[];
-    date: string;
-  }
+  };
+  documents: string[];
+  date: string;
+}
   
-  // export const edbData: EDB[] = [
   //   {
   //     id: "EDB-5212377",
   //     title: "Fournitures de bureau trimestrielles",

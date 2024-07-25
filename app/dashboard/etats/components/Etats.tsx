@@ -485,10 +485,10 @@ export default function Etats() {
                         <TableHead className="hidden md:table-cell">
                             Département
                         </TableHead>
-                        <TableHead className="text-right rounded-r-lg">
+                        <TableHead className="text-right md:rounded-r-lg">
                             Montant (XOF)
                         </TableHead>
-                        <TableHead className="lg:hidden">
+                        <TableHead className="lg:hidden rounded-r-lg">
                             {''}
                         </TableHead>
                         </TableRow>
@@ -587,7 +587,7 @@ export default function Etats() {
           
           {/* Right-side card for EDB details */}
           <div>
-            <Card className="overflow-hidden lg:block hidden">
+            <Card className="overflow-hidden lg:block hidden mb-5">
               {selectedEDB ? (
                 <>
                 <CardHeader className="flex flex-row items-start border-b">
@@ -691,14 +691,14 @@ export default function Etats() {
                     </li>
                     </ul>
                     <ul className="grid gap-3">
-                      <ScrollArea className="w-full rounded-md h-14 p-2 border">
+                    <ScrollArea className="w-full rounded-md h-14 p-2 border">
                       {selectedEDB.items.map((item, index) => (
                         <li className="flex items-center justify-between" key={index}>
-                          <span className="text-muted-foreground">{item.name}</span>
+                          <span className="text-muted-foreground">{item.designation}</span>
                           <span>x {item.quantity}</span>
                         </li>
                       ))}
-                      </ScrollArea>
+                    </ScrollArea>
                     </ul>
                     <span className="font-semibold">Références Techniques</span>
                     <span className="text-muted-foreground">Non-renseigné</span>
