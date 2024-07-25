@@ -169,7 +169,7 @@ model EtatDeBesoin {
   id                    Int            @id @default(autoincrement())
   edbId                 String         @unique
   title                 String
-  description           String[]
+  description           Json
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   status                EDBStatus      @default(DRAFT)
