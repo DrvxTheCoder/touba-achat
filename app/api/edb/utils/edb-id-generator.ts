@@ -1,22 +1,29 @@
-import { PrismaClient, UserStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export default async function generateEDBId() {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0'); // +1 because getMonth() returns 0-11
-  
-    const latestEDB = await prisma.etatDeBesoin.findFirst({
-      where: { edbId: { startsWith: `EDB-${currentYear}-${currentMonth}-` } },
-      orderBy: { id: 'desc' },
-      select: { edbId: true },
-    });
-  
-    const latestNumber = latestEDB 
-      ? parseInt(latestEDB.edbId.split('-')[3]) 
-      : 0;
-  
-    return `EDB-${currentYear}${currentMonth}${(latestNumber + 1).toString().padStart(4, '0')}`;
+export default async function generateEDBId(): Promise<string> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+
+  const latestEDB = await prisma.etatDeBesoin.findFirst({
+    where: { edbId: { startsWith: `EDB-${currentYear}${currentMonth}` } },
+    orderBy: { id: 'desc' },
+    select: { edbId: true },
+  });
+
+  let latestNumber = 0;
+  if (latestEDB) {
+    const parts = latestEDB.edbId.split('-');
+    if (parts.length === 4) {
+      const parsedNumber = parseInt(parts[3], 10);
+      if (!isNaN(parsedNumber)) {
+        latestNumber = parsedNumber;
+      }
+    }
   }
- // e.g., EDB-2023-07-0001
+
+  const newNumber = latestNumber + 1;
+  return `EDB-${currentYear}${currentMonth}-${newNumber.toString().padStart(4, '0')}`;
+}

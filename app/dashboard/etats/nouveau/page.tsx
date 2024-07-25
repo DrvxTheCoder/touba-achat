@@ -22,10 +22,10 @@ const edbSchema = z.object({
   title: z.string().min(1, "Ce champ est requis"),
   category: z.string().min(1, "Ce champ est requis"),
   reference: z.string().optional(),
-  description: z.array(z.object({
+  items: z.array(z.object({
     designation: z.string().min(1, "Ce champ est requis"),
     quantity: z.string().min(1, "Requis").regex(/^\d+$/, "La quantité doit être un nombre")
-  })).min(1, "Au moins un élément de description est requis")
+  })).min(1, "Au moins un élément est requis")
 });
 
 type Category = {
@@ -50,7 +50,7 @@ const CreateEDBPage = () => {
       title: '',
       category: '',
       reference: '',
-      description: [{ designation: '', quantity: '' }]
+      items: [{ designation: '', quantity: '' }]
     }
   });
 
@@ -84,7 +84,10 @@ const CreateEDBPage = () => {
         },
         body: JSON.stringify({
           ...data,
-          description: data.description.map(item => `${item.designation} (Quantité: ${item.quantity})`)
+          items: data.items.map(item => ({
+            designation: item.designation,
+            quantity: parseInt(item.quantity, 10)
+          }))
         }),
       });
 
@@ -118,16 +121,15 @@ const CreateEDBPage = () => {
       <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins - Nouveau</h2>
-          {/* <CategoriesDialog /> */}
         </div>
 
-        <div className="flex  items-center justify-center ">
+        <div className="flex items-center justify-center">
         <Card className='w-[22rem] lg:w-[50rem] mt-8'>
           <CardHeader className='border-b'>
             <CardTitle>Créer un EDB</CardTitle>
           </CardHeader>
           <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4  space-y-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
             <Form {...form}>
               
                 <FormField
@@ -170,13 +172,13 @@ const CreateEDBPage = () => {
                 />
                 
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Items</FormLabel>
                   <ScrollArea className="h-[200px] w-full border rounded-md p-4">
-                    {form.watch('description').map((item, index) => (
+                    {form.watch('items').map((item, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2 p-1">
                         <FormField
                           control={form.control}
-                          name={`description.${index}.designation`}
+                          name={`items.${index}.designation`}
                           render={({ field }) => (
                             <FormItem className="flex-grow">
                               <FormControl>
@@ -188,24 +190,24 @@ const CreateEDBPage = () => {
                         />
                         <FormField
                           control={form.control}
-                          name={`description.${index}.quantity`}
+                          name={`items.${index}.quantity`}
                           render={({ field }) => (
                             <FormItem className="w-24">
                               <FormControl>
                                 <Input {...field} placeholder="QTE" type="number" />
                               </FormControl>
-                              <FormMessage className="text-xs"  />
+                              <FormMessage className="text-xs" />
                             </FormItem>
                           )}
                         />
-                        {form.watch('description').length > 1 && (
+                        {form.watch('items').length > 1 && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              const currentDescription = form.getValues('description');
-                              form.setValue('description', currentDescription.filter((_, i) => i !== index));
+                              const currentItems = form.getValues('items');
+                              form.setValue('items', currentItems.filter((_, i) => i !== index));
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -218,8 +220,8 @@ const CreateEDBPage = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const currentDescription = form.getValues('description');
-                        form.setValue('description', [...currentDescription, { designation: '', quantity: '' }]);
+                        const currentItems = form.getValues('items');
+                        form.setValue('items', [...currentItems, { designation: '', quantity: '' }]);
                       }}
                       className="mt-2"
                     >
@@ -237,7 +239,7 @@ const CreateEDBPage = () => {
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
-                      <FormMessage className="text-xs"  />
+                      <FormMessage className="text-xs" />
                     </FormItem>
                   )}
                 />
@@ -255,7 +257,6 @@ const CreateEDBPage = () => {
         </div>
 
       </main>
-      
     </>
   );
 };

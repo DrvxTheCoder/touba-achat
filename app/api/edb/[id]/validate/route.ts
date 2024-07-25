@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient, EDBStatus } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'; // Adjust this import path as necessary
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
+import { updateEDBStatus } from '../../utils/edbAuditLogUtil'; // Import the utility function
 
 const prisma = new PrismaClient();
 
@@ -34,7 +35,7 @@ export async function POST(
         if (edb.status === 'SUBMITTED') {
           newStatus = 'APPROVED_RESPONSABLE';
         } else {
-            return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });
+          return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });
         }
         break;
       case 'DIRECTEUR':
@@ -53,23 +54,21 @@ export async function POST(
         }
         break;
       case 'DIRECTEUR_GENERAL':
-        if (edb.status === 'AWAITING_FINAL_APPROVAL') {
+        if (edb.status !== 'DRAFT' && edb.status !== 'REJECTED') {
           newStatus = 'APPROVED_DG';
         } else {
-          return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });
+          return NextResponse.json({ message: 'Validation impossible à cette étape' }, { status: 403 });
         }
         break;
       default:
         return NextResponse.json({ message: 'Action non autorisé' }, { status: 403 });
     }
 
-    // Update the EDB with the new status
-    const updatedEdb = await prisma.etatDeBesoin.update({
+    // Update the EDB status and log the event
+    await updateEDBStatus(Number(id), newStatus, parseInt(session.user.id));
+
+    const updatedEdb = await prisma.etatDeBesoin.findUnique({
       where: { id: Number(id) },
-      data: { 
-        status: newStatus,
-        approverId: parseInt(session.user.id),
-      },
     });
 
     return NextResponse.json(updatedEdb);

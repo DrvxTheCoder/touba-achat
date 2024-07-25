@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { EDBEventType, PrismaClient } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '../auth/[...nextauth]/auth-options';
 import generateEDBId from './utils/edb-id-generator';
 import { Prisma, EDBStatus } from '@prisma/client';
+import { logEDBEvent } from './utils/edbAuditLogUtil';
 
 const prisma = new PrismaClient();
 
@@ -30,7 +31,12 @@ export async function GET(request: Request) {
       OR: [
         { edbId: { contains: search, mode: 'insensitive' } },
         { title: { contains: search, mode: 'insensitive' } },
-        { description: { hasSome: [search] } },
+        { 
+          description: {
+            path: ['items'],
+            array_contains: [{ designation: { contains: search } }]
+          }
+        },
       ],
       ...(statusFilter.length > 0 ? { status: { in: statusFilter } } : {}),
     };
@@ -115,10 +121,10 @@ export async function GET(request: Request) {
       department: edb.department.name,
       amount: edb.orders.reduce((sum: number, order: { amount: number }) => sum + order.amount, 0),
       email: edb.userCreator.email,
-      items: edb.description.map(desc => {
-        const match = desc.match(/^(.+) \(Quantité: (\d+)\)$/);
-        return match ? { name: match[1], quantity: parseInt(match[2], 10) } : { name: desc, quantity: 1 };
-      }),
+      items: (edb.description as any).items.map((item: { designation: string, quantity: number }) => ({
+        designation: item.designation,
+        quantity: item.quantity
+      })),
       employee: {
         name: edb.userCreator.name,
         department: edb.department.name,
@@ -154,9 +160,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, category, reference, description } = body;
+    const { title, category, reference, items } = body;
 
-    // Fetch the user and their associated employee
+    console.log('Received body:', body);
+
     const user = await prisma.user.findUnique({
       where: { id: parseInt(userId) },
       include: { employee: true },
@@ -166,27 +173,63 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'User or employee not found' }, { status: 400 });
     }
 
-    // Generate EDB ID
-    const edbId = await generateEDBId();
+    console.log('User:', user);
 
-    // Create a new EDB
-    const newEDB = await prisma.etatDeBesoin.create({
-      data: {
-        edbId,
-        title,
-        description,
-        references: reference,
-        status: 'SUBMITTED',
-        department: { connect: { id: user.employee.currentDepartmentId } },
-        creator: { connect: { id: user.employee.id } },
-        userCreator: { connect: { id: user.id } },
-        category: { connect: { id: parseInt(category) } },
-      },
-    });
+    // Generate EDB ID
+    let edbId;
+    let newEDB;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (attempts < maxAttempts) {
+      try {
+        edbId = await generateEDBId();
+        console.log('Generated EDB ID:', edbId);
+
+        // Prepare the data for creating the EDB
+        const edbData = {
+          edbId,
+          title,
+          description: { items },
+          references: reference,
+          status: 'SUBMITTED' as EDBStatus,
+          department: { connect: { id: user.employee.currentDepartmentId } },
+          creator: { connect: { id: user.employee.id } },
+          userCreator: { connect: { id: user.id } },
+          category: { connect: { id: parseInt(category) } },
+        };
+
+        console.log('EDB Data:', edbData);
+
+        // Create the new EDB
+        newEDB = await prisma.etatDeBesoin.create({
+          data: edbData,
+        });
+
+        console.log('Created EDB:', newEDB);
+        break; // If successful, break out of the loop
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          // If it's a unique constraint violation, try again
+          attempts++;
+          console.log(`Attempt ${attempts}: EDB ID already exists, trying again...`);
+        } else {
+          // If it's any other error, throw it
+          throw error;
+        }
+      }
+    }
+
+    if (!newEDB) {
+      throw new Error('Failed to create EDB after multiple attempts');
+    }
+
+    // Log the EDB creation event
+    await logEDBEvent(newEDB.id, parseInt(userId), EDBEventType.CREATED);
 
     return NextResponse.json(newEDB, { status: 201 });
   } catch (error) {
     console.error('Error creating EDB:', error);
-    return NextResponse.json({ message: 'Error creating EDB' }, { status: 500 });
+    return NextResponse.json({ message: 'Error creating EDB', error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

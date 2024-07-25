@@ -1,8 +1,8 @@
-// app/api/edb/[id]/reject/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient, EDBStatus } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
+import { updateEDBStatus } from '../../utils/edbAuditLogUtil'; // Import the utility function
 
 const prisma = new PrismaClient();
 
@@ -41,17 +41,18 @@ export async function POST(
       return NextResponse.json({ message: 'Vous n\'êtes pas autorisé a rejeter cet EDB ' }, { status: 403 });
     }
 
-    // Update the EDB status to REJECTED and add the rejection reason
+    // Update the EDB status to REJECTED, log the event, and add the rejection reason
+    await updateEDBStatus(Number(id), EDBStatus.REJECTED, parseInt(session.user.id));
+    
     const updatedEdb = await prisma.etatDeBesoin.update({
       where: { id: Number(id) },
       data: { 
-        status: EDBStatus.REJECTED,
         approverId: parseInt(session.user.id),
         rejectionReason: reason,
       },
     });
 
-    // You might want to create a notification or log this action
+    // Create a notification
     await prisma.notification.create({
       data: {
         type: 'EDB_REJECTED',
