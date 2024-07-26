@@ -36,9 +36,8 @@ export default async function RootLayout({
       <AuthProvider session={session}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="new-york"
           enableSystem
-          disableTransitionOnChange
         >
           <NextProgress />
             {children}
