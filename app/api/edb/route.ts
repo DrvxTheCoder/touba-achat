@@ -76,6 +76,24 @@ export async function GET(request: Request) {
           ]
         };
       break;
+      case 'MAGASINIER':
+        // Show only validated EDBs (approved by director or higher)
+        where = {
+          AND: [
+            { ...where }, // Keep existing search and status filters
+            {
+              status: {
+                notIn: [
+                  'DRAFT',
+                  'SUBMITTED',
+                  'APPROVED_RESPONSABLE',
+                  'REJECTED'
+                ]
+              }
+            }
+          ]
+        };
+      break;
       case 'ADMIN':
       case 'DIRECTEUR_GENERAL':
       case 'AUDIT':
@@ -153,7 +171,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'You must be logged in.' }, { status: 401 });
     }
 
-    const { id: userId, status: userStatus } = session.user;
+    const { id: userId, status: userStatus, role } = session.user;
 
     if (userStatus !== 'ACTIVE') {
       return NextResponse.json({ message: 'Your account is not active.' }, { status: 403 });
@@ -176,60 +194,69 @@ export async function POST(request: Request) {
     console.log('User:', user);
 
     // Generate EDB ID
-    let edbId;
-    let newEDB;
-    let attempts = 0;
-    const maxAttempts = 5;
+    const edbId = generateEDBId();
+    console.log('Generated EDB ID:', edbId);
 
-    while (attempts < maxAttempts) {
-      try {
-        edbId = await generateEDBId();
-        console.log('Generated EDB ID:', edbId);
-
-        // Prepare the data for creating the EDB
-        const edbData = {
-          edbId,
-          title,
-          description: { items },
-          references: reference,
-          status: 'SUBMITTED' as EDBStatus,
-          department: { connect: { id: user.employee.currentDepartmentId } },
-          creator: { connect: { id: user.employee.id } },
-          userCreator: { connect: { id: user.id } },
-          category: { connect: { id: parseInt(category) } },
-        };
-
-        console.log('EDB Data:', edbData);
-
-        // Create the new EDB
-        newEDB = await prisma.etatDeBesoin.create({
-          data: edbData,
-        });
-
-        console.log('Created EDB:', newEDB);
-        break; // If successful, break out of the loop
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-          // If it's a unique constraint violation, try again
-          attempts++;
-          console.log(`Attempt ${attempts}: EDB ID already exists, trying again...`);
-        } else {
-          // If it's any other error, throw it
-          throw error;
-        }
-      }
+    // Determine initial status based on user role
+    let initialStatus: EDBStatus = 'SUBMITTED';
+    if (session.user.role === 'RESPONSABLE') {
+      initialStatus = 'APPROVED_RESPONSABLE';
+    } else if (session.user.role === 'DIRECTEUR') {
+      initialStatus = 'APPROVED_DIRECTEUR';
+    } else if (session.user.role === 'DIRECTEUR_GENERAL') {
+      initialStatus = 'APPROVED_DG';
     }
 
-    if (!newEDB) {
-      throw new Error('Failed to create EDB after multiple attempts');
-    }
+    // Prepare the data for creating the EDB
+    const edbData = {
+      edbId,
+      title,
+      description: { items },
+      references: reference,
+      status: initialStatus,
+      department: { connect: { id: user.employee.currentDepartmentId } },
+      creator: { connect: { id: user.employee.id } },
+      userCreator: { connect: { id: user.id } },
+      category: { connect: { id: parseInt(category) } },
+    };
+
+    console.log('EDB Data:', edbData);
+
+    // Create the new EDB
+    const newEDB = await prisma.etatDeBesoin.create({
+      data: edbData,
+    });
+
+    console.log('Created EDB:', newEDB);
 
     // Log the EDB creation event
     await logEDBEvent(newEDB.id, parseInt(userId), EDBEventType.CREATED);
 
+    // If the initial status is not SUBMITTED, log a separate validation event
+    if (initialStatus !== 'SUBMITTED') {
+      let validationEventType: EDBEventType;
+      switch (initialStatus) {
+        case 'APPROVED_RESPONSABLE':
+          validationEventType = EDBEventType.APPROVED_RESPONSABLE;
+          break;
+        case 'APPROVED_DIRECTEUR':
+          validationEventType = EDBEventType.APPROVED_DIRECTEUR;
+          break;
+        case 'APPROVED_DG':
+          validationEventType = EDBEventType.APPROVED_DG;
+          break;
+        default:
+          validationEventType = EDBEventType.UPDATED;
+      }
+      await logEDBEvent(newEDB.id, parseInt(userId), validationEventType);
+    }
+
     return NextResponse.json(newEDB, { status: 201 });
   } catch (error) {
     console.error('Error creating EDB:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ message: 'A unique constraint error occurred. Please try again.' }, { status: 409 });
+    }
     return NextResponse.json({ message: 'Error creating EDB', error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

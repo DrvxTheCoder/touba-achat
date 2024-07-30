@@ -69,6 +69,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EDBTimelineDialog } from "@/components/EDBTimelineDiaolg";
 
 export default function EtatsDeBesoinPage() {
   return (
@@ -276,12 +277,7 @@ export default function EtatsDeBesoinPage() {
                     <CardDescription>Statut: <Badge className="text-xs ml-1" variant="outline"> Validé </Badge></CardDescription>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
-                    <Button size="sm" variant="outline" className="h-8 gap-1">
-                      <Truck className="h-3.5 w-3.5" />
-                      <span className="lg:sr-only xl:not-sr-only xl:whitespace-nowrap">
-                        Traquer
-                      </span>
-                    </Button>
+                    <EDBTimelineDialog />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button size="icon" variant="outline" className="h-8 w-8">

@@ -1,29 +1,18 @@
-import { PrismaClient } from '@prisma/client';
+import { customAlphabet } from 'nanoid';
 
-const prisma = new PrismaClient();
+// Define a custom alphabet for the random part (excluding similar-looking characters)
+const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const nanoid = customAlphabet(alphabet, 4);
 
-export default async function generateEDBId(): Promise<string> {
+export default function generateEDBId(): string {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const timestamp = `${year}${month}${day}`;
+  
+  // Generate a random string
+  const randomPart = nanoid();
 
-  const latestEDB = await prisma.etatDeBesoin.findFirst({
-    where: { edbId: { startsWith: `EDB-${currentYear}${currentMonth}` } },
-    orderBy: { id: 'desc' },
-    select: { edbId: true },
-  });
-
-  let latestNumber = 0;
-  if (latestEDB) {
-    const parts = latestEDB.edbId.split('-');
-    if (parts.length === 4) {
-      const parsedNumber = parseInt(parts[3], 10);
-      if (!isNaN(parsedNumber)) {
-        latestNumber = parsedNumber;
-      }
-    }
-  }
-
-  const newNumber = latestNumber + 1;
-  return `EDB-${currentYear}${currentMonth}-${newNumber.toString().padStart(4, '0')}`;
+  return `EDB-${timestamp}-${randomPart}`;
 }

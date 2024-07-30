@@ -146,7 +146,7 @@ export default function NouveauEtatsDeBesoinPage() {
       </Breadcrumb>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
         <div className="flex items-center justify-center">
-        <Card className='w-[22rem] lg:w-[50rem] mt-0'>
+        <Card className='w-[22rem] lg:w-[50rem] my-4'>
           <CardHeader className='border-b'>
             <CardTitle><h2 className="text-lg md:text-3xl font-bold tracking-tight">Créer un EDB</h2></CardTitle>
           </CardHeader>
@@ -195,7 +195,7 @@ export default function NouveauEtatsDeBesoinPage() {
                 
                 <FormItem>
                   <FormLabel>Articles</FormLabel>
-                  <ScrollArea className="h-[200px] w-full border rounded-md p-4">
+                  <ScrollArea className="h-[200px] w-full border border-dashed rounded-md md:p-4 p-1">
                     {form.watch('items').map((item, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2 p-1">
                         <FormField
