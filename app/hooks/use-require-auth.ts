@@ -1,22 +1,28 @@
-// hooks/useRequireAuth.js
-// This hook will redirect users to the login page if they are not authenticated.
-
-import { useEffect, useState } from 'react';
+// hooks/useRequireAuth.ts
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react'; // Assuming you're using next-auth
+import { useSession } from 'next-auth/react';
+import { Role } from '@prisma/client';
 
-export default function useRequireAuth(redirectUrl = '/auth') {
+export default function useRequireAuth(allowedRoles?: Role[]) {
   const { data: session, status } = useSession();
   const loading = status === 'loading';
-  const isAuthenticated = !!session;
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      // Redirect to login or any specified URL
-      router.push(redirectUrl);
+    if (!loading) {
+      if (!session) {
+        router.push('/auth');
+      } else if (allowedRoles && !allowedRoles.includes(session.user.role)) {
+        // Redirect to an unauthorized page or the appropriate route based on the user's role
+        if (session.user.isSimpleUser) {
+          router.push('/acceuil');
+        } else {
+          router.push('/dashboard');
+        }
+      }
     }
-  }, [isAuthenticated, loading, redirectUrl, router]);
+  }, [session, loading, router, allowedRoles]);
 
-  return { isAuthenticated, loading };
+  return { session, loading };
 }

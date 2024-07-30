@@ -7,6 +7,7 @@ export const useAllowedRoles = () => {
         "DIRECTEUR",
         "DIRECTEUR_GENERAL",
         "RESPONSABLE",
+        "MAGASINIER",
         "RH",
         "AUDIT",
         "IT_ADMIN"

@@ -1,11 +1,11 @@
 "use client"
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
-import { Home, Package, ShoppingCart, Users, SettingsIcon } from "lucide-react";
+import { Home, Package, ShoppingCart, Users, SettingsIcon, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -72,7 +72,10 @@ export default function Sidebar(){
                     </nav>
                 </div>
                 <div className="mt-auto p-4 w-full">
-                    <Card x-chunk="dashboard-02-chunk-0">
+                <Button onClick={() => signOut()} variant="outline" className="w-full justify-center h-10 mt-5">
+                    <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+                </Button>
+                    {/* <Card x-chunk="dashboard-02-chunk-0">
                         <CardHeader className="p-3 pt-0 md:p-4">
                             <CardTitle>Feedback</CardTitle>
                             <CardDescription className="w-full">
@@ -84,7 +87,7 @@ export default function Sidebar(){
                                 Donner un avis
                             </Button>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                 </div>
             </div>
         </aside>

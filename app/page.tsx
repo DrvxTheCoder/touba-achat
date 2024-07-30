@@ -1,43 +1,44 @@
 "use client"
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { Progress } from "@/components/ui/progress"
 import CustomLogoSVG from '@/components/logos/CustomLogoSVG';
-import { title } from 'process';
 
 const HomeRedirect: React.FC = () => {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      // Start progress
+    const redirectUser = async () => {
       setProgress(10);
-
-      // Simulate some loading time
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
       setProgress(30);
 
-      const session = await getSession();
-      setProgress(60);
+      if (status === 'loading') {
+        setProgress(50);
+        return;
+      }
 
-      // Simulate some more loading time
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setProgress(90);
+      setProgress(70);
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       if (!session) {
         router.replace('/auth');
       } else {
-        router.replace('/dashboard');
+        if (['ADMIN', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'MAGASINIER', 'RH', 'AUDIT', 'RESPONSABLE'].includes(session.user.role)) {
+          router.replace('/dashboard');
+        } else {
+          router.replace('/acceuil');
+        }
       }
-      
-      // Complete progress
+
       setProgress(100);
     };
     
-    fetchSession();
-  }, [router]);
+    redirectUser();
+  }, [router, session, status]);
 
   return (
     <>
@@ -49,7 +50,6 @@ const HomeRedirect: React.FC = () => {
         <p className="text-muted-foreground">{progress}%</p>
       </div>
     </>
-
   );
 }
 

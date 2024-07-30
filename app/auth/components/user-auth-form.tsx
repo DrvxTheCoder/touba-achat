@@ -12,19 +12,8 @@ import { Label } from "@/components/ui/label";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-async function customSignIn(email: string, password: string) {
+async function customSignIn(email: string, password: string): Promise<{ success: boolean; error?: string; message?: string }> {
   try {
-    const res = await fetch('/api/auth/signin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(JSON.stringify(errorData));
-    }
-
     const result = await signIn('credentials', {
       redirect: false,
       email,
@@ -32,29 +21,27 @@ async function customSignIn(email: string, password: string) {
     });
 
     if (result?.error) {
-      throw new Error(result.error);
+      // Decode the URL-encoded error
+      const decodedError = decodeURIComponent(result.error);
+      console.log("Decoded error:", decodedError);  // For debugging
+
+      let errorMessage;
+      try {
+        // Try to parse it as JSON
+        const parsedError = JSON.parse(decodedError);
+        errorMessage = parsedError.message || "Une erreur s'est produite lors de la connexion";
+      } catch {
+        // If it's not JSON, use it as is
+        errorMessage = decodedError;
+      }
+
+      return { success: false, message: errorMessage };
     }
 
     return { success: true };
   } catch (error: any) {
-    let errorMessage = "Une erreur s'est produite lors de la connexion";
-    let errorCode = "unknown_error";
-
-    if (typeof error.message === 'string') {
-      try {
-        const parsedError = JSON.parse(error.message);
-        errorMessage = parsedError.message || errorMessage;
-        errorCode = parsedError.error || errorCode;
-      } catch {
-        // If parsing fails, use the error message as is
-        errorMessage = error.message;
-      }
-    }else {
-      errorMessage = 'Erreur Interne du serveur. Veuillez ressayer plus tard';
-
-    }
-
-    return { success: false, error: errorCode, message: errorMessage };
+    console.error("Sign-in error:", error);  // For debugging
+    return { success: false, message: "Une erreur inattendue s'est produite" };
   }
 }
 
@@ -67,20 +54,21 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
-
+  
     const form = event.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-
+  
     const result = await customSignIn(email, password);
-
+  
     if (result.success) {
-      await router.replace("/");
+      router.replace("/");
     } else {
+      // Just use the message directly, as it's already been parsed in customSignIn
       setError(result.message || "Une erreur inattendue s'est produite");
     }
-
+  
     setIsLoading(false);
   }
 

@@ -6,7 +6,8 @@ import {
   SquarePen,
   LayoutGrid,
   LucideIcon,
-  Package2
+  Package2,
+  Home
 } from "lucide-react";
 
 type Submenu = {
@@ -36,8 +37,8 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: "/acceuil",
           label: "Acceuil",
-          active: pathname.includes("/"),
-          icon: LayoutGrid,
+          active: pathname.includes("/acceuil"),
+          icon: Home,
           submenus: []
         }
       ]
@@ -46,16 +47,16 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "États de Besoins",
       menus: [
         {
-          href: "/etats-de-besoins",
+          href: "/etats-de-besoin",
           label: "Liste",
-          active: pathname.includes("/tags"),
+          active: pathname === "/etats-de-besoin",
           icon: Package2,
           submenus: []
         },
         {
-          href: "/etats-de-besoins/nouveau",
+          href: "/etats-de-besoin/nouveau",
           label: "Nouveau",
-          active: pathname.includes("/categories"),
+          active: pathname === "/etats-de-besoin/nouveau",
           icon: SquarePen,
           submenus: []
         }

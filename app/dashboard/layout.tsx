@@ -1,3 +1,4 @@
+// app/dashboard/layout.tsx
 "use client"
 
 import React from 'react';
@@ -6,6 +7,7 @@ import Header from '@/components/Header';
 import { Toaster } from "@/components/ui/toaster"
 import useRequireAuth from '../hooks/use-require-auth';
 import dynamic from 'next/dynamic';
+import { Role } from '@prisma/client';
 
 const DynamicBreadcrumbs = dynamic(() => import('@/components/DynamicBreadcrumbs'), { ssr: false });
 
@@ -14,13 +16,13 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { isAuthenticated, loading } = useRequireAuth();
+  const { session, loading } = useRequireAuth([Role.ADMIN, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL]);
 
   if (loading) {
     return <div>Chargement...</div>;
   }
 
-  if (!isAuthenticated) {
+  if (!session) {
     return null;
   }
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CircleEllipsis, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
-
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { getMenuList } from "@/lib/menu-list";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,7 @@ export function Menu({ isOpen }: MenuProps) {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => {}}
+                    onClick={() => signOut()}
                     variant="outline"
                     className="w-full justify-center h-10 mt-5"
                   >
@@ -125,7 +125,7 @@ export function Menu({ isOpen }: MenuProps) {
                   </Button>
                 </TooltipTrigger>
                 {isOpen === false && (
-                  <TooltipContent side="right">Sign out</TooltipContent>
+                  <TooltipContent side="right">Déconnexion</TooltipContent>
                 )}
               </Tooltip>
             </TooltipProvider>

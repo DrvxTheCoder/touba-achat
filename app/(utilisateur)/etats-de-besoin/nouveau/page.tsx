@@ -2,10 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
+import Link from "next/link";
+import PlaceholderContent from "../../components/placeholder";
+import { ContentLayout } from "@/components/user-panel/content-layout";
+import { PlusCircle } from "lucide-react";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator
+  } from "@/components/ui/breadcrumb";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CategoryType } from "@prisma/client"
 import { Plus, Trash2 } from "lucide-react";
@@ -33,97 +45,110 @@ type Category = {
 
 type EdbFormValues = z.infer<typeof edbSchema>;
 
-const CreateEDBPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [error, setError] = useState<string | null>(null);
+export default function NouveauEtatsDeBesoinPage() {
+    const [isLoading, setIsLoading] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    
+    const { toast } = useToast();
+    const router = useRouter();
   
-  const { toast } = useToast();
-  const router = useRouter();
-
-  const form = useForm<EdbFormValues>({
-    resolver: zodResolver(edbSchema),
-    defaultValues: {
-      title: '',
-      category: '',
-      reference: '',
-      items: [{ designation: '', quantity: '' }]
-    }
-  });
-
-  const fetchCategories = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/categories');
-      if (!response.ok) throw new Error('Erreur serveur');
-      const fetchedCategories = await response.json();
-      setCategories(fetchedCategories);
-    } catch (err) {
-      setError("Erreur lors de la récupération des catégories");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const onSubmit = async (data: EdbFormValues) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/edb', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          items: data.items.map(item => ({
-            designation: item.designation,
-            quantity: parseInt(item.quantity, 10)
-          }))
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create EDB');
+    const form = useForm<EdbFormValues>({
+      resolver: zodResolver(edbSchema),
+      defaultValues: {
+        title: '',
+        category: '',
+        reference: '',
+        items: [{ designation: '', quantity: '' }]
       }
-
-      const result = await response.json();
-      
-      toast({
-        title: "EDB créé avec succès",
-        description: `L'EDB ${result.edbId} a été créé.`,
-      });
-
-      router.push('/dashboard/etats');
-    } catch (err) {
-      setError('Une erreur est survenue lors de la création de l\'EDB');
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer l'EDB. Veuillez réessayer.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+    });
+  
+    const fetchCategories = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('Erreur serveur');
+        const fetchedCategories = await response.json();
+        setCategories(fetchedCategories);
+      } catch (err) {
+        setError("Erreur lors de la récupération des catégories");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    useEffect(() => {
+      fetchCategories();
+    }, []);
+  
+    const onSubmit = async (data: EdbFormValues) => {
+      setIsLoading(true);
+      setError(null);
+  
+      try {
+        const response = await fetch('/api/edb', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            items: data.items.map(item => ({
+              designation: item.designation,
+              quantity: parseInt(item.quantity, 10)
+            }))
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to create EDB');
+        }
+  
+        const result = await response.json();
+        
+        toast({
+          title: "EDB créé avec succès",
+          description: `L'EDB ${result.edbId} a été créé.`,
+        });
+  
+        router.push('/dashboard/etats');
+      } catch (err) {
+        setError('Une erreur est survenue lors de la création de l\'EDB');
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer l'EDB. Veuillez réessayer.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
   return (
-    <>
-      <title>États de Besoins - Touba App™</title>
-      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins - Nouveau</h2>
-        </div>
-
+    <ContentLayout title="Etats de Besoins">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/">Acceuil</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/etats-de-besoin">États de Besoins</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Nouveau</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
         <div className="flex items-center justify-center">
-        <Card className='w-[22rem] lg:w-[50rem] mt-8'>
+        <Card className='w-[22rem] lg:w-[50rem] mt-0'>
           <CardHeader className='border-b'>
-            <CardTitle>Créer un EDB</CardTitle>
+            <CardTitle><h2 className="text-lg md:text-3xl font-bold tracking-tight">Créer un EDB</h2></CardTitle>
           </CardHeader>
           <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
@@ -169,7 +194,7 @@ const CreateEDBPage = () => {
                 />
                 
                 <FormItem>
-                  <FormLabel>Items</FormLabel>
+                  <FormLabel>Articles</FormLabel>
                   <ScrollArea className="h-[200px] w-full border rounded-md p-4">
                     {form.watch('items').map((item, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2 p-1">
@@ -241,8 +266,7 @@ const CreateEDBPage = () => {
                   )}
                 />
                 
-                <CardFooter className="flex justify-between gap-2 pt-4 px-0">
-                  <Button variant="outline" type="button" disabled={isLoading}>Sauvegarder</Button>
+                <CardFooter className="flex justify-end gap-2 pt-4 px-0">
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? 'Chargement...' : 'Émettre'}
                   </Button>
@@ -252,10 +276,7 @@ const CreateEDBPage = () => {
           </CardContent>
         </Card>
         </div>
-
       </main>
-    </>
+    </ContentLayout>
   );
-};
-
-export default CreateEDBPage;
+}
