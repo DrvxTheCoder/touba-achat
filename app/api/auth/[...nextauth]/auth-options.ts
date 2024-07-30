@@ -1,7 +1,7 @@
 import { DefaultSession, type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { pagesOptions } from './pages-options';
-import { PrismaClient, UserStatus } from '@prisma/client';
+import { PrismaClient, UserStatus, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { JWT } from 'next-auth/jwt';
 
@@ -10,15 +10,17 @@ const prisma = new PrismaClient();
 declare module 'next-auth' {
   interface User {
     id: string;
-    role: string;
+    role: Role;
     status: UserStatus;
+    isSimpleUser: boolean;
   }
 
   interface Session {
     user: {
       id: string;
-      role: string;
+      role: Role;
       status: UserStatus;
+      isSimpleUser: boolean;
     } & DefaultSession['user'];
   }
 }
@@ -26,8 +28,9 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
-    role: string;
+    role: Role;
     status: UserStatus;
+    isSimpleUser: boolean;
   }
 }
 
@@ -46,8 +49,9 @@ export const authOptions: NextAuthOptions = {
         user: {
           ...session.user,
           id: token.id,
-          role: token.role,
-          status: token.status,
+          role: token.role as Role,
+          status: token.status as UserStatus,
+          isSimpleUser: token.isSimpleUser,
         },
       };
     },
@@ -58,6 +62,7 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.role = user.role;
         token.status = user.status;
+        token.isSimpleUser = user.role === Role.USER;
       }
       return token;
     },
@@ -74,53 +79,43 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials, req) {
         if (!credentials) {
-          throw new Error(JSON.stringify({ 
-            error: "auth_error", 
-            message: "Aucune information d'identification fournie" 
-          }));
+          throw new Error("Aucune information d'identification fournie");
         }
-
+      
         try {
           const user = await prisma.user.findUnique({
             where: { email: credentials.email },
           });
-
+      
           if (!user) {
-            throw new Error(JSON.stringify({ 
-              error: "user_not_found", 
-              message: "Aucun utilisateur trouvé avec cet email" 
-            }));
+            throw new Error("Cet utilisateur n'existe pas.");
           }
-
+      
           if (user.status !== UserStatus.ACTIVE) {
-            throw new Error(JSON.stringify({ 
-              error: "inactive_account", 
-              message: "Ce compte n'est pas actif. Veuillez consulter l'administrateur du système." 
-            }));
+            throw new Error("Ce compte n'est pas actif. Veuillez consulter l'administrateur du système.");
           }
-
+      
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-
+      
           if (!isPasswordValid) {
-            throw new Error(JSON.stringify({ 
-              error: "invalid_credentials", 
-              message: "Mot de passe incorrect" 
-            }));
+            throw new Error("Mot de passe incorrecte");
           }
-
+      
           return {
             id: user.id.toString(),
             email: user.email,
             name: user.name,
             role: user.role,
             status: user.status,
+            isSimpleUser: user.role === Role.USER,
           };
         } catch (error) {
           console.error('Erreur lors de l\'autorisation:', error);
-          throw new Error(JSON.stringify({ 
-            error: "Erreur Interne", 
-            message: "Erreur interne du serveur" 
-          }));
+          if (error instanceof Error) {
+            throw new Error(JSON.stringify({ error: "auth_error", message: error.message }));
+          } else {
+            throw new Error("Une erreur inconnue s'est produite. Veuillez ressayer plus tard.");
+          }
         }
       },
     }),

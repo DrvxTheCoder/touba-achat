@@ -6,7 +6,7 @@ import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
 import { ModeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
-import { Home, Menu, Package, ShoppingCart, Users, SettingsIcon, Search, CircleUser, LogOut } from "lucide-react";
+import { Home, Menu, Package, ShoppingCart, Users, SettingsIcon, Search, CircleUser, LogOut, HomeIcon, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -100,19 +100,9 @@ export default function Header (){
                 ))}
             </nav>
             <div className="mt-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Documentation</CardTitle>
-                  <CardDescription>
-                  Accedez à la documentation de cette application en cliquant içi.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button size="sm" className="w-full">
-                    Github
-                  </Button>
-                </CardContent>
-              </Card>
+          <Button onClick={() => signOut()} variant="outline" className="w-full justify-center h-10 mt-5">
+            Déconnexion
+          </Button>
             </div>
           </SheetContent>
         </Sheet>
@@ -145,11 +135,15 @@ export default function Header (){
               
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+            <DropdownMenuItem className="hover:cursor-pointer" asChild>
+            <Link href="/acceuil" className="flex items-center">
+              <HomeIcon className="w-4 h-4 mr-3 text-muted-foreground" />
+              Acceuil
+            </Link>
+          </DropdownMenuItem>
             <DropdownMenuItem>
+              <User className="w-4 h-4 mr-3 text-muted-foreground" />
                 Profil           
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-                Aide
             </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
