@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, EDBStatus } from '@prisma/client';
+import { PrismaClient, EDBStatus, EDBEventType } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { updateEDBStatus } from '../../utils/edbAuditLogUtil'; // Import the utility function
+import { logEDBEvent } from '../../utils/edbAuditLogUtil';
 
 const prisma = new PrismaClient();
 
@@ -35,6 +36,7 @@ export async function POST(
       return NextResponse.json({ message: 'EDB introuvable' }, { status: 404 });
     }
 
+
     // Check if the user has the right to reject this EDB
     const canReject = await checkUserCanReject(role, edb);
     if (!canReject) {
@@ -51,6 +53,9 @@ export async function POST(
         rejectionReason: reason,
       },
     });
+    if (updatedEdb){
+      logEDBEvent(edb.id, parseInt(session.user.id), EDBEventType.REJECTED);
+    }
 
     // Create a notification
     await prisma.notification.create({

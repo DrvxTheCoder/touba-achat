@@ -230,7 +230,7 @@ export async function POST(request: Request) {
     console.log('Created EDB:', newEDB);
 
     // Log the EDB creation event
-    await logEDBEvent(newEDB.id, parseInt(userId), EDBEventType.CREATED);
+    await logEDBEvent(newEDB.id, parseInt(userId), EDBEventType.SUBMITTED);
 
     // If the initial status is not SUBMITTED, log a separate validation event
     if (initialStatus !== 'SUBMITTED') {
@@ -260,3 +260,172 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Error creating EDB', error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }
+
+// api/edb/route.ts
+
+// export async function GET(request: Request) {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session || !session.user) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     const { searchParams } = new URL(request.url);
+//     const page = parseInt(searchParams.get('page') || '1');
+//     const pageSize = parseInt(searchParams.get('pageSize') || '10');
+//     const search = searchParams.get('search') || '';
+//     const status = searchParams.get('status') || '';
+//     const skip = (page - 1) * pageSize;
+//     const role = session.user.role;
+
+//     const statusFilter = status ? status.split(',') as EDBStatus[] : [];
+
+//     let where: any = {
+//       OR: [
+//         { edbId: { contains: search, mode: 'insensitive' } },
+//         { title: { contains: search, mode: 'insensitive' } },
+//         { 
+//           description: {
+//             path: ['items'],
+//             array_contains: [{ designation: { contains: search } }]
+//           }
+//         },
+//       ],
+//       ...(statusFilter.length > 0 ? { status: { in: statusFilter } } : {}),
+//     };
+
+//         // Role-based filtering
+//         switch (role) {
+//           case 'RESPONSABLE':
+//           case 'DIRECTEUR':
+//             const employee = await prisma.employee.findUnique({
+//               where: { userId: parseInt(session.user.id) },
+//               select: { currentDepartmentId: true }
+//             });
+//             if (employee) {
+//               where.departmentId = employee.currentDepartmentId;
+//             }
+//             break;
+//           case 'IT_ADMIN':
+//             const itEmployee = await prisma.employee.findUnique({
+//               where: { userId: parseInt(session.user.id) },
+//               select: { currentDepartmentId: true }
+//             });
+//             where = {
+//               AND: [
+//                 { ...where }, // Keep existing search and status filters
+//                 {
+//                   OR: [
+//                     { departmentId: itEmployee?.currentDepartmentId },
+//                     { 
+//                       category: { 
+//                         name: { 
+//                           in: ['Logiciels et licences', 'Matériel informatique'] 
+//                         } 
+//                       } 
+//                     }
+//                   ]
+//                 }
+//               ]
+//             };
+//           break;
+//           case 'MAGASINIER':
+//             // Show only validated EDBs (approved by director or higher)
+//             where = {
+//               AND: [
+//                 { ...where }, // Keep existing search and status filters
+//                 {
+//                   status: {
+//                     notIn: [
+//                       'DRAFT',
+//                       'SUBMITTED',
+//                       'APPROVED_RESPONSABLE',
+//                       'REJECTED'
+//                     ]
+//                   }
+//                 }
+//               ]
+//             };
+//           break;
+//           case 'ADMIN':
+//           case 'DIRECTEUR_GENERAL':
+//           case 'AUDIT':
+//             // No additional filtering, they can see all EDAs
+//             break;
+//           default:
+//             // For any other role, only show their own department's EDAs
+//             const defaultEmployee = await prisma.employee.findUnique({
+//               where: { userId: parseInt(session.user.id) },
+//               select: { currentDepartmentId: true }
+//             });
+//             if (defaultEmployee) {
+//               where.departmentId = defaultEmployee.currentDepartmentId;
+//             }
+//             break;
+//         }
+
+//     const [edbs, totalCount] = await Promise.all([
+//       prisma.etatDeBesoin.findMany({
+//         where,
+//         skip,
+//         take: pageSize,
+//         include: {
+//           category: true,
+//           department: true,
+//           userCreator: true,
+//           orders: true,
+//           attachments: true,
+//           auditLogs: {
+//             include: {
+//               user: true
+//             },
+//             orderBy: {
+//               eventAt: 'asc'
+//             }
+//           }
+//         },
+//         orderBy: {
+//           createdAt: 'desc',
+//         },
+//       }),
+//       prisma.etatDeBesoin.count({ where }),
+//     ]);
+
+//     const formattedEDBs = edbs.map(edb => ({
+//       id: edb.id,
+//       edbId: edb.edbId,
+//       title: edb.title,
+//       description: edb.description,
+//       status: edb.status,
+//       categoryId: edb.categoryId,
+//       category: edb.category.name,
+//       createdAt: edb.createdAt.toISOString(),
+//       updatedAt: edb.updatedAt.toISOString(),
+//       department: edb.department.name,
+//       creator: {
+//         name: edb.userCreator.name,
+//       },
+//       totalAmount: edb.orders.reduce((sum, order) => sum + order.amount, 0),
+//       auditLogs: edb.auditLogs.map(log => ({
+//         id: log.id,
+//         eventType: log.eventType,
+//         eventAt: log.eventAt.toISOString(),
+//         user: {
+//           name: log.user.name,
+//         },
+//       })),
+//     }));
+
+//     return NextResponse.json({
+//       data: formattedEDBs,
+//       total: totalCount,
+//       page,
+//       pageSize,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching EDAs:', error);
+//     return NextResponse.json({ error: 'Erreur lors de la récuperation des états de besoins' }, { status: 500 });
+//   }
+// }
+
+// Keep your existing POST method here
