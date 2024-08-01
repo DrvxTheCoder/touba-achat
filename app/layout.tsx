@@ -6,6 +6,9 @@ import { ThemeProvider } from '@/components/theme-provider';
 import AuthProvider from '@/app/api/auth/[...nextauth]/auth-provider';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 import React from 'react';
 import './globals.css';
 
@@ -34,6 +37,7 @@ export default async function RootLayout({
             defaultTheme="new-york"
             enableSystem
           >
+            <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)}/>
             {children}
           </ThemeProvider>
         </AuthProvider>

@@ -1,25 +1,41 @@
-// import { getServerSession } from 'next-auth/next';
 import { createUploadthing, type FileRouter } from 'uploadthing/next';
-// import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 
 const f = createUploadthing();
 
+// TODO: Replace this with your actual authentication logic
 const auth = (req: Request) => ({ id: 'fakeId' }); // Fake auth function
 
-// FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
-  // Define as many FileRoutes as you like, each with a unique routeSlug
   avatar: f({ image: { maxFileSize: '4MB' } })
     .middleware(({ req }) => auth(req))
-    .onUploadComplete((data) => console.log('file', data)),
+    .onUploadComplete((data) => console.log('Avatar uploaded:', data)),
 
   generalMedia: f({
-    'application/pdf': { maxFileSize: '4MB', maxFileCount: 4 },
-    image: { maxFileSize: '2MB', maxFileCount: 4 },
-    video: { maxFileSize: '256MB', maxFileCount: 1 },
+    'application/pdf': { maxFileSize: '2MB', maxFileCount: 3 },
   })
-    .middleware(({ req }) => auth(req))
-    .onUploadComplete((data) => console.log('file', data)),
+    .middleware(async ({ req }) => {
+      // Run any authentication or validation logic here
+      const user = await auth(req);
+
+      // If you throw, the user will not be able to upload
+      if (!user) throw new Error("Unauthorized");
+
+      // Whatever is returned here is accessible in onUploadComplete as `metadata`
+      return { userId: user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // This code runs on your server after upload
+      console.log("EDB document uploaded for userId:", metadata.userId);
+      console.log("File details:", {
+        name: file.name,
+        size: file.size,
+        key: file.key,
+        url: file.url,
+      });
+
+      // Here you could save the file information to your database
+      // await saveFileToDatabase(metadata.userId, file);
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

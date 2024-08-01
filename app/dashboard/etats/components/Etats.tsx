@@ -1,6 +1,6 @@
 "use client"
 import * as React from "react"
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -113,6 +113,7 @@ import { ValidationDialog } from "./ValidationDialog"
 import { RejectionDialog } from "./RejectionDialog"
 import { StatusBadge } from "./StatusBadge"
 import { canPerformAction } from "../utils/can-perform-action"
+import { AttachDocumentDialog } from "./AttachDocumentDialog"
 
 const ITEMS_PER_PAGE = 5;
 const statusMapping = {
@@ -145,9 +146,19 @@ type UserRole = 'RESPONSABLE' | 'DIRECTEUR' | 'IT_ADMIN' | 'DIRECTEUR_GENERAL' |
 
 type StatusMappingKey = keyof typeof statusMapping;
 
+type AttachmentMetadata = {
+  file: File;
+  invoiceName: string;
+  supplierName: string;
+  totalAmount: number;
+  url?: string; // This will be added by the upload process
+};
+
 function isValidStatusMappingKey(key: string): key is StatusMappingKey {
   return key in statusMapping;
 }
+
+
 
 
 export default function Etats() {
@@ -161,6 +172,8 @@ export default function Etats() {
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [isAttachDocumentDialogOpen, setIsAttachDocumentDialogOpen] = useState(false);
+
 
   const userInfo = useMemo(() => ({
     role: session?.user?.role || '',
@@ -305,6 +318,55 @@ export default function Etats() {
       console.warn(`Invalid filter: ${filter}`);
     }
   };
+
+  useEffect(() => {
+    console.log("Dialog open state:", isAttachDocumentDialogOpen);
+  }, [isAttachDocumentDialogOpen]);
+
+  const handleOpenAttachDialog = useCallback(() => {
+    if (selectedEDB) {
+      setIsAttachDocumentDialogOpen(true);
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un EDB avant d'attacher des documents.",
+        variant: "destructive",
+      });
+    }
+  }, [selectedEDB]);
+  const handleUploadSuccess = useCallback(async (attachments: AttachmentMetadata[]) => {
+    if (!selectedEDB) return;
+
+    try {
+      // Here you would typically send the attachments data to your backend
+      const response = await fetch(`/api/edb/${selectedEDB.queryId}/attachments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attachments }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save attachments');
+      }
+
+      // Refresh the EDB data
+      await refetch();
+
+      toast({
+        title: "Succès",
+        description: `${attachments.length} document(s) ont été attachés à l'EDB #${selectedEDB.id}.`,
+      });
+    } catch (error) {
+      console.error('Error saving attachments:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'enregistrement des documents.",
+        variant: "destructive",
+      });
+    }
+  }, [selectedEDB, refetch]);
 
   
 
@@ -631,8 +693,9 @@ export default function Etats() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>Modifier</DropdownMenuItem>
                         
-                        <DropdownMenuItem>Joindre document(s)
-                          <DropdownMenuShortcut><Paperclip className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        <DropdownMenuItem onSelect={handleOpenAttachDialog}>
+                          Joindre document(s)
+                          <Paperclip className="ml-2 h-4 w-4" />
                         </DropdownMenuItem>
                         <DropdownMenuItem disabled>Bon de Commande
                         <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
@@ -657,6 +720,11 @@ export default function Etats() {
 
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    <AttachDocumentDialog 
+                      isOpen={isAttachDocumentDialogOpen}
+                      onOpenChange={setIsAttachDocumentDialogOpen}
+                      onUploadSuccess={handleUploadSuccess}
+                    />
                     {selectedEDB && (
                       <>
                         <ValidationDialog 

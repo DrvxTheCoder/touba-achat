@@ -34,7 +34,7 @@ type EDBDetailsCardProps = {
 
 export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
   return (
-    <Card className="overflow-hidden lg:block hidden">
+    <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-start border-b">
         <div className="grid gap-0.5">
           <CardTitle className="group flex items-center gap-2 text-lg hover:underline underline-offset-2">
