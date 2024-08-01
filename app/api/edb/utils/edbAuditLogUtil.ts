@@ -26,7 +26,7 @@ export async function logEDBEvent(
 // Helper function to get the appropriate EDBEventType based on the new status
 function getEventTypeFromStatus(status: EDBStatus): EDBEventType {
   switch (status) {
-    case 'DRAFT': return EDBEventType.CREATED;
+    case 'DRAFT': return EDBEventType.DRAFT_CREATED;
     case 'SUBMITTED': return EDBEventType.SUBMITTED;
     case 'APPROVED_RESPONSABLE': return EDBEventType.APPROVED_RESPONSABLE;
     case 'APPROVED_DIRECTEUR': return EDBEventType.APPROVED_DIRECTEUR;

@@ -59,7 +59,7 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
                 status: edb.status as EDBStatus, // Cast to EDBStatus if necessary
                 auditLogs: edb.auditLogs
             }} 
-            />
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="outline" className="h-8 w-8">

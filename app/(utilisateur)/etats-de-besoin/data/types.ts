@@ -34,7 +34,7 @@ export type EDBStatus =
     totalAmount: number;
     auditLogs: Array<{
       id: number;
-      eventType: string;
+      eventType: EDBEventType;
       eventAt: string;
       user: {
         name: string;
