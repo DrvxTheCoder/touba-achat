@@ -31,7 +31,7 @@ export function Sidebar() {
           variant="link"
           asChild
         >
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/acceuil" className="flex items-center gap-2">
           <CustomLogoSVG width="2rem" height="2rem" />
             {/* <h1
               className={cn(

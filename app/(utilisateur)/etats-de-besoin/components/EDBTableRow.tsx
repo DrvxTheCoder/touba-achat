@@ -17,15 +17,16 @@ const getStatusBadge = (status: string) => {
     case 'DRAFT':
       return <Badge variant="secondary" className="text-xs">Brouillon</Badge>;
     case 'SUBMITTED':
-      return <Badge variant="outline" className="text-xs">Soumis</Badge>;
+      return <Badge variant="outline" className="text-xs"><small>Soumis</small></Badge>;
     case 'APPROVED_RESPONSABLE':
       return <Badge variant="secondary" className="text-xs">Approuvé (Resp.)</Badge>;
     case 'APPROVED_DIRECTEUR':
-      return <Badge variant="secondary" className="text-xs">(Dir.)</Badge>;
     case 'APPROVED_DG':
-      return <Badge variant="secondary" className="text-xs">Approuvé (DG)</Badge>;
+      return <Badge variant="secondary" className="text-xs"><small>Approuvé</small></Badge>;
     case 'REJECTED':
       return <Badge variant="destructive" className="text-xs">Rejeté</Badge>;
+    case 'MAGASINIER_ATTACHED':
+      return <Badge variant="outline" className="text-xs"><small>Traité</small></Badge>;
     default:
       return <Badge variant="default" className="text-xs">{status}</Badge>;
   }

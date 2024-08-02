@@ -129,7 +129,7 @@ export default function EtatsDeBesoinPage() {
                       </TableRow>
                     ) : edbs.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center">Aucun état de besoin trouvé.</TableCell>
+                        <TableCell colSpan={6} className="text-center">Aucun état de besoin trouvé.</TableCell>
                       </TableRow>
                     ) : (
                       edbs.map((edb) => (

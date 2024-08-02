@@ -6,7 +6,7 @@ import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
 import { ModeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
-import { Home, Menu, Package, ShoppingCart, Users, SettingsIcon, Search, CircleUser, LogOut, HomeIcon, User } from "lucide-react";
+import { Home, Menu, Package, ShoppingCart, Users, SettingsIcon, Search, CircleUser, LogOut, HomeIcon, User, Layout, LayoutGrid } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -44,8 +44,8 @@ export default function Header (){
 
 
     const links =  hasReadAccess ? [
-        { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
-        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 6 },
+        { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
+        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
         { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
         { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
         { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }

@@ -6,6 +6,7 @@ import generateEDBId from './utils/edb-id-generator';
 import { Prisma, EDBStatus } from '@prisma/client';
 import { logEDBEvent } from './utils/edbAuditLogUtil';
 
+
 const prisma = new PrismaClient();
 
 
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
     // Role-based filtering
     switch (role) {
       case 'RESPONSABLE':
-      case 'DIRECTEUR':
+      // case 'DIRECTEUR':
         const employee = await prisma.employee.findUnique({
           where: { userId: parseInt(session.user.id) },
           select: { currentDepartmentId: true }

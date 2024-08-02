@@ -39,7 +39,7 @@ export async function POST(
         }
         break;
       case 'DIRECTEUR':
-        if (edb.status === 'SUBMITTED') {
+        if (edb.status === 'SUBMITTED' || edb.status === 'APPROVED_RESPONSABLE') {
           newStatus = 'APPROVED_DIRECTEUR';
         } else {
           return NextResponse.json({ message: 'Non autorisé à approuver à cette étape' }, { status: 403 });

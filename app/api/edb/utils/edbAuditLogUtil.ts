@@ -54,7 +54,7 @@ export async function updateEDBStatus(
 ): Promise<void> {
   const updatedEDB = await prisma.etatDeBesoin.update({
     where: { id: edbId },
-    data: { status: newStatus },
+    data: { status: newStatus, updatedAt: new Date() },
   });
 
   await logEDBEvent(
@@ -65,32 +65,41 @@ export async function updateEDBStatus(
   );
 }
 
-// Example usage for attachment operations
 export async function addAttachmentToEDB(
   edbId: number,
   userId: number,
   attachmentData: {
     filePath: string;
-    fileName: string;
+    fileName?: string;
     supplierName: string;
     totalAmount: number;
     type: AttachmentType;
   }
 ): Promise<void> {
-  await prisma.attachment.create({
-    data: {
-      ...attachmentData,
-      edbId,
-      uploadedBy: userId,
-    },
-  });
+  try {
+    console.log('Attachment data:', attachmentData);
 
-  await logEDBEvent(
-    edbId,
-    userId,
-    EDBEventType.ATTACHMENT_ADDED,
-    { fileName: attachmentData.fileName, attachmentType: attachmentData.type }
-  );
+    const createdAttachment = await prisma.attachment.create({
+      data: {
+        ...attachmentData,
+        fileName: attachmentData.fileName || 'Facture Pro Forma',
+        edbId,
+        uploadedBy: userId,
+      },
+    });
+
+    console.log('Created attachment:', createdAttachment);
+
+    await logEDBEvent(
+      edbId,
+      userId,
+      EDBEventType.MAGASINIER_ATTACHED,
+      { fileName: createdAttachment.fileName, attachmentType: attachmentData.type }
+    );
+  } catch (error) {
+    console.error('Error adding attachment to EDB:', error);
+    throw error;
+  }
 }
 
 // New function for removing attachments

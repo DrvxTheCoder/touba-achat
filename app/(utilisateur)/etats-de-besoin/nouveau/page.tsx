@@ -111,7 +111,7 @@ export default function NouveauEtatsDeBesoinPage() {
           description: `L'EDB ${result.edbId} a été créé.`,
         });
   
-        router.push('/dashboard/etats');
+        router.push('/etats-de-besoin');
       } catch (err) {
         setError('Une erreur est survenue lors de la création de l\'EDB');
         toast({

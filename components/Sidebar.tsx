@@ -5,7 +5,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
-import { Home, Package, ShoppingCart, Users, SettingsIcon, LogOut } from "lucide-react";
+import { Home, Package, ShoppingCart, Users, SettingsIcon, LogOut, LayoutGrid } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -16,8 +16,8 @@ export default function Sidebar(){
     const { hasReadAccess, hasWriteAccess } = useAllowedRoles();
 
     const links = hasReadAccess ? [
-        { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
-        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 6 },
+        { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
+        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
         { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
         { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
         { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }

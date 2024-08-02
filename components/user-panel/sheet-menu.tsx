@@ -9,6 +9,9 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+// import CustomLogoSVG from "../logos/CustomLogoSVG";
+import CustomLogoSVG from "../logos/CustomLogoSVGTwo";
+
 
 export function SheetMenu() {
   return (
@@ -22,12 +25,11 @@ export function SheetMenu() {
         <SheetHeader>
           <Button
             className="flex justify-center items-center pb-2 pt-1"
-            variant="link"
+            variant="ghost"
             asChild
           >
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <PanelsTopLeft className="w-6 h-6 mr-1" />
-              <h1 className="text-lg">ToubaApp™</h1>
+            <Link href="/acceuil" className="flex items-center gap-2">
+            <CustomLogoSVG width="8rem" height="auto" />
             </Link>
           </Button>
         </SheetHeader>
