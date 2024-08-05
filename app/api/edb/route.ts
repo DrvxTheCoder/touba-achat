@@ -122,7 +122,16 @@ export async function GET(request: Request) {
           department: true,
           userCreator: true,
           orders: true,
+          finalSupplier: true,
           attachments: true,
+          auditLogs: {
+            include: {
+              user: true
+            },
+            orderBy: {
+              eventAt: 'asc'
+            }
+          }
         },
         orderBy: {
           createdAt: 'desc',
@@ -132,8 +141,8 @@ export async function GET(request: Request) {
     ]);
 
     const formattedEDBs = edbs.map(edb => ({
-      id: edb.edbId,
-      queryId: edb.id,
+      id: edb.id,
+      edbId: edb.edbId,
       title: edb.title,
       category: edb.category.name,
       status: edb.status,
@@ -151,6 +160,29 @@ export async function GET(request: Request) {
       },
       documents: edb.attachments.map(attachment => attachment.fileName),
       date: edb.createdAt.toISOString().split('T')[0],
+      auditLogs: edb.auditLogs.map(log => ({
+        id: log.id,
+        eventType: log.eventType,
+        eventAt: log.eventAt.toISOString(),
+        user: {
+          name: log.user.name,
+        },
+      })),
+      attachments: edb.attachments.map(attachment => ({
+        id: attachment.id,
+        fileName: attachment.fileName,
+        filePath: attachment.filePath,
+        supplierName: attachment.supplierName,
+        totalAmount: attachment.totalAmount,
+      })),
+      finalSupplier: edb.finalSupplier ? {
+        id: edb.finalSupplier.id,
+        filePath: edb.finalSupplier.filePath,
+        supplierName: edb.finalSupplier.supplierName,
+        amount: edb.finalSupplier.amount,
+        chosenAt: edb.finalSupplier.chosenAt.toISOString(),
+        chosenBy: edb.finalSupplier.chosenBy,
+      } : null,
     }));
 
     return NextResponse.json({

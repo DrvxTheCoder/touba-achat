@@ -17,15 +17,15 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { session, loading } = useRequireAuth([Role.ADMIN, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.MAGASINIER, Role.AUDIT, Role.IT_ADMIN ]);
+  // const { session, loading } = useRequireAuth([Role.ADMIN, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.MAGASINIER, Role.AUDIT, Role.IT_ADMIN ]);
 
-  if (loading) {
-    return <div>Chargement...</div>;
-  }
+  // if (loading) {
+  //   return <div>Chargement...</div>;
+  // }
 
-  if (!session) {
-    return null;
-  }
+  // if (!session) {
+  //   return null;
+  // }
 
   return (
     <>

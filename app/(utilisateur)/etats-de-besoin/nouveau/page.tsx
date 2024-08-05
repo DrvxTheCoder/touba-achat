@@ -25,6 +25,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { ReloadIcon } from '@radix-ui/react-icons';
+import { Icons } from '@/components/icons';
 
 // Define the Zod schema
 const edbSchema = z.object({
@@ -268,7 +270,10 @@ export default function NouveauEtatsDeBesoinPage() {
                 
                 <CardFooter className="flex justify-end gap-2 pt-4 px-0">
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Chargement...' : 'Émettre'}
+                    {isLoading && (
+                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                      {isLoading ? 'En cours...' : 'Émettre'}
                   </Button>
                 </CardFooter>
             </Form>

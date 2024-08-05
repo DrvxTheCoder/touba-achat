@@ -63,8 +63,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
     );
 
-    await updateEDBStatus(edbId, EDBStatus.MAGASINIER_ATTACHED, userId);
-
     return NextResponse.json({ message: 'Attachments saved and events logged successfully', attachments: savedAttachments }, { status: 200 });
   } catch (error) {
     console.error('Error saving attachments:', error);

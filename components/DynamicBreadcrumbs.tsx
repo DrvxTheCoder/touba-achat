@@ -56,7 +56,7 @@ export default function DynamicBreadcrumbs() {
   const breadcrumbs = generateBreadcrumbs(pathname);
 
   return (
-    <Breadcrumb className='p-4 '>
+    <Breadcrumb className='p-4'>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink href="/" className='text-xs'>Accueil</BreadcrumbLink>

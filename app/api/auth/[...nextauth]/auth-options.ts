@@ -1,4 +1,4 @@
-import { DefaultSession, type NextAuthOptions } from 'next-auth';
+import { DefaultSession, User, type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { pagesOptions } from './pages-options';
 import { PrismaClient, UserStatus, Role } from '@prisma/client';
@@ -108,7 +108,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
             status: user.status,
             isSimpleUser: user.role === Role.USER,
-          };
+          } as User; // Add this type assertion
         } catch (error) {
           console.error('Erreur lors de l\'autorisation:', error);
           if (error instanceof Error) {

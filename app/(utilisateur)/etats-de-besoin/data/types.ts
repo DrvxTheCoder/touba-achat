@@ -17,6 +17,7 @@ export type EDBStatus =
   | 'COMPLETED';
 
   export type EDB = {
+    items: any;
     id: string;
     edbId: string;
     title: string;
@@ -28,9 +29,12 @@ export type EDBStatus =
     createdAt: string;
     updatedAt: string;
     department: string;
-    creator: {
+    employee: {
       name: string;
+      department: string;
+      email: string;
     };
+    email: string;
     totalAmount: number;
     auditLogs: Array<{
       id: number;
@@ -44,7 +48,9 @@ export type EDBStatus =
       id: number;
       fileName: string;
       filePath: string;
+      supplierName: string;
     }>;
+    finalSupplier: FinalSupplier | null; 
   };
 
   export type EDBEventType = 
@@ -60,5 +66,22 @@ export type EDBStatus =
     | 'ESCALATED'
     | 'MAGASINIER_ATTACHED'
     | 'SUPPLIER_CHOSEN'
-    | 'IT_APPROVED'
+    // | 'IT_APPROVED'
     | 'COMPLETED';
+
+    export type Attachment = {
+      id: number;
+      fileName: string;
+      filePath: string;
+      supplierName: string;
+      totalAmount?: number; // Make this optional
+    };
+
+export type FinalSupplier = {
+  id: number;
+  filePath: string;
+  supplierName: string;
+  amount: number;
+  chosenAt: string;
+  chosenBy: number;
+};

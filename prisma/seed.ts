@@ -1,20 +1,21 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, Access, EDBStatus, CategoryType, EDBEventType, AttachmentType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-export async function main() {
+async function main() {
   const saltRounds = 10;
 
   // Test database connection
   try {
     await prisma.$connect();
-    console.log('Connected to the database successfully.');
+    console.log('Connexion à la base de données réussie.');
   } catch (error) {
-    console.error('Failed to connect to the database:', error);
+    console.error('Échec de la connexion à la base de données:', error);
     process.exit(1);
   }
 
+  // Create departments
   // Create departments
   const departmentNames = [
     'Administration IT',
@@ -36,7 +37,44 @@ export async function main() {
     })
   );
 
-  console.log('Departments created successfully.');
+
+  console.log('Départements créés avec succès.');
+
+  // Create categories
+  const categories = [
+    { name: 'Équipement de distribution', type: CategoryType.DEFAULT },
+    { name: 'Matériel de stockage', type: CategoryType.DEFAULT },
+    { name: 'Véhicules et transport', type: CategoryType.DEFAULT },
+    { name: 'Équipement de sécurité', type: CategoryType.DEFAULT },
+    { name: 'Fournitures de bureau', type: CategoryType.DEFAULT },
+    { name: 'Matériel informatique', type: CategoryType.DEFAULT },
+    { name: 'Maintenance et réparations', type: CategoryType.DEFAULT },
+    { name: 'Formation et développement', type: CategoryType.DEFAULT },
+    { name: 'Équipement de protection individuelle', type: CategoryType.DEFAULT },
+    { name: 'Outils et équipements spécialisés', type: CategoryType.DEFAULT },
+    { name: 'Marketing et publicité', type: CategoryType.DEFAULT },
+    { name: 'Services professionnels', type: CategoryType.DEFAULT },
+    { name: 'Logiciels et licences', type: CategoryType.DEFAULT },
+    { name: 'Mobilier de bureau', type: CategoryType.DEFAULT },
+    { name: 'Équipement de laboratoire', type: CategoryType.DEFAULT },
+    { name: 'Uniformes et vêtements de travail', type: CategoryType.DEFAULT },
+    { name: 'Équipement de communication', type: CategoryType.DEFAULT },
+    { name: 'Fournitures d\'entretien', type: CategoryType.DEFAULT },
+    { name: 'Carburant pour véhicules de société', type: CategoryType.DEFAULT },
+    { name: 'Équipement environnemental', type: CategoryType.DEFAULT },
+    { name: 'Divers / Non-catégorisé', type: CategoryType.DEFAULT },
+    { name: 'Catégorie personnalisée', type: CategoryType.CUSTOM },
+  ];
+
+  for (const category of categories) {
+    await prisma.category.upsert({
+      where: { name: category.name },
+      update: {},
+      create: category,
+    });
+  }
+
+  console.log('Catégories créées avec succès.');
 
   // Create users and employees
   const usersData = [
@@ -44,29 +82,73 @@ export async function main() {
       name: 'Administrateur',
       email: 'admin@touba-oil.com',
       role: Role.ADMIN,
+      access: [Access.APPROVE_EDB, Access.FINAL_APPROVAL],
       departmentName: 'Administration IT',
       matriculation: 'ADM001',
+    },
+    {
+      name: 'Djiby Seye',
+      email: 'dseye@touba-oil.com',
+      role: Role.DIRECTEUR_GENERAL,
+      access: [Access.APPROVE_EDB, Access.FINAL_APPROVAL],
+      departmentName: 'Direction Générale',
+      matriculation: '25241',
+    },
+    {
+      name: 'Keba Gnabaly',
+      email: 'keba.gnabal@touba-oil.com',
+      role: Role.MAGASINIER,
+      access: [Access.ATTACH_DOCUMENTS],
+      departmentName: 'Direction Opération Gaz',
+      matriculation: '24040',
     },
     {
       name: 'Bescaye Diop',
       email: 'bescaye.diop@touba-oil.com',
       role: Role.RESPONSABLE,
+      access: [Access.APPROVE_EDB],
       departmentName: 'Direction Administrative et Financière',
       matriculation: '26263',
+    },
+    {
+      name: 'Alboury Ndao',
+      email: 'alboury.ndao@touba-oil.com',
+      role: Role.RESPONSABLE,
+      access: [Access.APPROVE_EDB],
+      departmentName: 'Direction Administrative et Financière',
+      matriculation: '25672',
     },
     {
       name: 'Ibra Diop',
       email: 'ibra.diop@touba-oil.com',
       role: Role.DIRECTEUR,
+      access: [Access.APPROVE_EDB],
       departmentName: 'Direction Ressources Humaines',
       matriculation: '26294',
+    },
+    {
+      name: 'Safietou Ndour',
+      email: 'mme.ndour@touba-oil.com',
+      role: Role.DIRECTEUR,
+      access: [Access.APPROVE_EDB],
+      departmentName: 'Direction Administrative et Financière',
+      matriculation: '26290',
     },
     {
       name: 'Aminata Gaye',
       email: 'aminata.gaye@touba-oil.com',
       role: Role.USER,
+      access: [],
       departmentName: 'Direction Générale',
       matriculation: '26346',
+    },
+    {
+      name: 'Paul Flan',
+      email: 'paul.flan@touba-oil.com',
+      role: Role.IT_ADMIN,
+      access: [Access.IT_APPROVAL],
+      departmentName: 'Direction Administrative et Financière',
+      matriculation: '26344',
     },
   ];
 
@@ -80,6 +162,7 @@ export async function main() {
         name: userData.name,
         email: userData.email,
         role: userData.role,
+        access: userData.access,
         password: hashedPassword,
       },
     });
@@ -87,7 +170,7 @@ export async function main() {
     const department = departments.find(d => d.name === userData.departmentName);
 
     if (!department) {
-      console.error(`Department not found: ${userData.departmentName}`);
+      console.error(`Département non trouvé: ${userData.departmentName}`);
       continue;
     }
 
@@ -98,35 +181,80 @@ export async function main() {
         name: userData.name,
         email: userData.email,
         matriculation: userData.matriculation,
-        phoneNumber: '+1234567890', // Placeholder phone number
+        phoneNumber: '+221123456789', // Placeholder phone number
         userId: user.id,
         currentDepartmentId: department.id,
       },
     });
 
-    console.log(`Upserted user and employee: ${userData.name}`);
+    console.log(`Utilisateur et employé créés/mis à jour: ${userData.name}`);
   }
 
   // Create a user without an employee record
   const nonEmployeeUser = await prisma.user.upsert({
-    where: { email: 'consultant@example.com' },
+    where: { email: 'audit@touba-oil.com' },
     update: {},
     create: {
-      name: 'Auditeur',
-      email: 'consultant@example.com',
+      name: 'Audit',
+      email: 'audit@touba-oil.com',
       role: Role.AUDIT,
-      password: await bcrypt.hash('consultant123', saltRounds),
+      access: [],
+      password: await bcrypt.hash('audit123', saltRounds),
     },
   });
 
-  console.log(`Upserted non-employee user: ${nonEmployeeUser.name}`);
+  console.log(`Utilisateur non-employé créé/mis à jour: ${nonEmployeeUser.name}`);
 
-  console.log('Seeding completed.');
+  // // Create sample EtatDeBesoin
+  // const sampleEDB = await prisma.etatDeBesoin.create({
+  //   data: {
+  //     edbId: 'EDB001',
+  //     title: 'Achat de matériel informatique',
+  //     description: { details: 'Besoin de 5 nouveaux ordinateurs portables pour l\'équipe de développement.' },
+  //     status: EDBStatus.SUBMITTED,
+  //     department: { connect: { name: 'Administration IT' } },
+  //     creator: { connect: { email: 'paul.flan@touba-oil.com' } },
+  //     userCreator: { connect: { email: 'paul.flan@touba-oil.com' } },
+  //     category: { connect: { name: 'Matériel informatique' } },
+  //     itApprovalRequired: true,
+  //   },
+  // });
+
+  // console.log('EtatDeBesoin exemple créé avec succès.');
+
+  // // Create sample EtatDeBesoinAuditLog
+  // await prisma.etatDeBesoinAuditLog.create({
+  //   data: {
+  //     etatDeBesoin: { connect: { id: sampleEDB.id } },
+  //     user: { connect: { email: 'paul.flan@touba-oil.com' } },
+  //     eventType: EDBEventType.SUBMITTED,
+  //     details: { action: 'Soumission initiale de l\'EDB' },
+  //   },
+  // });
+
+  // console.log('Journal d\'audit EDB exemple créé avec succès.');
+
+  // // Create sample Attachment
+  // await prisma.attachment.create({
+  //   data: {
+  //     edb: { connect: { id: sampleEDB.id } },
+  //     filePath: '/uploads/devis_informatique.pdf',
+  //     fileName: 'devis_informatique.pdf',
+  //     supplierName: 'InfoTech SARL',
+  //     totalAmount: 5000000,
+  //     uploader: { connect: { email: 'paul.flan@touba-oil.com' } },
+  //     type: AttachmentType.INITIAL,
+  //   },
+  // });
+
+  // console.log('Pièce jointe exemple créée avec succès.');
+
+  console.log('Alimentation de la base de données terminée.');
 }
 
 main()
   .catch((e) => {
-    console.error('An error occurred during seeding:', e);
+    console.error('Une erreur s\'est produite lors de l\'alimentation de la base de données:', e);
     process.exit(1);
   })
   .finally(async () => {

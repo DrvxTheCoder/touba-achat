@@ -15,17 +15,15 @@ export default function Sidebar(){
     const { data: session } = useSession();
     const { hasReadAccess, hasWriteAccess } = useAllowedRoles();
 
-    const links = hasReadAccess ? [
+    const links = hasWriteAccess ? [
         { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
         { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
         { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
         { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
         { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
     ] : [
-        { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
-        { href: "/dashboard/mes-edbs", icon: Package, label: "Mes EDBs", badgeCount: 6 },
-        { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
-        { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
+        { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
+        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
     ];
 
     const isLinkActive = (href: string) => {

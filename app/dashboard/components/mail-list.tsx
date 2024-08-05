@@ -17,7 +17,7 @@ export function MailList({ items }: MailListProps) {
 
   return (
     <div className="p-2 border rounded-lg">
-      <ScrollArea  style={{height: "35rem"}}>
+      <ScrollArea  style={{height: "20rem"}}>
       <div className="flex flex-col gap-2 py-2 pt-0">
         {items.map((item) => (
           <button

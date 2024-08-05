@@ -90,11 +90,22 @@ export async function addAttachmentToEDB(
 
     console.log('Created attachment:', createdAttachment);
 
+    // Update EDB status
+    await prisma.etatDeBesoin.update({
+      where: { id: edbId },
+      data: { status: 'MAGASINIER_ATTACHED' },
+    });
+
+    // Log only one event
     await logEDBEvent(
       edbId,
       userId,
       EDBEventType.MAGASINIER_ATTACHED,
-      { fileName: createdAttachment.fileName, attachmentType: attachmentData.type }
+      { 
+        fileName: createdAttachment.fileName, 
+        attachmentType: attachmentData.type,
+        newStatus: 'MAGASINIER_ATTACHED'
+      }
     );
   } catch (error) {
     console.error('Error adding attachment to EDB:', error);
@@ -156,7 +167,7 @@ export async function chooseFinalSupplier(
   await logEDBEvent(
     edbId,
     userId,
-    EDBEventType.UPDATED,
+    EDBEventType.SUPPLIER_CHOSEN,
     { action: 'SUPPLIER_CHOSEN', supplierName: supplierData.supplierName }
   );
 }

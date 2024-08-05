@@ -7,7 +7,8 @@ const statusMapping: Record<string, string[]> = {
   'Soumis': ['SUBMITTED'],
   'Validé': ['APPROVED_RESPONSABLE', 'APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
   'En attente': ['AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
-  'En cours': ['MAGASINIER_ATTACHED', 'SUPPLIER_CHOSEN'],
+  'Facture Rattaché': ['MAGASINIER_ATTACHED'],
+  'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],
   'Rejeté': ['REJECTED'],
   'Complété': ['COMPLETED'],
 };
@@ -44,7 +45,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
 
   return (
     <Badge className={`m-1 ${textSizeClass}`} variant={variant}>
-      {displayStatus}
+      <small>{displayStatus}</small>
     </Badge>
   );
 };

@@ -121,14 +121,14 @@ const chartData = [
 
 const chartConfig = {
   visitors: {
-    label: "Visitors",
+    label: "États de besoins",
   },
   desktop: {
-    label: "Desktop",
+    label: "Traité",
     color: "hsl(var(--chart-1))",
   },
   mobile: {
-    label: "Mobile",
+    label: "Non-traité",
     color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig
@@ -155,7 +155,7 @@ export default function OverviewChart() {
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle>Fréquences EDB</CardTitle>
           <CardDescription>
-            Showing total visitors for the last 3 months
+            Rapport Trimestriale sur les EDBs émit
           </CardDescription>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>

@@ -1,6 +1,6 @@
 // useEDBs.ts
 import { useState, useEffect, useCallback } from 'react';
-import { EDB } from '../data-two/data';
+import { EDBStatus, EDB } from '@/app/(utilisateur)/etats-de-besoin/data/types';
 
 interface PaginatedEDBs {
   edbs: EDB[];

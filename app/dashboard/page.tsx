@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, ArrowUpRight, CheckCircle2Icon, Clock, CreditCard, DollarSign, LuggageIcon, Package2Icon, PackageIcon, Users, Search, Slash, ChevronRight } from "lucide-react";
+import { Activity, ArrowUpRight, CheckCircle2Icon, Clock, CreditCard, DollarSign, LuggageIcon, Package2Icon, PackageIcon, Users, Search, Slash, ChevronRight, AlertCircle, Bell } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -67,17 +67,17 @@ export default function Dashboard (){
           <Tabs defaultValue="edb" className="space-y-2 flex flex-col items-center sm:max-w-90">
             <TabsList className="max-w-md">
               <TabsTrigger value="edb">EDB</TabsTrigger>
-              <TabsTrigger value="odm">ODM</TabsTrigger>
+              {/* <TabsTrigger value="odm">ODM</TabsTrigger> */}
               <TabsTrigger value="analytics">Analytiques</TabsTrigger>
-              <TabsTrigger value="notifications">
+              {/* <TabsTrigger value="notifications">
                 Alertes
-                {/* {badgeCount > 0 && (
+                 {badgeCount > 0 && (
                     <Badge className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                        {badgeCount} 
-                    </Badge>)} */}
-              </TabsTrigger>
+                    </Badge>)}
+              </TabsTrigger> */}
             </TabsList>
-            <ScrollArea className="w-full h-[40rem] p-2 rounded-lg">
+            <ScrollArea className="w-full h-[40rem] px-2 rounded-lg border">
                           {/* Start Etats de besoins */}
             <TabsContent value="edb" className="space-y-4 w-full">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -158,10 +158,10 @@ export default function Dashboard (){
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                   <CardHeader>
-                    <CardTitle>Overview</CardTitle>
+                    <CardTitle className="flex flex-row items-center justify-between space-y-0">Alertes <Bell /></CardTitle>
                   </CardHeader>
                   <CardContent className="pl-2">
-                    <Overview />
+                    <MailList items={mails.filter((item) => !item.read)} />
                   </CardContent>
                 </Card>
                 <CardsMetric2 />
@@ -238,7 +238,7 @@ export default function Dashboard (){
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                   <CardHeader>
-                    <CardTitle>Overview</CardTitle>
+                    <CardTitle>Vue d&apos;ensemble</CardTitle>
                   </CardHeader>
                   <CardContent className="pl-2">
                     <Overview />
@@ -251,6 +251,7 @@ export default function Dashboard (){
             {/* Start Analytiques */}
             <TabsContent value="analytics" className="space-y-4 w-full">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <OverviewChart />
                 <Card className="col-span-4">
                   <CardHeader>
                     <CardTitle>Vue d&apos;ensemble</CardTitle>
@@ -260,14 +261,14 @@ export default function Dashboard (){
                   </CardContent>
                 </Card>
                 <CardsMetric2 />
-                <OverviewChart />
+                
               </div>
             </TabsContent>
             {/* End Analytiques */}
             {/* Start Notifications */}
-            <TabsContent value="notifications">
+            {/* <TabsContent value="notifications">
               <MailList items={mails.filter((item) => !item.read)} />
-            </TabsContent>
+            </TabsContent> */}
             {/* Ends Notifications */}
             </ScrollArea>
           </Tabs>

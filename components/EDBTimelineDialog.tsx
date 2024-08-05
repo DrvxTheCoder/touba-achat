@@ -41,7 +41,6 @@ const keyEvents = [
   'APPROVAL',
   'MAGASINIER',
   'SUPPLIER',
-  'IT_APPROVAL',
   'FINAL_APPROVAL',
   'COMPLETED'
 ] as const;
@@ -59,7 +58,6 @@ const eventTypeToKeyEvent: Record<EDBEventType, KeyEvent> = {
   ESCALATED: 'APPROVAL',
   MAGASINIER_ATTACHED: 'MAGASINIER',
   SUPPLIER_CHOSEN: 'SUPPLIER',
-  IT_APPROVED: 'IT_APPROVAL',
   COMPLETED: 'COMPLETED'
 };
 
@@ -74,9 +72,17 @@ const statusTranslations: Record<EDBEventType, string> = {
   ATTACHMENT_ADDED: "Pièce jointe ajoutée",
   ATTACHMENT_REMOVED: "Pièce jointe supprimée",
   ESCALATED: "Escaladé",
-  MAGASINIER_ATTACHED: "Traité par le Magasinier",
+  MAGASINIER_ATTACHED: "Pièce jointe par le Magasinier",
   SUPPLIER_CHOSEN: "Fournisseur choisi",
-  IT_APPROVED: "Approuvé par l'IT",
+  COMPLETED: "Terminé"
+};
+
+const keyEventTranslations: Record<KeyEvent, string> = {
+  CREATION: "Création",
+  APPROVAL: "Approbation",
+  MAGASINIER: "Traitement Magasinier",
+  SUPPLIER: "Choix du Fournisseur",
+  FINAL_APPROVAL: "Approbation Finale",
   COMPLETED: "Terminé"
 };
 
@@ -89,7 +95,6 @@ const eventTypeIcons: Record<KeyEvent, React.ElementType> = {
   APPROVAL: Stamp,
   MAGASINIER: Package,
   SUPPLIER: ShoppingCart,
-  IT_APPROVAL: AlertTriangle,
   FINAL_APPROVAL: CheckCircle2,
   COMPLETED: Printer
 };
@@ -133,8 +138,6 @@ const getEventStatus = (edb: EDBTimelineProps['edb'], keyEvent: KeyEvent) => {
       return latestEvent.eventType === 'MAGASINIER_ATTACHED' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'PENDING');
     case 'SUPPLIER':
       return latestEvent.eventType === 'SUPPLIER_CHOSEN' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'PENDING');
-    case 'IT_APPROVAL':
-      return latestEvent.eventType === 'IT_APPROVED' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'PENDING');
     case 'FINAL_APPROVAL':
       if (latestEvent.eventType === 'APPROVED_DG') return 'COMPLETED';
       if (latestEvent.eventType === 'REJECTED') return 'REJECTED';
@@ -198,7 +201,7 @@ const EventNode: React.FC<{ edb: EDBTimelineProps['edb']; keyEvent: KeyEvent }> 
       <PopoverContent className="w-80">
         <div className="grid gap-4">
           <div className="space-y-2">
-          <h4 className="font-medium leading-none">{keyEvent}</h4>
+          <h4 className="font-medium leading-none">{keyEventTranslations[keyEvent]}</h4>
             <p className="text-sm text-muted-foreground">
               {status === 'COMPLETED' ? 'Terminé' : 
                status === 'IN_PROGRESS' ? 'En cours' : 
@@ -292,7 +295,7 @@ export const EDBTimelineDialog: React.FC<EDBTimelineDialogProps> = ({ edb }) => 
       </DialogTrigger>
       <DialogContent className="sm:max-w-[825px]">
         <DialogHeader>
-          <DialogTitle className="border-b pb-4">Traquer : #{edb.edbId}</DialogTitle>
+          <DialogTitle className="border-b pb-4">{edb.edbId}</DialogTitle>
         </DialogHeader>
         {error ? (
           <div className="flex items-center justify-center p-4 text-destructive">

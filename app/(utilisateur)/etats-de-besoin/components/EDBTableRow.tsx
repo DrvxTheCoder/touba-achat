@@ -27,6 +27,8 @@ const getStatusBadge = (status: string) => {
       return <Badge variant="destructive" className="text-xs">Rejeté</Badge>;
     case 'MAGASINIER_ATTACHED':
       return <Badge variant="outline" className="text-xs"><small>Traité</small></Badge>;
+    case 'SUPPLIER_CHOSEN':
+      return <Badge variant="outline" className="text-xs"><small>Fournisseur Choisi</small></Badge>;
     default:
       return <Badge variant="default" className="text-xs">{status}</Badge>;
   }

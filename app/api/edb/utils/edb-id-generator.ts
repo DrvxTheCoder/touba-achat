@@ -14,5 +14,5 @@ export default function generateEDBId(): string {
   // Generate a random string
   const randomPart = nanoid();
 
-  return `EDB-${timestamp}-${randomPart}`;
+  return `EDB-${timestamp}${randomPart}`;
 }

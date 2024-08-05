@@ -58,6 +58,7 @@ export async function GET(request: Request) {
           userCreator: true,
           orders: true,
           attachments: true,
+          finalSupplier: true,
           auditLogs: {
             include: {
               user: true
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
             orderBy: {
               eventAt: 'asc'
             }
-          }
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -101,7 +102,17 @@ export async function GET(request: Request) {
         id: attachment.id,
         fileName: attachment.fileName,
         filePath: attachment.filePath,
+        supplierName: attachment.supplierName,
+        totalAmount: attachment.totalAmount,
       })),
+      finalSupplier: edb.finalSupplier ? {
+        id: edb.finalSupplier.id,
+        filePath: edb.finalSupplier.filePath,
+        supplierName: edb.finalSupplier.supplierName,
+        amount: edb.finalSupplier.amount,
+        chosenAt: edb.finalSupplier.chosenAt.toISOString(),
+        chosenBy: edb.finalSupplier.chosenBy,
+      } : null,
     }));
 
     return NextResponse.json({
