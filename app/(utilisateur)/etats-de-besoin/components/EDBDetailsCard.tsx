@@ -225,6 +225,7 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
             isITCategory={isITCategory}
             isSupplierChosen={isSupplierChosen}
             isCurrentAttachmentChosen={edb.attachments[currentPdfIndex].filePath === chosenFilePath}
+            amount={edb.attachments[currentPdfIndex].totalAmount}
           />
         )}
       </CardContent>

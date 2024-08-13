@@ -28,6 +28,7 @@ import { PrismaClient } from '@prisma/client'
 import { ToastAction } from "@/components/ui/toast"
 import Link from "next/link"
 import { Plus, PlusCircle } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const employeeFormSchema = z
   .object({
@@ -143,7 +144,18 @@ export function AddEmployeeForm() {
           }
         }}>
         <DialogTrigger asChild>
-            <Button variant="secondary" className="font-bold"><Plus className="h-4 w-4"/></Button>
+        <Button variant="outline">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PlusCircle className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Ajouter un employé</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
           e.preventDefault();

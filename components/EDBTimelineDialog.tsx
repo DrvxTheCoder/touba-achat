@@ -63,10 +63,10 @@ const eventTypeToKeyEvent: Record<EDBEventType, KeyEvent> = {
 
 const statusTranslations: Record<EDBEventType, string> = {
   DRAFT_CREATED: "Brouillon créé",
-  SUBMITTED: "Soumis",
-  APPROVED_RESPONSABLE: "Approuvé par le Responsable",
-  APPROVED_DIRECTEUR: "Approuvé par le Directeur",
-  APPROVED_DG: "Approuvé par le DG",
+  SUBMITTED: "Soumis par l'employé",
+  APPROVED_RESPONSABLE: "Approuvé par le Service",
+  APPROVED_DIRECTEUR: "Approuvé par la Direction",
+  APPROVED_DG: "Approuvé par la Direction Générale",
   REJECTED: "Rejeté",
   UPDATED: "Mis à jour",
   ATTACHMENT_ADDED: "Pièce jointe ajoutée",
@@ -80,10 +80,10 @@ const statusTranslations: Record<EDBEventType, string> = {
 const keyEventTranslations: Record<KeyEvent, string> = {
   CREATION: "Création",
   APPROVAL: "Approbation",
-  MAGASINIER: "Traitement Magasinier",
+  MAGASINIER: "Traitement Service Achat",
   SUPPLIER: "Choix du Fournisseur",
   FINAL_APPROVAL: "Approbation Finale",
-  COMPLETED: "Terminé"
+  COMPLETED: "Delivré"
 };
 
 
@@ -135,7 +135,8 @@ const getEventStatus = (edb: EDBTimelineProps['edb'], keyEvent: KeyEvent) => {
       if (['APPROVED_RESPONSABLE', 'ESCALATED'].includes(latestEvent.eventType)) return 'IN_PROGRESS';
       return isLaterStageCompleted ? 'COMPLETED' : 'PENDING';
     case 'MAGASINIER':
-      return latestEvent.eventType === 'MAGASINIER_ATTACHED' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'PENDING');
+      if (['APPROVED_DIRECTEUR'].includes(latestEvent.eventType)) return 'IN_PROGRESS';
+      return latestEvent.eventType === 'MAGASINIER_ATTACHED' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'IN_PROGRESS');
     case 'SUPPLIER':
       return latestEvent.eventType === 'SUPPLIER_CHOSEN' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'PENDING');
     case 'FINAL_APPROVAL':
@@ -155,7 +156,7 @@ const getStatusDetails = (status: EDBStatus) => {
     case 'ESCALATED':
       return 'Escaladé au DG';
     case 'APPROVED_RESPONSABLE':
-      return 'Approuvé par le Responsable';
+      return 'Approuvé par le Service';
     case 'APPROVED_DIRECTEUR':
       return 'Approuvé par la Direction';
     case 'APPROVED_DG':
@@ -187,22 +188,23 @@ const EventNode: React.FC<{ edb: EDBTimelineProps['edb']; keyEvent: KeyEvent }> 
     <Popover>
       <PopoverTrigger asChild>
         <div className="relative">
-          {isCurrentStep && (
+          {isCurrentStep && !isRejected && (
             <span className="absolute inline-flex h-full w-full rounded-full opacity-75 bg-secondary-foreground animate-ping"></span>
           )}
           <div className={`relative flex-shrink-0 w-8 h-8 rounded-full 
-            ${status === 'COMPLETED' ? 'bg-primary' : 
-              status === 'IN_PROGRESS' ? 'bg-muted-foreground' : 'bg-muted-foreground/75  opacity-40'}
+            ${isRejected ? 'bg-destructive border-2 border-destructive' :
+              status === 'COMPLETED' ? 'bg-primary' : 
+              status === 'IN_PROGRESS' ? 'bg-muted-foreground' : 'bg-muted-foreground/75 opacity-40'}
             flex items-center justify-center cursor-pointer`}>
-            <Icon className="text-white" size={16} />
+            {isRejected ? <XCircle className="text-white" size={16} /> : <Icon className="text-white" size={16} />}
           </div>
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-80">
         <div className="grid gap-4">
           <div className="space-y-2">
-          <h4 className="font-medium leading-none">{keyEventTranslations[keyEvent]}</h4>
-            <p className="text-sm text-muted-foreground">
+            <h4 className="font-medium leading-none">{keyEventTranslations[keyEvent]}</h4>
+            <p className={`text-sm ${isRejected ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
               {status === 'COMPLETED' ? 'Terminé' : 
                status === 'IN_PROGRESS' ? 'En cours' : 
                status === 'REJECTED' ? 'Rejeté' : 'En attente'}
@@ -212,7 +214,9 @@ const EventNode: React.FC<{ edb: EDBTimelineProps['edb']; keyEvent: KeyEvent }> 
             <div className="grid gap-2">
               <div className="grid grid-cols-3 items-center gap-4">
                 <p className="text-xs font-medium">Statut:</p>
-                <p className="col-span-2 text-xs">{statusTranslations[latestEvent.eventType]}</p>
+                <p className={`col-span-2 text-xs ${isRejected ? 'text-destructive font-semibold' : ''}`}>
+                  {statusTranslations[latestEvent.eventType]}
+                </p>
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
                 <p className="text-xs font-medium">Date:</p>
@@ -293,7 +297,9 @@ export const EDBTimelineDialog: React.FC<EDBTimelineDialogProps> = ({ edb }) => 
           </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[825px]">
+      <DialogContent className="sm:max-w-[825px]" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}  >
         <DialogHeader>
           <DialogTitle className="border-b pb-4">{edb.edbId}</DialogTitle>
         </DialogHeader>

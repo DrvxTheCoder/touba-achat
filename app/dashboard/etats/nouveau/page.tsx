@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CategoryType } from "@prisma/client"
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { getEmployees, Employee } from '../../employes/components/data'; // Adjust the import path as needed
 
-// Define the Zod schema
 const edbSchema = z.object({
   title: z.string().min(1, "Ce champ est requis"),
   category: z.string().min(1, "Ce champ est requis"),
@@ -22,7 +25,8 @@ const edbSchema = z.object({
   items: z.array(z.object({
     designation: z.string().min(1, "Ce champ est requis"),
     quantity: z.string().min(1, "Requis").regex(/^\d+$/, "La quantité doit être un nombre")
-  })).min(1, "Au moins un élément est requis")
+  })).min(1, "Au moins un élément est requis"),
+  userId: z.number().min(1, "Ce champ est requis")
 });
 
 type Category = {
@@ -37,8 +41,10 @@ const CreateEDBPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
-  const { toast } = useToast();
   const router = useRouter();
 
   const form = useForm<EdbFormValues>({
@@ -47,7 +53,8 @@ const CreateEDBPage = () => {
       title: '',
       category: '',
       reference: '',
-      items: [{ designation: '', quantity: '' }]
+      items: [{ designation: '', quantity: '' }],
+      userId: 0
     }
   });
 
@@ -65,16 +72,36 @@ const CreateEDBPage = () => {
     }
   };
 
+  const fetchEmployees = async (search: string = '') => {
+    try {
+      const data = await getEmployees(1, 5, search); // Adjust limit as needed
+      setEmployees(data.employees);
+    } catch (err) {
+      setError("Erreur lors de la récupération des employés");
+    }
+  };
+
   useEffect(() => {
     fetchCategories();
+    fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchEmployees(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
   const onSubmit = async (data: EdbFormValues) => {
     setIsLoading(true);
     setError(null);
-
+  
+    const endpoint = '/api/edb/helper-edb';
+  
     try {
-      const response = await fetch('/api/edb', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,25 +114,22 @@ const CreateEDBPage = () => {
           }))
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to create EDB');
       }
-
+  
       const result = await response.json();
       
-      toast({
-        title: "EDB créé avec succès",
+      toast.success("EDB créé avec succès",{
         description: `L'EDB ${result.edbId} a été créé.`,
       });
-
+  
       router.push('/dashboard/etats');
     } catch (err) {
       setError('Une erreur est survenue lors de la création de l\'EDB');
-      toast({
-        title: "Erreur",
+      toast.error("Erreur",{
         description: "Impossible de créer l'EDB. Veuillez réessayer.",
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -128,6 +152,67 @@ const CreateEDBPage = () => {
           <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
             <Form {...form}>
+
+            <FormField
+                  control={form.control}
+                  name="userId"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Utilisateur</FormLabel>
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={open}
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value
+                                ? employees.find((employee) => employee.id === field.value)?.name
+                                : "Sélectionner un utilisateur"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Rechercher un utilisateur..." 
+                              onValueChange={setSearchTerm}
+                            />
+                            <CommandEmpty>Aucun utilisateur trouvé.</CommandEmpty>
+                            <CommandGroup>
+                              {employees.map((employee) => (
+                                <CommandItem
+                                className="cursor-pointer"
+                                  key={employee.id}
+                                  value={employee.name}
+                                  onSelect={() => {
+                                    form.setValue("userId", employee.id);
+                                    setOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      employee.id === field.value ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {employee.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               
                 <FormField
                   control={form.control}

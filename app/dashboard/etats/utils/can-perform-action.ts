@@ -11,6 +11,7 @@ type EDBStatus =
   | 'IT_APPROVED'
   | 'AWAITING_FINAL_APPROVAL'
   | 'APPROVED_DG'
+  | 'ESCALATED'
   | 'REJECTED'
   | 'COMPLETED';
 
@@ -31,7 +32,7 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
       canReject = ['SUBMITTED'].includes(status);
       break;
     case 'DIRECTEUR':
-      canValidate = ['APPROVED_RESPONSABLE', 'AWAITING_FINAL_APPROVAL'].includes(status);
+      canValidate = ['SUBMITTED','APPROVED_RESPONSABLE', 'AWAITING_FINAL_APPROVAL'].includes(status);
       canReject = ['SUBMITTED', 'APPROVED_RESPONSABLE'].includes(status);
       break;
     case 'IT_ADMIN':
@@ -41,7 +42,7 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
       }
       break;
     case 'DIRECTEUR_GENERAL':
-      canValidate = ['SUBMITTED','APPROVED_RESPONSABLE', 'APPROVED_DIRECTEUR', 'AWAITING_FINAL_APPROVAL'].includes(status);
+      canValidate = ['SUBMITTED','APPROVED_RESPONSABLE','ESCALATED', 'APPROVED_DIRECTEUR', 'AWAITING_FINAL_APPROVAL'].includes(status);
       canReject = !['APPROVED_DG', 'REJECTED'].includes(status); // Can reject at any stage except when already approved by DG
       break;
     case 'ADMIN':

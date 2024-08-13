@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { BadgeCheck, Ban, Check, Loader2 } from "lucide-react";
+import { BadgeCheck, Ban, BookOpenIcon, Check, DownloadIcon, ExternalLink, ExternalLinkIcon, Link2, LinkIcon, Loader2 } from "lucide-react";
 import { SpinnerCircularFixed } from 'spinners-react';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
+import Link from 'next/link';
 
 interface PDFViewerProps {
     fileUrl: string;
@@ -18,6 +19,7 @@ interface PDFViewerProps {
     isITCategory: boolean | null;
     isSupplierChosen: boolean;  // New prop
     isCurrentAttachmentChosen: boolean;  // Rename from isChosen
+    amount: number;
   }
 export const PDFViewer: React.FC<PDFViewerProps> = ({ 
   fileUrl, 
@@ -29,7 +31,8 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   isITCategory,
   supplierName,
   isSupplierChosen,
-  isCurrentAttachmentChosen
+  isCurrentAttachmentChosen,
+  amount
 }) => {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -86,7 +89,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              <p className='flex flex-row justify-between gap-1 text-sm'>Fournisseur déjà sélectionné</p>
+              <p className='flex flex-row justify-between gap-1 text-sm'>Non-autorisé</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -96,9 +99,13 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}>
         <DialogHeader>
-          <DialogTitle>{fileName} - <text className="text-muted-foreground text-sm">par {supplierName}</text></DialogTitle>
+          <DialogTitle>
+                {fileName} - <text className="text-muted-foreground text-sm"> par {supplierName}</text>            
+            </DialogTitle>
         </DialogHeader>
         <div className="pdf-viewer relative" style={{ height: '500px' }}>
           {isLoading && (
@@ -117,7 +124,16 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           />
         </div>
         <DialogFooter>
+          
           <SelectSupplierButton />
+          <div>
+          <small>Total: <b>XOF {amount}</b></small>
+          <Button variant="ghost" className="ml-1">
+                <Link href={fileUrl} target='_blank'>
+                    <DownloadIcon className="h-4 w-4" />
+                </Link>
+          </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -44,7 +44,7 @@ export async function POST(
     }
 
     // Update the EDB status to REJECTED, log the event, and add the rejection reason
-    await updateEDBStatus(Number(id), EDBStatus.REJECTED, parseInt(session.user.id));
+    await updateEDBStatus(Number(id),edb.edbId, EDBStatus.REJECTED, parseInt(session.user.id));
     
     const updatedEdb = await prisma.etatDeBesoin.update({
       where: { id: Number(id) },
@@ -57,16 +57,16 @@ export async function POST(
       logEDBEvent(edb.id, parseInt(session.user.id), EDBEventType.REJECTED);
     }
 
-    // Create a notification
-    await prisma.notification.create({
-      data: {
-        type: 'EDB_REJECTED',
-        message: `EDB #${edb.edbId} a été rejeté. Raison: ${reason}`,
-        senderId: parseInt(session.user.id),
-        receiverId: edb.creatorId, // Notify the creator
-        etatDeBesoinId: edb.id,
-      },
-    });
+    // // Create a notification
+    // await prisma.notification.create({
+    //   data: {
+    //     type: 'EDB_REJECTED',
+    //     message: `EDB #${edb.edbId} a été rejeté. Raison: ${reason}`,
+    //     senderId: parseInt(session.user.id),
+    //     receiverId: edb.creatorId, // Notify the creator
+    //     etatDeBesoinId: edb.id,
+    //   },
+    // });
 
     return NextResponse.json(updatedEdb);
   } catch (error) {

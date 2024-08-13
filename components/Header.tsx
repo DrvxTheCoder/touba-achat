@@ -4,9 +4,9 @@ import { signOut } from 'next-auth/react';
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
-import { ModeToggle } from "@/components/theme-toggle";
+import { ModeToggle } from "./user-panel/mode-toggle";
 import { Input } from "@/components/ui/input";
-import { Home, Menu, Package, ShoppingCart, Users, SettingsIcon, Search, CircleUser, LogOut, HomeIcon, User, Layout, LayoutGrid } from "lucide-react";
+import { Home, Menu, Package, ShoppingCart, Users, SettingsIcon, Search, CircleUser, LogOut, HomeIcon, User, Layout, LayoutGrid, BellIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -26,6 +26,7 @@ import { useSession } from "next-auth/react";
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import CustomLogoSVGTwo from "./logos/CustomLogoSVGTwo";
 import { CommandMenu } from "@/components/command-menu";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 export default function Header (){
     const { data: session } = useSession();
@@ -109,6 +110,7 @@ export default function Header (){
         <div className="w-full flex-1">
           <CommandMenu />
         </div>
+        <NotificationCenter />
         <ModeToggle/>
         <DropdownMenu>
         <DropdownMenuTrigger asChild>

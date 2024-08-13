@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "@/components/ui/use-toast";
 import { Progress } from "@/components/ui/progress";
 
 type AttachmentMetadata = {
@@ -34,6 +34,7 @@ export const AttachDocumentDialog: React.FC<AttachDocumentDialogProps> = ({ isOp
   const [selectedFiles, setSelectedFiles] = useState<AttachmentMetadata[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { startUpload, permittedFileInfo } = useUploadThing("generalMedia", {
     onUploadProgress: (progress) => {
@@ -47,24 +48,24 @@ export const AttachDocumentDialog: React.FC<AttachDocumentDialogProps> = ({ isOp
           url: res[index]?.url
         }));
         onUploadSuccess(updatedAttachments);
-        toast({ title: "Succès", description: "Les fichiers ont été téléchargés avec succès." });
         setIsUploading(false);
         setUploadProgress(0);
         onOpenChange(false);
       } else {
         console.error("Upload completed but no response received");
-        toast({ title: "Attention", description: "Le téléchargement semble avoir réussi, mais aucune donnée n'a été reçue. Veuillez vérifier et réessayer si nécessaire.", variant: "destructive" });
+        toast.error("Le téléchargement semble avoir réussi, mais aucune donnée n'a été reçue. Veuillez vérifier et réessayer si nécessaire.");
         setIsUploading(false);
         setUploadProgress(0);
       }
     },
     onUploadError: (error: Error) => {
       console.error("Upload error:", error);
-      toast({ title: "Erreur", description: `Une erreur est survenue lors du sauvegarde des fichiers: ${error.message}`, variant: "destructive" });
+      toast.error(`Une erreur est survenue lors du sauvegarde des fichiers: ${error.message}`);
       setIsUploading(false);
       setUploadProgress(0);
     },
   });
+
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newAttachments = acceptedFiles.map(file => ({
@@ -76,7 +77,7 @@ export const AttachDocumentDialog: React.FC<AttachDocumentDialogProps> = ({ isOp
     setSelectedFiles(prev => {
       const updated = [...prev, ...newAttachments].slice(0, 3);
       if (updated.length > 3) {
-        toast({ title: "Attention", description: "Vous ne pouvez sélectionner que 3 fichiers maximum.", variant: "destructive" });
+        toast.error("Attention",{description: "Vous ne pouvez sélectionner que 3 fichiers maximum."});
       }
       return updated;
     });
@@ -110,24 +111,75 @@ export const AttachDocumentDialog: React.FC<AttachDocumentDialogProps> = ({ isOp
     );
   }, [selectedFiles]);
 
+  const cancelUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsUploading(false);
+      setUploadProgress(0);
+      toast.error("Téléchargement annulé");
+    }
+  };
+
+  const retryUpload = async (retryCount: number = 0): Promise<any> => {
+    if (retryCount >= 5) {
+      throw new Error("Nombre maximal de tentatives atteint");
+    }
+
+    try {
+      abortControllerRef.current = new AbortController();
+      const result = await startUpload(selectedFiles.map(attachment => attachment.file));
+      if (abortControllerRef.current.signal.aborted) {
+        throw new Error('AbortError');
+      }
+      return result;
+    } catch (error: any) {
+      if (error.message === 'AbortError') {
+        throw error;
+      }
+      console.log(`Tentative ${retryCount + 1} échouée, nouvelle tentative...`);
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+      return retryUpload(retryCount + 1);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!isFormValid()) {
-      toast({ title: "Erreur", description: "Veuillez remplir tous les champs pour chaque fichier.", variant: "destructive" });
+      toast.error("Veuillez remplir tous les champs pour chaque fichier.");
       return;
     }
 
     setIsUploading(true);
+    
+    const uploadPromise = new Promise((resolve, reject) => {
+      retryUpload()
+        .then((result) => {
+          if (!result || result.length === 0) {
+            reject(new Error("Aucun fichier n'a été téléchargé"));
+          } else {
+            resolve(result);
+          }
+        })
+        .catch(reject);
+    });
+
+    toast.promise(uploadPromise, {
+      loading: 'Téléchargement en cours...',
+      success: (data) => {
+        console.log("Upload result:", data);
+        return `Les fichiers ont été téléchargés avec succès.`;
+      },
+      error: 'Une erreur inattendue s\'est produite lors du téléchargement.',
+    });
+
     try {
-      const result = await startUpload(selectedFiles.map(attachment => attachment.file));
-      console.log("Upload result:", result);
-      if (!result || result.length === 0) {
-        throw new Error("Aucun fichier n'a été téléchargé");
-      }
+      await uploadPromise;
     } catch (error) {
       console.error("Error in handleSubmit:", error);
-      toast({ title: "Erreur", description: "Une erreur inattendue s'est produite lors du téléchargement.", variant: "destructive" });
       setIsUploading(false);
       setUploadProgress(0);
+    } finally {
+      abortControllerRef.current = null;
     }
   };
 

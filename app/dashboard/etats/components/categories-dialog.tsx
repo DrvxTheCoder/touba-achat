@@ -23,7 +23,7 @@ import { LoaderIcon, Tag, Tags, Trash2Icon } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { CategoryType } from "@prisma/client"
 import { Icons } from "@/components/icons"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 type Category = {
   id: number;
@@ -64,10 +64,8 @@ export function CategoriesDialog() {
   const addCategory = async () => {
 
     if (!newCategory.trim()) {
-        toast({
-          title: "Erreur",
+        toast.error("Erreur",{
           description: "Le champ ne pas être vide!",
-          variant: "destructive",
         });
         return;
       }

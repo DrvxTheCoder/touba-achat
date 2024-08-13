@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const pageSize = parseInt(searchParams.get('pageSize') || '5');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
     const skip = (page - 1) * pageSize;
@@ -113,6 +113,7 @@ export async function GET(request: Request) {
         chosenAt: edb.finalSupplier.chosenAt.toISOString(),
         chosenBy: edb.finalSupplier.chosenBy,
       } : null,
+      rejectionReason: edb.rejectionReason,
     }));
 
     return NextResponse.json({

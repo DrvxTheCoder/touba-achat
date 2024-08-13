@@ -4,7 +4,7 @@
 import React from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 import useRequireAuth from '../hooks/use-require-auth';
 import dynamic from 'next/dynamic';
 import { Role } from '@prisma/client';
@@ -35,7 +35,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex flex-col">
           <Header />
           <DynamicBreadcrumbs />
-          <Toaster />
           {children}
         </div>
       </div>

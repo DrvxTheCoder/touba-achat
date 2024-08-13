@@ -11,6 +11,8 @@ import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import React from 'react';
 import './globals.css';
+import { NotificationProvider } from '@/components/NotificationProvider';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
   title: 'Touba Service Achat',
@@ -37,8 +39,11 @@ export default async function RootLayout({
             defaultTheme="new-york"
             enableSystem
           >
-            <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)}/>
-            {children}
+            <NotificationProvider>
+              <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)}/>
+              <Toaster richColors position="top-right" closeButton  />
+              {children}
+            </NotificationProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

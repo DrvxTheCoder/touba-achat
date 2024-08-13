@@ -28,6 +28,7 @@ import { accounts, mails } from "@/app/dashboard/components/data"
 import { useRouter } from 'next/navigation';
 import { getSession, useSession } from 'next-auth/react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { TestNotificationButton } from "@/components/SimulateBtn"
 
 
 export default function Dashboard (){
@@ -61,7 +62,9 @@ export default function Dashboard (){
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Dashboard</h2>
             <div className="flex items-center space-x-2">
+              {/* <TestNotificationButton/> */}
             <TeamSwitcher />
+            
             </div>
           </div>
           <Tabs defaultValue="edb" className="space-y-2 flex flex-col items-center sm:max-w-90">

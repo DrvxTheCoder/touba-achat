@@ -1,4 +1,6 @@
-import { PrismaClient, EDBEventType, EtatDeBesoin, User, Prisma, EDBStatus, AttachmentType } from '@prisma/client';
+import { PrismaClient, EDBEventType, EtatDeBesoin, User, Prisma, EDBStatus, AttachmentType, NotificationType, Role } from '@prisma/client';
+import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
+import { getEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
 
 const prisma = new PrismaClient();
 
@@ -23,46 +25,37 @@ export async function logEDBEvent(
   }
 }
 
-// Helper function to get the appropriate EDBEventType based on the new status
-function getEventTypeFromStatus(status: EDBStatus): EDBEventType {
-  switch (status) {
-    case 'DRAFT': return EDBEventType.DRAFT_CREATED;
-    case 'SUBMITTED': return EDBEventType.SUBMITTED;
-    case 'APPROVED_RESPONSABLE': return EDBEventType.APPROVED_RESPONSABLE;
-    case 'APPROVED_DIRECTEUR': return EDBEventType.APPROVED_DIRECTEUR;
-    case 'AWAITING_MAGASINIER': return EDBEventType.UPDATED;
-    case 'MAGASINIER_ATTACHED': return EDBEventType.UPDATED;
-    case 'AWAITING_SUPPLIER_CHOICE': return EDBEventType.UPDATED;
-    case 'SUPPLIER_CHOSEN': return EDBEventType.UPDATED;
-    case 'AWAITING_IT_APPROVAL': return EDBEventType.UPDATED;
-    case 'IT_APPROVED': return EDBEventType.UPDATED;
-    case 'AWAITING_FINAL_APPROVAL': return EDBEventType.UPDATED;
-    case 'APPROVED_DG': return EDBEventType.APPROVED_DG;
-    case 'REJECTED': return EDBEventType.REJECTED;
-    case 'COMPLETED': return EDBEventType.UPDATED;
-    default: 
-      console.warn(`Unhandled EDB status: ${status}`);
-      return EDBEventType.UPDATED;
-  }
-}
-
 // Example usage for status change
 export async function updateEDBStatus(
-  edbId: number,
+  id: number,
+  edbId: string,
   newStatus: EDBStatus,
   userId: number
 ): Promise<void> {
   const updatedEDB = await prisma.etatDeBesoin.update({
-    where: { id: edbId },
+    where: { id: id },
     data: { status: newStatus, updatedAt: new Date() },
   });
 
   await logEDBEvent(
-    edbId,
+    id,
     userId,
     getEventTypeFromStatus(newStatus),
     { oldStatus: updatedEDB.status, newStatus }
   );
+
+  const recipients = await determineRecipients(updatedEDB, newStatus, userId);
+
+  const notificationPayload: NotificationPayload = {
+    type: getNotificationTypeFromStatus(newStatus),
+    message: `EDB #${edbId} a été mis à jour vers ${newStatus}`,
+    entityId: edbId,
+    entityType: 'EDB',
+    recipients,
+    additionalData: { updatedBy: userId, departmentId: updatedEDB.departmentId }
+  };
+
+  await sendNotification(notificationPayload);
 }
 
 export async function addAttachmentToEDB(
@@ -79,6 +72,8 @@ export async function addAttachmentToEDB(
   try {
     console.log('Attachment data:', attachmentData);
 
+    const resultEventType = EDBEventType.MAGASINIER_ATTACHED;
+
     const createdAttachment = await prisma.attachment.create({
       data: {
         ...attachmentData,
@@ -91,7 +86,7 @@ export async function addAttachmentToEDB(
     console.log('Created attachment:', createdAttachment);
 
     // Update EDB status
-    await prisma.etatDeBesoin.update({
+    const updatedEDB = await prisma.etatDeBesoin.update({
       where: { id: edbId },
       data: { status: 'MAGASINIER_ATTACHED' },
     });
@@ -107,6 +102,20 @@ export async function addAttachmentToEDB(
         newStatus: 'MAGASINIER_ATTACHED'
       }
     );
+
+    const recipients = await determineRecipients(updatedEDB, resultEventType, userId);
+
+    const notificationPayload: NotificationPayload = {
+      type: getNotificationTypeFromStatus(resultEventType),
+      message: `Facture rattaché à l'EDB #${edbId} a par le Service d'Achat`,
+      entityId: edbId,
+      entityType: 'EDB',
+      recipients,
+      additionalData: { updatedBy: userId, departmentId: updatedEDB.departmentId }
+    };
+  
+    await sendNotification(notificationPayload);
+    
   } catch (error) {
     console.error('Error adding attachment to EDB:', error);
     throw error;

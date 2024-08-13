@@ -13,6 +13,7 @@ export type EDBStatus =
   | 'IT_APPROVED'
   | 'AWAITING_FINAL_APPROVAL'
   | 'APPROVED_DG'
+  | 'ESCALATED'
   | 'REJECTED'
   | 'COMPLETED';
 
@@ -49,8 +50,10 @@ export type EDBStatus =
       fileName: string;
       filePath: string;
       supplierName: string;
+      totalAmount: number;
     }>;
-    finalSupplier: FinalSupplier | null; 
+    finalSupplier: FinalSupplier | null;
+    rejectionReason: string | undefined;
   };
 
   export type EDBEventType = 

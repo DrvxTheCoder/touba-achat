@@ -3,6 +3,9 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { EDBStatus, EDB } from '@/app/(utilisateur)/etats-de-besoin/data/types';
 import { MoreVertical } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 
 interface EDBTableRowProps {
@@ -19,7 +22,7 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
   return (
     <TableRow 
       onClick={() => onRowClick(edb)} 
-      className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}
+      className={`cursor-pointer hover:bg-muted/80 ${isSelected ? 'bg-muted/80' : ''}`}
     >
       <TableCell>
         <div className="font-medium"># {displayId}</div>
@@ -36,7 +39,11 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
         {displayAmount} XOF
       </TableCell>
       <TableCell className="lg:hidden">
-        <MoreVertical className="w-4 h-4" />
+        <Link href={`/dashboard/etats/${displayId}`}>
+          <Button size="icon" variant="outline">
+            <OpenInNewWindowIcon className="w-4 h-4" />
+          </Button>
+        </Link>
       </TableCell>
     </TableRow>
   );

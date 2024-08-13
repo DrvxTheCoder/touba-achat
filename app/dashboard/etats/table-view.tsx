@@ -5,9 +5,9 @@ import Image from "next/image"
 import { z } from "zod"
 
 import { columns } from "./components/columns"
-import { DataTable } from "./components/data-table"
+import { DataTable } from "./components/unused/data-table"
 import { UserNav } from "./components/user-nav"
-import { taskSchema } from "./data/schema"
+import { taskSchema } from "./data-2/schema"
 import { Button } from "@/components/ui/button";
 
 async function getTasks() {
