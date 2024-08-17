@@ -95,7 +95,7 @@ export async function determineRecipients(edb: EtatDeBesoin, newStatus: EDBStatu
 
   // Always notify the creator and the actor
   recipients.add(edb.creatorId);
-  recipients.add(actorId);
+  // recipients.add(actorId);
 
   // Determine other recipients based on the new status
   switch (newStatus) {

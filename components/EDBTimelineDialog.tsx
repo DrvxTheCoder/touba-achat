@@ -117,28 +117,40 @@ type EDBTimelineProps = {
 
 
 const getEventStatus = (edb: EDBTimelineProps['edb'], keyEvent: KeyEvent) => {
+  console.log(`Checking status for ${keyEvent}`);
+  
   const relevantEvents = edb.events.filter(e => eventTypeToKeyEvent[e.eventType] === keyEvent);
-  if (relevantEvents.length === 0) return 'PENDING';
+  console.log(`Relevant events for ${keyEvent}:`, relevantEvents);
+  
+  if (relevantEvents.length === 0) {
+    console.log(`No events found for ${keyEvent}, returning PENDING`);
+    return 'PENDING';
+  }
 
   const latestEvent = relevantEvents[relevantEvents.length - 1];
+  console.log(`Latest event for ${keyEvent}:`, latestEvent);
 
   // Check if any later stage is completed
   const isLaterStageCompleted = keyEvents.slice(keyEvents.indexOf(keyEvent) + 1)
-    .some(laterEvent => getEventStatus(edb, laterEvent as KeyEvent) === 'COMPLETED');
+    .some(laterEvent => {
+      const status = getEventStatus(edb, laterEvent as KeyEvent);
+      console.log(`Status of later stage ${laterEvent}: ${status}`);
+      return status === 'COMPLETED';
+    });
 
   switch (keyEvent) {
     case 'CREATION':
       return isLaterStageCompleted || latestEvent.eventType === 'SUBMITTED' ? 'COMPLETED' : 'IN_PROGRESS';
     case 'APPROVAL':
+      if (isLaterStageCompleted) return 'COMPLETED';
       if (['APPROVED_DG', 'APPROVED_DIRECTEUR'].includes(latestEvent.eventType)) return 'COMPLETED';
       if (latestEvent.eventType === 'REJECTED') return 'REJECTED';
       if (['APPROVED_RESPONSABLE', 'ESCALATED'].includes(latestEvent.eventType)) return 'IN_PROGRESS';
-      return isLaterStageCompleted ? 'COMPLETED' : 'PENDING';
+      return 'PENDING';
     case 'MAGASINIER':
-      if (['APPROVED_DIRECTEUR'].includes(latestEvent.eventType)) return 'IN_PROGRESS';
-      return latestEvent.eventType === 'MAGASINIER_ATTACHED' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'IN_PROGRESS');
+      return isLaterStageCompleted || latestEvent.eventType === 'MAGASINIER_ATTACHED' ? 'COMPLETED' : 'IN_PROGRESS';
     case 'SUPPLIER':
-      return latestEvent.eventType === 'SUPPLIER_CHOSEN' ? 'COMPLETED' : (isLaterStageCompleted ? 'COMPLETED' : 'PENDING');
+      return isLaterStageCompleted || latestEvent.eventType === 'SUPPLIER_CHOSEN' ? 'COMPLETED' : 'PENDING';
     case 'FINAL_APPROVAL':
       if (latestEvent.eventType === 'APPROVED_DG') return 'COMPLETED';
       if (latestEvent.eventType === 'REJECTED') return 'REJECTED';

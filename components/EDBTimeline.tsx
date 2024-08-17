@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Stamp, Package, ShoppingCart, CheckCircle2, Printer } from 'lucide-react';
+import { User, Stamp, Package, ShoppingCart, CheckCircle2, Printer, ArrowUpRight, XCircle, FileText, Paperclip } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EDBStatus, EDBEventType } from '@/app/(utilisateur)/etats-de-besoin/data/types';
 import { Separator } from "@/components/ui/separator"
@@ -20,49 +20,36 @@ type EDBTimelineProps = {
   };
 };
 
-const keyEvents = [
-  'CREATION',
-  'APPROVAL',
-  'MAGASINIER',
-  'SUPPLIER',
-  'FINAL_APPROVAL',
-  'COMPLETED'
-] as const; 
-
-type KeyEvent = typeof keyEvents[number];
-
-const eventTypeToKeyEvent: Record<EDBEventType, KeyEvent> = {
-  DRAFT_CREATED: 'CREATION',
-  SUBMITTED: 'CREATION',
-  APPROVED_RESPONSABLE: 'APPROVAL',
-  APPROVED_DIRECTEUR: 'APPROVAL',
-  APPROVED_DG: 'APPROVAL',
-  REJECTED: 'APPROVAL',
-  UPDATED: 'APPROVAL',
-  ATTACHMENT_ADDED: 'APPROVAL',
-  ATTACHMENT_REMOVED: 'APPROVAL',
-  ESCALATED: 'APPROVAL',
-  MAGASINIER_ATTACHED: 'MAGASINIER',
-  SUPPLIER_CHOSEN: 'SUPPLIER',
-  COMPLETED: 'COMPLETED'
+const eventTypeIcons: Record<EDBEventType, React.ElementType> = {
+  DRAFT_CREATED: User,
+  SUBMITTED: FileText,
+  APPROVED_RESPONSABLE: Stamp,
+  APPROVED_DIRECTEUR: Stamp,
+  APPROVED_DG: Stamp,
+  REJECTED: XCircle,
+  UPDATED: FileText,
+  ATTACHMENT_ADDED: Paperclip,
+  ATTACHMENT_REMOVED: Paperclip,
+  ESCALATED: ArrowUpRight,
+  MAGASINIER_ATTACHED: Package,
+  SUPPLIER_CHOSEN: ShoppingCart,
+  COMPLETED: CheckCircle2
 };
 
-const eventTypeIcons: Record<KeyEvent, React.ElementType> = {
-  CREATION: User,
-  APPROVAL: Stamp,
-  MAGASINIER: Package,
-  SUPPLIER: ShoppingCart,
-  FINAL_APPROVAL: CheckCircle2,
-  COMPLETED: Printer
-};
-
-const keyEventTranslations: Record<KeyEvent, string> = {
-  CREATION: "Création",
-  APPROVAL: "Approbation",
-  MAGASINIER: "Traitement Service Achat",
-  SUPPLIER: "Choix du Fournisseur",
-  FINAL_APPROVAL: "Approbation Finale",
-  COMPLETED: "Delivré"
+const eventTypeTranslations: Record<EDBEventType, string> = {
+  DRAFT_CREATED: "Brouillon créé",
+  SUBMITTED: "Soumis",
+  APPROVED_RESPONSABLE: "Approuvé par le Responsable",
+  APPROVED_DIRECTEUR: "Approuvé par le Directeur",
+  APPROVED_DG: "Approuvé par le DG",
+  REJECTED: "Rejeté",
+  UPDATED: "Mis à jour",
+  ATTACHMENT_ADDED: "Pièce jointe ajoutée",
+  ATTACHMENT_REMOVED: "Pièce jointe supprimée",
+  ESCALATED: "Escaladé",
+  MAGASINIER_ATTACHED: "Facture rattaché par le Service d'Achat",
+  SUPPLIER_CHOSEN: "Fournisseur choisi",
+  COMPLETED: "Complété"
 };
 
 const formatDate = (dateString: string) => {
@@ -86,22 +73,28 @@ export const EDBTimeline: React.FC<EDBTimelineProps> = ({ edb }) => {
       <h2 className="text-lg font-semibold mb-4">Événements</h2>
       <Separator className="my-2" />
       <ScrollArea className="h-[25rem]">
-        {sortedLogs.map((log) => {
-          const keyEvent = eventTypeToKeyEvent[log.eventType];
-          const Icon = eventTypeIcons[keyEvent];
-          return (
-            <div key={log.id} className="flex items-start space-x-4 mb-4 border rounded-xl p-3 shadow">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <Icon className="h-4 w-4 text-primary-foreground" />
+        <div className="relative">
+          {sortedLogs.map((log, index) => {
+            const Icon = eventTypeIcons[log.eventType];
+            return (
+              <div key={log.id} className="flex items-start space-x-2 mb-4">
+                <div className="relative">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center z-10 relative">
+                    <Icon className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  {index !== sortedLogs.length - 1 && (
+                    <div className="absolute top-8 left-1/2 bottom-0 w-0.5 bg-primary -translate-x-1/2" />
+                  )}
+                </div>
+                <div className="flex-1 border rounded-xl p-3 shadow">
+                  <p className="font-medium">{eventTypeTranslations[log.eventType]}</p>
+                  <p className="text-sm text-muted-foreground">Par: <b>{log.user.name}</b></p>
+                  <p className="text-xs text-muted-foreground">Le: {formatDate(log.eventAt)}</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="font-medium">{keyEventTranslations[keyEvent]}</p>
-                <p className="text-sm text-muted-foreground">Par: <b>{log.user.name}</b></p>
-                <p className="text-xs text-muted-foreground">Le: {formatDate(log.eventAt)}</p>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </ScrollArea>
     </div>
   );

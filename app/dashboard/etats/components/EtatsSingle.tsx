@@ -174,6 +174,26 @@ const statusMapping = {
 
   export function EtatsSingle({ edb }: { edb: any }) {  // Replace 'any' with a proper type for your EDB
 
+    const [edbData, setEdbData] = useState(edb);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const fetchEDB = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/edb/${edb.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch EDB');
+        }
+        const data = await response.json();
+        setEdbData(data);
+      } catch (error) {
+        console.error('Error fetching EDB:', error);
+        toast.error("Erreur lors du rafraîchissement des données");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     const { data: session } = useSession();
     const [currentPage, setCurrentPage] = useState(1);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -238,8 +258,8 @@ const statusMapping = {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Erreur lors de la sélection du fournisseur');
         }
-  
-        toast("Fournisseur sélectionné",{
+        await fetchEDB(); // Refetch the EDB data
+        toast.success("Fournisseur sélectionné",{
           description: 'Le fournisseur a été sélectionné avec succès.',
         });
       } catch (error) {
@@ -286,32 +306,31 @@ const statusMapping = {
       };
     
       const confirmValidation = async () => {
-        if (!edb) return;
+        if (!edbData) return;
         setIsValidating(true);
         try {
-          const response = await fetch(`/api/edb/${edb.id}/validate`, {
+          const response = await fetch(`/api/edb/${edbData.id}/validate`, {
             method: 'POST',
           });
           if (!response.ok) {
             const errorData = await response.json();
-            setIsValidating(true);
             throw new Error(errorData.message || 'Failed to validate EDB');
           }
-          toast.success("EDB Validé",{
-            description: `L'EDB #${edb.id} a été validé avec succès.`,
+          toast.success("EDB Validé", {
+            description: `L'EDB #${edbData.id} a été validé avec succès.`,
           });
-          setIsValidating(false);
-          
+          await fetchEDB(); // Refetch the EDB data
         } catch (error : any) {
           console.error('Error validating EDB:', error);
-          toast.error("Erreur",{
+          toast.error("Erreur", {
             description: error.message || "Une erreur est survenue lors de la validation de l'EDB.",
           });
-          setIsValidating(false);
         } finally {
+          setIsValidating(false);
           setIsValidationDialogOpen(false);
         }
       };
+
       const confirmEscalation = async () => {
         if (!edb) return;
         setIsEscalating(true);
@@ -324,7 +343,7 @@ const statusMapping = {
             setIsEscalating(true);
             throw new Error(errorData.message || 'Erreur lors de l\'opération.');
           }
-        //   refetch();
+          await fetchEDB(); // Refetch the EDB data
           toast.success("EDB Validé",{
             description: `L'EDB #${edb.edbId} a été escaladé à la Direction Générale.`,
           });
@@ -356,7 +375,7 @@ const statusMapping = {
             setIsRejecting(false);
             throw new Error(errorData.message || 'Failed to reject EDB'); 
           }
-
+          await fetchEDB();
           toast.info("EDB Rejeté",{
             description: `L'EDB #${edb.id} a été rejeté.`,
           });
