@@ -69,7 +69,8 @@ export type EDBStatus =
     | 'ESCALATED'
     | 'MAGASINIER_ATTACHED'
     | 'SUPPLIER_CHOSEN'
-    // | 'IT_APPROVED'
+    | 'AWAITING_FINAL_APPROVAL'
+    | 'FINAL_APPROVAL'
     | 'COMPLETED';
 
     export type Attachment = {

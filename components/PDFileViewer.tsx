@@ -113,11 +113,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
               <SpinnerCircularFixed size={90} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
             </div>
           )}
-          <iframe
-            src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+          <embed
+            src={`${fileUrl}`}
             width="100%"
             height="100%"
             title="PDF Viewer"
+            type="application/pdf"
             onLoad={handleIframeLoad}
             style={{ opacity: isLoading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}
             className='rounded'
@@ -130,7 +131,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           <small>Total: <b>XOF {amount}</b></small>
           <Button variant="ghost" className="ml-1">
                 <Link href={fileUrl} target='_blank'>
-                    <DownloadIcon className="h-4 w-4" />
+                    <ExternalLinkIcon className="h-4 w-4" />
                 </Link>
           </Button>
           </div>

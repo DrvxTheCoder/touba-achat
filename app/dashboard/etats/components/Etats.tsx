@@ -18,7 +18,8 @@ import {
   FileCheck2,
   BadgeCheck,
   ArrowBigUpDash,
-  CheckIcon
+  CheckIcon,
+  UserCheck
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -110,6 +111,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Role } from "@prisma/client"
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons"
 import { cn } from "@/lib/utils"
+import { FinalApprovalDialog } from "./FinalApprovalDialog"
+import { EDBCards } from "./EDBCards"
 
 const ITEMS_PER_PAGE = 5;
 const statusMapping = {
@@ -174,6 +177,7 @@ export default function Etats() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
+  const [isFinalApprobation, setIsFinalApprobation] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isEscalating, setIsEscalating] = useState(false);
   const [isAttachDocumentDialogOpen, setIsAttachDocumentDialogOpen] = useState(false);
@@ -244,7 +248,6 @@ export default function Etats() {
     }
   };
 
-
   const userInfo = useMemo(() => ({
     role: session?.user?.role || '',
   }), [session?.user?.role]);
@@ -273,6 +276,7 @@ export default function Etats() {
   );
 
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
+  const [isFinalApprovalDialogOpen, setIsFinalApprovalDialogOpen] = useState(false);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [isEscalationDialogOpen, setIsEscalationDialogOpen] = useState(false);
 
@@ -293,6 +297,9 @@ export default function Etats() {
 
   const handleValidate = async () => {
     setIsValidationDialogOpen(true);
+  };
+  const handleFinalApproval = async () => {
+    setIsFinalApprovalDialogOpen(true);
   };
 
   const handleEscalate = async () => {
@@ -330,6 +337,7 @@ export default function Etats() {
       setIsValidationDialogOpen(false);
     }
   };
+
   const confirmEscalation = async () => {
     if (!selectedEDB) return;
     setIsEscalating(true);
@@ -387,6 +395,34 @@ export default function Etats() {
       setIsRejecting(false);
     } finally {
       setIsRejectionDialogOpen(false);
+    }
+  };
+
+  const confirmFinalApproval = async () => {
+    if (!selectedEDB) return;
+    setIsFinalApprobation(true);
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.id}/finalapproval`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        setIsFinalApprobation(true);
+        throw new Error(errorData.message || 'Failed to validate EDB');
+      }
+      refetch();
+      toast.success("EDB Validé",{
+        description: `L'EDB #${selectedEDB.id} a été approuvé avec succès.`,
+      });
+      setIsFinalApprobation(false);
+    } catch (error : any) {
+      console.error('Error validating EDB:', error);
+      toast.error("Erreur",{
+        description: error.message || "Une erreur est survenue lors de l'approbation finale de l'EDB.",
+      });
+      setIsFinalApprobation(false);
+    } finally {
+      setIsFinalApprovalDialogOpen(false);
     }
   };
 
@@ -485,84 +521,7 @@ export default function Etats() {
         </div>
         <div className="grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
           <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-              
-                {/* <Card className="sm:col-span-2">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Dépenses Totale
-                      </CardTitle>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        className="h-4 w-4 text-muted-foreground"
-                      >
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">XOF 8910222</div>
-                      <p className="text-xs text-muted-foreground">
-                        +20.1% sur le mois passé
-                      </p>
-                    </CardContent>
-                </Card> */}
-                <MetricCard />
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total
-                    </CardTitle>
-                    <PackageIcon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">55</div>
-                    <p className="text-xs text-muted-foreground">
-                      +18.1% sur le mois dernier
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Actif
-                    </CardTitle>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-muted-foreground"
-                    >
-                      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                    </svg>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">+30</div>
-                    <p className="text-xs text-muted-foreground">
-                    +5 depuis la dernière heure
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">En Attente</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">25</div>
-                  </CardContent>
-                </Card>
-
-            </div>
+            <EDBCards />
             <div className="flex items-center">
               <div className="ml-auto flex items-center gap-2">
                 <Input 
@@ -793,9 +752,18 @@ export default function Etats() {
                         {!isMagasinier && (
                           <>
                           <DropdownMenuSeparator />
+                          {selectedEDB.status === "SUPPLIER_CHOSEN" && (
                             <DropdownMenuItem 
                               className="text-primary"
-                              onClick={handleValidate}
+                              onClick={handleFinalApproval}
+                            >
+                              Approuver
+                              <DropdownMenuShortcut><UserCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                          )}
+                            <DropdownMenuItem 
+                              className="text-primary"
+                              onClick={handleFinalApproval}
                               disabled={!canValidate}
                             >
                               Valider
@@ -857,6 +825,13 @@ export default function Etats() {
                           onConfirm={confirmRejection}
                           edbId={selectedEDB.id}
                           isLoading={isRejecting}
+                        />
+                        <FinalApprovalDialog
+                          isOpen={isFinalApprovalDialogOpen}
+                          onClose={() => setIsFinalApprovalDialogOpen(false)}
+                          onConfirm={confirmFinalApproval}
+                          edbId={selectedEDB.id}
+                          isLoading={isFinalApprobation}
                         />
                       </>
                     )}

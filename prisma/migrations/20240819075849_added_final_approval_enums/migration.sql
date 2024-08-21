@@ -1,0 +1,8 @@
+-- AlterEnum
+ALTER TYPE "EDBEventType" ADD VALUE 'FINAL_APPROVAL';
+
+-- AlterEnum
+ALTER TYPE "EDBStatus" ADD VALUE 'FINAL_APPROVAL';
+
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'EDB_FINAL_APPROVAL';

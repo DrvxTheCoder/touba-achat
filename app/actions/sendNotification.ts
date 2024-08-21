@@ -6,13 +6,14 @@ import { prisma } from '@/lib/prisma'
 import { NotificationType } from '@prisma/client'
 import nodemailer from 'nodemailer'
 
-// Create a transporter using Gmail SMTP
-// Note: For production, use environment variables for these credentials
+// Create a transporter using the cPanel SMTP settings
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'mail.connectinterim.com',
+  port: 465,
+  secure: true, // Use SSL/TLS
   auth: {
-    user: 'flanpaul19@gmail.com', // Your Gmail address
-    pass: 'vcqsutmiwgamvfhi' // Your Gmail app password
+    user: 'test@connectinterim.com',
+    pass: process.env.CPANEL_EMAIL_PASSWORD // Store this in your environment variables
   }
 })
 
@@ -21,7 +22,7 @@ const sendEmail = async (to: string, subject: string, body: string) => {
   console.log('Attempting to send email to:', to);
   try {
     const info = await transporter.sendMail({
-      from: '"TOUBA OIL" <your-email@gmail.com>',
+      from: '"TOUBA OIL" <test@connectinterim.com>',
       to: to,
       subject: subject,
       text: body,
@@ -89,48 +90,30 @@ export async function sendNotification(payload: NotificationPayload) {
     }
 
     // Send email notifications
-    for (const recipient of notification.recipients) {
-      console.log('Processing recipient:', recipient.user.email);
-      
-      const emailSubject = `Nouvelle notification - ${type}`
-      const emailBody = `
-        Bonjour ${recipient.user.name},
-    
-        Vous avez reçu une nouvelle notification :
-    
-        ${message}
-    
-        Veuillez vous connecter à l'application pour plus de détails.
-    
-        Cordialement,
-        L'équipe TOUBA OIL
-      `
-    
-      // Send to the test email address
-      if (recipient.user.email === 'w-iyfbd8@developermail.com') {
-        console.log('Sending email to test address:', recipient.user.email);
-        const emailResult = await sendEmail(recipient.user.email, emailSubject, emailBody)
-    
-        if (emailResult.success) {
-          console.log('Email sent successfully, updating database');
-          // Update emailSent status
-          await prisma.notification.update({
-            where: { id: notification.id },
-            data: {
-              recipients: {
-                update: {
-                  where: { id: recipient.id },
-                  data: { emailSent: true }
-                }
-              }
-            }
-          })
-        } else {
-          console.error('Failed to send email:', emailResult.error);
-        }
-      } else {
-        console.log('Skipping email for non-test address:', recipient.user.email);
-      }
+    const testRecipientEmail = 'flanpaul19@gmail.com'; // Test recipient email
+
+    const emailSubject = `Nouvelle notification - ${type}`
+    const emailBody = `
+      Bonjour,
+  
+      Vous avez reçu une nouvelle notification :
+  
+      ${message}
+  
+      Veuillez vous connecter à l'application pour plus de détails.
+  
+      Cordialement,
+      L'équipe TOUBA OIL
+    `
+  
+    console.log('Sending email to test address:', testRecipientEmail);
+    const emailResult = await sendEmail(testRecipientEmail, emailSubject, emailBody)
+
+    if (emailResult.success) {
+      console.log('Email sent successfully to test address');
+      // Note: We're not updating the database here since we're using a test email
+    } else {
+      console.error('Failed to send email:', emailResult.error);
     }
 
     return { success: true, notification }

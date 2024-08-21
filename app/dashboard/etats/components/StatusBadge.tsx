@@ -6,11 +6,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 const statusMapping: Record<string, string[]> = {
   'Brouillon': ['DRAFT'],
   'Soumis': ['SUBMITTED'],
-  'Validé': ['APPROVED_RESPONSABLE', 'APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
+  'Validé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
   'Escaladé': ['ESCALATED'],
-  'En attente': ['AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
+  'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Facture Rattaché': ['MAGASINIER_ATTACHED'],
   'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],
+  'Approuvé': ['FINAL_APPROVAL'],
   'Rejeté': ['REJECTED'],
   'Complété': ['COMPLETED'],
 };
@@ -44,12 +45,14 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
     ? 'outline'
     : displayStatus === 'Complété'
     ? 'default'
+    : displayStatus === 'Approuvé'
+    ? 'default'
     : 'secondary';
 
   const textSizeClass = textSize === 'tiny' ? 'text-xs' : '';
 
   const badgeContent = (
-    <Badge className={`m-1 ${textSizeClass} cursor-pointer`} variant={variant}>
+    <Badge className={`m-1 ${textSizeClass}`} variant={variant}>
       <small>{displayStatus}</small>
     </Badge>
   );

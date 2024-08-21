@@ -31,6 +31,8 @@ const eventTypeIcons: Record<EDBEventType, React.ElementType> = {
   ATTACHMENT_ADDED: Paperclip,
   ATTACHMENT_REMOVED: Paperclip,
   ESCALATED: ArrowUpRight,
+  AWAITING_FINAL_APPROVAL: CheckCircle2,
+  FINAL_APPROVAL: CheckCircle2,
   MAGASINIER_ATTACHED: Package,
   SUPPLIER_CHOSEN: ShoppingCart,
   COMPLETED: CheckCircle2
@@ -39,15 +41,17 @@ const eventTypeIcons: Record<EDBEventType, React.ElementType> = {
 const eventTypeTranslations: Record<EDBEventType, string> = {
   DRAFT_CREATED: "Brouillon créé",
   SUBMITTED: "Soumis",
-  APPROVED_RESPONSABLE: "Approuvé par le Responsable",
-  APPROVED_DIRECTEUR: "Approuvé par le Directeur",
-  APPROVED_DG: "Approuvé par le DG",
+  APPROVED_RESPONSABLE: "Approuvé par le Service",
+  APPROVED_DIRECTEUR: "Approuvé par la Direction",
+  APPROVED_DG: "Approuvé par la Direction Générale",
   REJECTED: "Rejeté",
   UPDATED: "Mis à jour",
   ATTACHMENT_ADDED: "Pièce jointe ajoutée",
   ATTACHMENT_REMOVED: "Pièce jointe supprimée",
   ESCALATED: "Escaladé",
   MAGASINIER_ATTACHED: "Facture rattaché par le Service d'Achat",
+  AWAITING_FINAL_APPROVAL: "En attente d'approbation finale",
+  FINAL_APPROVAL: "Approbation finale effectué",
   SUPPLIER_CHOSEN: "Fournisseur choisi",
   COMPLETED: "Complété"
 };

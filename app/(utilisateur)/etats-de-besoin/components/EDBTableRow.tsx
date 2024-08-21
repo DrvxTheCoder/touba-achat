@@ -4,6 +4,7 @@ import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EDB, EDBStatus } from '../data/types';
+import { StatusBadge } from '@/app/dashboard/etats/components/StatusBadge';
 
 type EDBTableRowProps = {
   edb: EDB;
@@ -35,13 +36,17 @@ const getStatusBadge = (status: string) => {
 };
 
 export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onClick, isSelected }) => {
+  const displayAmount = (edb.finalSupplier?.amount || 0).toLocaleString('fr-FR');
   return (
     <TableRow onClick={() => onClick(edb)} className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}>
       <TableCell>{edb.edbId}</TableCell>
       <TableCell className="hidden sm:table-cell">{edb.title}</TableCell>
       <TableCell className="hidden sm:table-cell">{edb.category}</TableCell>
-      <TableCell className="text-xs">{getStatusBadge(edb.status)}</TableCell>
-      <TableCell className="hidden sm:table-cell text-right">{edb.totalAmount.toLocaleString()} XOF</TableCell>
+      <TableCell className="text-xs"><StatusBadge 
+                        status={edb.status} 
+                        rejectionReason={edb.rejectionReason}
+                      /></TableCell>
+      <TableCell className="hidden sm:table-cell text-right">{displayAmount} XOF</TableCell>
     </TableRow>
   );
 };

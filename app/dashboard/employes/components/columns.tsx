@@ -18,7 +18,7 @@ import { ResetPasswordSheet } from "./forms/password-reset"
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 
 const ActionsCell = ({ employee, refreshData }: { employee: Employee, refreshData: () => void }) => {
-  const { hasWriteAccess } = useAllowedRoles();
+  const { hasFullAccess } = useAllowedRoles();
   
   const handleUpdate = () => {
     refreshData();
@@ -47,7 +47,7 @@ const ActionsCell = ({ employee, refreshData }: { employee: Employee, refreshDat
           Info
           <DropdownMenuShortcut><Info className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
         </DropdownMenuItem>
-        {hasWriteAccess && 
+        {hasFullAccess && 
           <>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               <ResetPasswordSheet userEmail={employee.email} userId={employee.userId}/>

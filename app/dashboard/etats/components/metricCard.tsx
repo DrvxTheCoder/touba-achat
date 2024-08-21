@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import {
@@ -8,41 +9,45 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components//ui/card"
+} from "@/components/ui/card"
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components//ui/chart"
+} from "@/components/ui/chart"
+
+interface ChartDataPoint {
+  date: string;
+  count: number;
+}
 
 export default function MetricCard() {
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/dashboard/edb-data');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des données');
+        }
+        const result = await response.json();
+        setChartData(result.chartData);
+      } catch (error) {
+        console.error('Erreur:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <Card className="flex flex-col lg:max-w-md">
-      {/* <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2 [&>div]:flex-1">
-        <div>
-          <CardDescription>Resting HR</CardDescription>
-          <CardTitle className="flex items-baseline gap-1 text-4xl tabular-nums">
-            62
-            <span className="text-sm font-normal tracking-normal text-muted-foreground">
-              bpm
-            </span>
-          </CardTitle>
-        </div>
-        <div>
-          <CardDescription>Variability</CardDescription>
-          <CardTitle className="flex items-baseline gap-1 text-4xl tabular-nums">
-            35
-            <span className="text-sm font-normal tracking-normal text-muted-foreground">
-              ms
-            </span>
-          </CardTitle>
-        </div>
-      </CardHeader> */}
       <CardContent className="flex flex-1 items-center">
         <ChartContainer
           config={{
-            resting: {
-              label: "Resting",
+            count: {
+              label: "EDBs:",
               color: "hsl(var(--chart-1))",
             },
           }}
@@ -55,36 +60,7 @@ export default function MetricCard() {
               right: 14,
               top: 10,
             }}
-            data={[
-              {
-                date: "2024-01-01",
-                resting: 62,
-              },
-              {
-                date: "2024-01-02",
-                resting: 72,
-              },
-              {
-                date: "2024-01-03",
-                resting: 35,
-              },
-              {
-                date: "2024-01-04",
-                resting: 62,
-              },
-              {
-                date: "2024-01-05",
-                resting: 52,
-              },
-              {
-                date: "2024-01-06",
-                resting: 62,
-              },
-              {
-                date: "2024-01-07",
-                resting: 70,
-              },
-            ]}
+            data={chartData}
           >
             <CartesianGrid
               strokeDasharray="4 4"
@@ -92,7 +68,7 @@ export default function MetricCard() {
               stroke="hsl(var(--muted-foreground))"
               strokeOpacity={0.5}
             />
-            <YAxis hide domain={["dataMin - 10", "dataMax + 10"]} />
+            <YAxis hide domain={["dataMin - 1", "dataMax + 1"]} />
             <XAxis
               dataKey="date"
               tickLine={false}
@@ -105,15 +81,15 @@ export default function MetricCard() {
               }}
             />
             <Line
-              dataKey="resting"
+              dataKey="count"
               type="natural"
-              fill="var(--color-resting)"
-              stroke="var(--color-resting)"
+              fill="var(--color-count)"
+              stroke="var(--color-count)"
               strokeWidth={2}
               dot={false}
               activeDot={{
-                fill: "var(--color-resting)",
-                stroke: "var(--color-resting)",
+                fill: "var(--color-count)",
+                stroke: "var(--color-count)",
                 r: 4,
               }}
             />

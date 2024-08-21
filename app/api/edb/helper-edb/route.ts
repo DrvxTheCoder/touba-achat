@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     // Check if the logged-in user has permission to create an EDA for others
-    if (!['ADMIN', 'DIRECTEUR', 'DIRECTEUR_GENERAL'].includes(role)) {
+    if (!['ADMIN', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'RESPONSABLE'].includes(role)) {
       return NextResponse.json({ message: 'You do not have permission to create an EDA for another user.' }, { status: 403 });
     }
 

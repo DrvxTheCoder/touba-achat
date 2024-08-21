@@ -25,6 +25,8 @@ export function generateNotificationMessage(
       return `Facture(s) rattachée(s) à l'EDB #${context.edbId} par le service d'achat.`;
     case EDBEventType.SUPPLIER_CHOSEN:
       return `Un fournisseur final a été choisi pour l'EDB #${context.edbId}.`;
+    case EDBEventType.FINAL_APPROVAL:
+        return `L'approbation finale de l'EDB #${context.edbId} effectué par : ${context.userName}.`
     case EDBEventType.IT_APPROVED:
       return `L'EDB #${context.edbId} a été approuvé par le Service IT.`;
     default:

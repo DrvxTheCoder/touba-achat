@@ -10,9 +10,10 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { EDBTimelineDialog } from "@/components/EDBTimelineDialog";
 import { PDFViewer } from '@/components/PDFileViewer';
 import { SupplierSelectionDialog } from '@/components/SupplierSelectionDialog';
-import { useToast } from '@/components/ui/use-toast';
 import { EDBStatus, EDB, Attachment } from '../data/types';
 import { BadgeCheck, Check, Copy, MoreVertical, Paperclip } from "lucide-react";
+import { StatusBadge } from '@/app/dashboard/etats/components/StatusBadge';
+import { toast } from 'sonner';
 
 type EDBDetailsCardProps = {
   edb: EDB;
@@ -43,7 +44,6 @@ const getStatusBadge = (status: string) => {
 
 export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
   const { data: session } = useSession();
-  const { toast } = useToast();
   const [currentPdfIndex, setCurrentPdfIndex] = useState<number | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null);
@@ -97,8 +97,7 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
         throw new Error(errorData.error || 'Erreur lors de la sélection du fournisseur');
       }
 
-      toast({
-        title: 'Fournisseur sélectionné',
+      toast.success('Fournisseur sélectionné',{
         description: 'Le fournisseur a été sélectionné avec succès.',
       });
 
@@ -109,10 +108,8 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
       
       // Here you might want to refresh the EDB data or update local state
     } catch (error) {
-      toast({
-        title: 'Erreur',
+      toast.error('Erreur', {
         description: error instanceof Error ? error.message : 'Une erreur est survenue lors de la sélection du fournisseur.',
-        variant: 'destructive',
       });
       setIsChoosingSupplier(false);
     }
@@ -128,13 +125,23 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
               size="icon"
               variant="outline"
               className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-              onClick={() => navigator.clipboard.writeText(edb.edbId)}
             >
-              <Copy className="h-3 w-3" />
+              <Copy className="h-3 w-3" onClick={() => {
+                const textToCopy = `${edb.edbId}`;
+                navigator.clipboard.writeText(textToCopy);  
+                toast.info("Copie réussi",{
+                  description: `L\'ID a été copié dans le presse-papier.`,
+                })
+              }} />
               <span className="sr-only">Copier ID EDB</span>
             </Button>
           </CardTitle>
-          <CardDescription>Statut: {getStatusBadge(edb.status)}</CardDescription>
+          <CardDescription>Statut: 
+            <StatusBadge 
+              status={edb.status} 
+              rejectionReason={edb.rejectionReason}
+            />
+          </CardDescription>
         </div>
         <div className="ml-auto flex items-center gap-1">
           <EDBTimelineDialog 

@@ -16,7 +16,6 @@ async function main() {
   }
 
   // Create departments
-  // Create departments
   const departmentNames = [
     'Administration IT',
     'Direction Administrative et Financière',

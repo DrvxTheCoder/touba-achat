@@ -109,6 +109,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Role } from "@prisma/client"
 import { EDBTimeline } from "@/components/EDBTimeline"
 import { Router } from "next/router"
+import EDBSummaryPDFDialog from "./EDBSummaryDialog"
 
 const statusMapping = {
     'Brouillon': ['DRAFT'],
@@ -569,6 +570,8 @@ const statusMapping = {
                 edbId={edb.id}
                 isLoading={isRejecting}
             />
+
+        <EDBSummaryPDFDialog edb={edb} />
         </div>
         </CardHeader>
         <CardContent className="p-5 text-sm">
@@ -730,6 +733,7 @@ const statusMapping = {
             )}
         </div>
         <EDBTimeline edb={edb}/>
+        
       </div>
     </div>
     </main>
