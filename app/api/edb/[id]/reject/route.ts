@@ -1,9 +1,10 @@
+// api/edb/[id]/reject/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient, EDBStatus, EDBEventType } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { updateEDBStatus } from '../../utils/edbAuditLogUtil'; // Import the utility function
-import { logEDBEvent } from '../../utils/edbAuditLogUtil';
+import { rejectEDB } from '../../utils/edbAuditLogUtil';
 
 const prisma = new PrismaClient();
 
@@ -44,29 +45,7 @@ export async function POST(
     }
 
     // Update the EDB status to REJECTED, log the event, and add the rejection reason
-    await updateEDBStatus(Number(id),edb.edbId, EDBStatus.REJECTED, parseInt(session.user.id));
-    
-    const updatedEdb = await prisma.etatDeBesoin.update({
-      where: { id: Number(id) },
-      data: { 
-        approverId: parseInt(session.user.id),
-        rejectionReason: reason,
-      },
-    });
-    if (updatedEdb){
-      logEDBEvent(edb.id, parseInt(session.user.id), EDBEventType.REJECTED);
-    }
-
-    // // Create a notification
-    // await prisma.notification.create({
-    //   data: {
-    //     type: 'EDB_REJECTED',
-    //     message: `EDB #${edb.edbId} a été rejeté. Raison: ${reason}`,
-    //     senderId: parseInt(session.user.id),
-    //     receiverId: edb.creatorId, // Notify the creator
-    //     etatDeBesoinId: edb.id,
-    //   },
-    // });
+    const updatedEdb = await rejectEDB(Number(id), parseInt(session.user.id), reason);
 
     return NextResponse.json(updatedEdb);
   } catch (error) {

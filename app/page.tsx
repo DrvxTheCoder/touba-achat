@@ -46,7 +46,7 @@ const HomeRedirect: React.FC = () => {
       <div className="flex flex-col items-center justify-center min-h-screen bg-background">
         <CustomLogoSVG className="w-20 h-20 mb-4" />
         <h1 className="text-2xl font-bold mb-4">Chargement...</h1>
-        <Progress value={progress} className="w-[20%] mb-4" />
+        <Progress value={progress} className="w-[70%] md:w-[20%] mb-4" />
         <p className="text-muted-foreground">{progress}%</p>
       </div>
     </>

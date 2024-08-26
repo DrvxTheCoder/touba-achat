@@ -16,6 +16,7 @@ import { UpdateEmployeeForm } from "./forms/edit-user-form"
 import { ToggleEmployeeStatusDialog } from "./delete-employee-dialog"
 import { ResetPasswordSheet } from "./forms/password-reset"
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
+import { UserInfoDialog } from "./UserInfoDialog"
 
 const ActionsCell = ({ employee, refreshData }: { employee: Employee, refreshData: () => void }) => {
   const { hasFullAccess } = useAllowedRoles();
@@ -39,12 +40,12 @@ const ActionsCell = ({ employee, refreshData }: { employee: Employee, refreshDat
       <DropdownMenuContent align="end">
         <DropdownMenuLabel className="text-bold">ACTIONS</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        {/* <DropdownMenuItem>
           Voir EDBs
           <DropdownMenuShortcut><ExternalLink className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          Info
+        </DropdownMenuItem> */}
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <UserInfoDialog userId={employee.userId} />
           <DropdownMenuShortcut><Info className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
         </DropdownMenuItem>
         {hasFullAccess && 
@@ -105,7 +106,7 @@ export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] =>
     header: "Téléphone",
   },
   {
-    accessorKey: "currentDepartment.name",
+    accessorKey: "départment",
     header: "Département",
     cell: ({ row }) => row.original.currentDepartment?.name || 'N/A',
   },

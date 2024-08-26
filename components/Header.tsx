@@ -27,6 +27,7 @@ import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import CustomLogoSVGTwo from "./logos/CustomLogoSVGTwo";
 import { CommandMenu } from "@/components/command-menu";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { translateRole } from "@/app/utils/translate-roles";
 
 export default function Header (){
     const { data: session } = useSession();
@@ -41,21 +42,24 @@ export default function Header (){
       return words[0][0].toUpperCase();
     };
 
-    
-
-
-    const links =  hasReadAccess ? [
-        { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
-        { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
-        { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
-        { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
-        { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
-    ] : [
-      { href: "/dashboard", icon: Home, label: "Dashboard", badgeCount: 0 },
-      { href: "/dashboard/mes-edbs", icon: Package, label: "États de Besoins", badgeCount: 0 },
+    const links = hasReadAccess ? [
+      { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
+      { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
+      { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
       { href: "/dashboard/commandes", icon: ShoppingCart, label: "Commandes", badgeCount: 0 },
       { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
-    ];
+  ] : [
+      { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
+      { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
+  ];
+
+  const isLinkActive = (href: string) => {
+      if (href === "/dashboard") {
+          return pathname === "/dashboard"; // Dashboard is active only on exact match
+      }
+      return pathname.startsWith(href); // Other links are active on nested routes
+  };
+
     return(
         <header className="absolute sticky w-full z-10 backdrop-blur-sm top-0 flex h-14 gap-4 items-center border-b px-4 lg:h-[60px] lg:px-6">
         <Sheet>
@@ -86,8 +90,8 @@ export default function Header (){
                     className={clsx(
                         "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2",
                         {
-                            "bg-muted text-foreground hover:text-foreground": pathname === link.href,
-                            "text-muted-foreground hover:text-foreground": pathname !== link.href,
+                            "bg-muted text-foreground hover:text-foreground": isLinkActive(link.href),
+                            "text-muted-foreground hover:text-foreground": !isLinkActive(link.href),
                         }
                     )}
                 >
@@ -131,7 +135,7 @@ export default function Header (){
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-            <p className="text-xs leading-none text-muted-foreground">Role :  ({session?.user?.role})</p>
+            <p className="text-xs leading-none text-muted-foreground">Role :  {translateRole(session?.user?.role.toString())}</p>
             </div>
             </DropdownMenuLabel>
               

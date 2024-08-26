@@ -22,7 +22,7 @@ const sendEmail = async (to: string, subject: string, body: string) => {
   console.log('Attempting to send email to:', to);
   try {
     const info = await transporter.sendMail({
-      from: '"TOUBA OIL" <test@connectinterim.com>',
+      from: '"Touba App™" <test@connectinterim.com>',
       to: to,
       subject: subject,
       text: body,
@@ -92,7 +92,7 @@ export async function sendNotification(payload: NotificationPayload) {
     // Send email notifications
     const testRecipientEmail = 'flanpaul19@gmail.com'; // Test recipient email
 
-    const emailSubject = `Nouvelle notification - ${type}`
+    const emailSubject = `Nouvelle notification`
     const emailBody = `
       Bonjour,
   

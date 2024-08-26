@@ -25,17 +25,17 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
       className={`cursor-pointer hover:bg-muted/80 ${isSelected ? 'bg-muted/80' : ''}`}
     >
       <TableCell>
-        <div className="font-medium"># {displayId}</div>
+        <div className="text-xs md:font-medium"># {displayId}</div>
         <div className="hidden text-xs text-muted-foreground md:inline">
           {displayEmail}
         </div>
       </TableCell>
       <TableCell className="hidden sm:table-cell">{edb.category}</TableCell>
-      <TableCell className="hidden sm:table-cell">
+      <TableCell className="text-right md:text-left ">
         <StatusBadge status={edb.status as EDBStatus} textSize="tiny" />
       </TableCell>
       <TableCell className="hidden md:table-cell">{edb.department}</TableCell>
-      <TableCell className="text-right">
+      <TableCell className="hidden sm:table-cell">
         {displayAmount} XOF
       </TableCell>
       <TableCell className="lg:hidden">

@@ -448,12 +448,10 @@ const statusMapping = {
     <div className="grid flex-1 items-start md:gap-8 gap-4 lg:grid-cols-3 xl:grid-cols-3">
       
       <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
-
-
         <Card>
         <CardHeader className="flex flex-row items-start border-b">
         <div className="grid gap-0.5">
-        <CardTitle className="group flex items-center gap-2 text-lg hover:underline underline-offset-2">
+        <CardTitle className="group flex items-center gap-2 text-md hover:underline underline-offset-2">
             # {edb.edbId}
             <Button
             size="icon"
@@ -487,6 +485,8 @@ const statusMapping = {
             auditLogs: edb.auditLogs || [] // Provide an empty array if auditLogs is undefined
             }} 
         />
+        
+        <EDBSummaryPDFDialog edb={edb} />
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -496,7 +496,7 @@ const statusMapping = {
             </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-            <DropdownMenuItem>Modifier</DropdownMenuItem>
+            {/* <DropdownMenuItem>Modifier</DropdownMenuItem> */}
             
             {isMagasinier && (
                 <DropdownMenuItem 
@@ -507,9 +507,9 @@ const statusMapping = {
                     <Paperclip className="ml-2 h-4 w-4" />
                 </DropdownMenuItem>
                 )}
-            <DropdownMenuItem disabled>Bon de Commande
+            {/* <DropdownMenuItem disabled>Bon de Commande
             <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuSeparator />
             <DropdownMenuItem 
                 className="text-primary"
@@ -541,11 +541,11 @@ const statusMapping = {
 
             </DropdownMenuContent>
         </DropdownMenu>
-        <AttachDocumentDialog 
-            isOpen={isAttachDocumentDialogOpen}
-            onOpenChange={setIsAttachDocumentDialogOpen}
-            onUploadSuccess={handleUploadSuccess}
-        />
+            <AttachDocumentDialog 
+                isOpen={isAttachDocumentDialogOpen}
+                onOpenChange={setIsAttachDocumentDialogOpen}
+                onUploadSuccess={handleUploadSuccess}
+            />
             <ValidationDialog 
                 isOpen={isValidationDialogOpen}
                 onClose={() => setIsValidationDialogOpen(false)}
@@ -571,7 +571,7 @@ const statusMapping = {
                 isLoading={isRejecting}
             />
 
-        <EDBSummaryPDFDialog edb={edb} />
+        
         </div>
         </CardHeader>
         <CardContent className="p-5 text-sm">

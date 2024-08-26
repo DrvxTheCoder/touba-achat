@@ -129,6 +129,16 @@ export function EmployeeDataTable({ initialData, selectedDepartmentId }: Employe
     fetchData(1, newPageSize, columnFilters, sorting);
   };
 
+  const columnLabels: { [key: string]: string } = {
+    name: "Nom Complet",
+    email: "Email",
+    matriculation: "Matricule",
+    status: "Statut",
+    phoneNumber: "Téléphone",
+    "currentDepartment.name": "Département",
+    actions: "Actions"
+  };
+
   return (
     <div className="w-full">
       <div className="flex items-center py-2">
@@ -160,7 +170,7 @@ export function EmployeeDataTable({ initialData, selectedDepartmentId }: Employe
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                   {columnLabels[column.id] || column.id}
                   </DropdownMenuCheckboxItem>
                 )
               })}

@@ -140,9 +140,6 @@
       scrollbar-width: none;  /* Firefox */
 }
 }
-html, body{
-  overscroll-behavior: none;
-}
 
 .animated-dots {
   clip-path: inset(0 1ch 0 0); /* Reduced from 3ch to 1ch */

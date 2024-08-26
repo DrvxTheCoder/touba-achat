@@ -188,7 +188,6 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
               ))}
             </ScrollArea>
           </ul>
-          <Separator className="my-2" />
           <ul className="grid">
             <li className="flex items-center justify-between font-semibold">
               <span className="text-muted-foreground">Total - Estimé (XOF)</span>

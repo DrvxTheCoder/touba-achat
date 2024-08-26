@@ -15,7 +15,7 @@ export default function Sidebar(){
     const { data: session } = useSession();
     const { hasReadAccess, hasWriteAccess } = useAllowedRoles();
 
-    const links = hasWriteAccess ? [
+    const links = hasReadAccess ? [
         { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
         { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
         { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },

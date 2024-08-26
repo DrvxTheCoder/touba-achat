@@ -1,8 +1,9 @@
+// api/edb/[id]/finalapproval/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient, EDBStatus, NotificationType, EDBEventType } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
-import { logEDBEvent } from '../../utils/edbAuditLogUtil';
+import { finalApproveEDB } from '../../utils/edbAuditLogUtil';
 import { sendNotification } from '@/app/actions/sendNotification';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
 import { determineRecipients } from '@/app/api/utils/notificationsUtil';
@@ -35,52 +36,8 @@ export async function POST(
       return NextResponse.json({ message: 'L\'EDB n\'est pas en attente d\'approbation finale' }, { status: 400 });
     }
 
-    const newStatus: EDBStatus = 'FINAL_APPROVAL';
-    const notificationType: NotificationType = NotificationType.EDB_FINAL_APPROVAL;
-    const action: EDBEventType = EDBEventType.FINAL_APPROVAL;
 
-    // Update the EDB status
-    const updatedEdb = await prisma.etatDeBesoin.update({
-      where: { id: Number(id) },
-      data: { 
-        status: newStatus,
-        finalApprovedAt: new Date(),
-        finalApprovedBy: parseInt(session.user.id)
-      },
-    });
-    
-    // Log the event
-    await logEDBEvent(
-      Number(id),
-      parseInt(session.user.id),
-      action,
-      { oldStatus: edb.status, newStatus }
-    );
-
-    // Generate notification message
-    const notificationMessage = generateNotificationMessage(action, {
-      edbId: edb.edbId,
-      status: newStatus,
-      userName: session.user.name || 'Un utilisateur',
-      departmentName: edb.department.name
-    });
-
-    // Determine recipients
-    const recipients = await determineRecipients(updatedEdb, newStatus, parseInt(session.user.id));
-
-    // Send notification
-    await sendNotification({
-      type: notificationType,
-      message: notificationMessage,
-      entityId: edb.edbId,
-      entityType: 'EDB',
-      recipients,
-      additionalData: { 
-        updatedBy: session.user.id, 
-        departmentId: edb.departmentId,
-        creatorId: edb.creatorId
-      }
-    });
+    const updatedEdb = await finalApproveEDB(Number(id), parseInt(session.user.id));
 
     return NextResponse.json(updatedEdb);
   } catch (error) {

@@ -118,8 +118,8 @@ const ITEMS_PER_PAGE = 5;
 const statusMapping = {
   'Brouillon': ['DRAFT'],
   'Soumis': ['SUBMITTED'],
-  'Validé': ['APPROVED_RESPONSABLE', 'APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
-  'En attente': ['AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
+  'Validé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
+  'En attente': ['APPROVED_RESPONSABLE','AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Traitement en cours': ['MAGASINIER_ATTACHED', 'SUPPLIER_CHOSEN'],
   'Rejeté': ['REJECTED'],
   'Complété': ['COMPLETED']
@@ -519,7 +519,7 @@ export default function Etats() {
                 </div>
             </div>
         </div>
-        <div className="grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
+        <div className="grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3 mb-4">
           <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
             <EDBCards />
             <div className="flex items-center">
@@ -578,13 +578,13 @@ export default function Etats() {
                       <TableHead className="hidden sm:table-cell">
                           Catégorie
                       </TableHead>
-                      <TableHead className="hidden md:table-cell">
+                      <TableHead className="text-right md:text-left">
                           Statut
                       </TableHead>
                       <TableHead className="hidden md:table-cell">
                           Département
                       </TableHead>
-                      <TableHead className="text-right md:rounded-r-lg">
+                      <TableHead className="hidden md:table-cell md:rounded-r-lg">
                           Montant (XOF)
                       </TableHead>
                       <TableHead className="lg:hidden rounded-r-lg">
@@ -734,7 +734,7 @@ export default function Etats() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Modifier</DropdownMenuItem>
+                        {/* <DropdownMenuItem>Modifier</DropdownMenuItem> */}
                         
                         {isMagasinier && (
                             <DropdownMenuItem 
@@ -745,9 +745,9 @@ export default function Etats() {
                               <Paperclip className="ml-2 h-4 w-4" />
                             </DropdownMenuItem>
                           )}
-                        <DropdownMenuItem disabled>Bon de Commande
+                        {/* <DropdownMenuItem disabled>Bon de Commande
                         <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-                        </DropdownMenuItem>
+                        </DropdownMenuItem> */}
                         
                         {!isMagasinier && (
                           <>
@@ -763,7 +763,7 @@ export default function Etats() {
                           )}
                             <DropdownMenuItem 
                               className="text-primary"
-                              onClick={handleFinalApproval}
+                              onClick={handleValidate}
                               disabled={!canValidate}
                             >
                               Valider

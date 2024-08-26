@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Ce choix est reservé au Service Informatique' }, { status: 403 });
       }
   
-      await chooseFinalSupplier(
+      const updatedEDB = await chooseFinalSupplier(
         edb.id,
         parseInt(session.user.id),
         {
@@ -47,13 +47,6 @@ export async function POST(req: NextRequest) {
           amount: attachment.totalAmount,
         }
       );
-  
-      const updatedEDB = await prisma.etatDeBesoin.update({
-        where: { id: edbId },
-        data: {
-          status: 'SUPPLIER_CHOSEN',
-        },
-      });
   
       return NextResponse.json({ message: 'Fournisseur sélectionné avec succès', edb: updatedEDB });
     } catch (error) {

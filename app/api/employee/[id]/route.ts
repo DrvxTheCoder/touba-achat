@@ -1,9 +1,52 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import prisma from '@/lib/prisma';
 
-// ... autres imports et fonctions ...
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const userId = parseInt(params.id);
+
+    const userInfo = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        employee: {
+          include: {
+            currentDepartment: true,
+          },
+        },
+        createdEdbs: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!userInfo) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    }
+
+    const { password, ...userInfoWithoutPassword } = userInfo;
+    const totalEDBs = userInfo.createdEdbs.length;
+
+    return NextResponse.json({
+      ...userInfoWithoutPassword,
+      totalEDBs,
+    });
+  } catch (error) {
+    console.error('Erreur dans GET /api/user/[id]:', error);
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+  }
+}
 
 export async function DELETE(
   request: Request,

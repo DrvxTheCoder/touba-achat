@@ -7,12 +7,11 @@ export function generateNotificationMessage(
     edbId: string;
     status?: EDBStatus;
     userName?: string;
-    departmentName?: string;
   }
 ): string {
   switch (action) {
     case EDBEventType.SUBMITTED:
-      return `Nouvel EDB #${context.edbId} créé par ${context.userName} du département ${context.departmentName}.`;
+      return `Nouvel EDB #${context.edbId} créé par ${context.userName}.`;
     case EDBEventType.APPROVED_RESPONSABLE:
       return `EDB #${context.edbId} a été approuvé par le service - ${context.userName}.`;
     case EDBEventType.APPROVED_DIRECTEUR:

@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Download, FileUp } from 'lucide-react';
 import { SpinnerCircularFixed } from 'spinners-react';
+import { useMediaQuery } from '@/app/hooks/use-media-query';
+import { toast } from 'sonner';
 
 // Updated MinimalEDB type
 type MinimalEDB = {
@@ -89,14 +91,22 @@ const translateStatus = (status: string): string => {
 
 const EDBSummaryPDFDialog: React.FC<EDBSummaryPDFDialogProps> = ({ edb }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
-  useEffect(() => {
-    const generatePDF = async () => {
+  const generatePDF = async () => {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      console.log('Generating PDF...');
       const timelineEvents = edb.auditLogs?.map(log => ({
         eventAt: log.eventAt.toString(),
         status: translateEvent(log.eventType),
         user: { name: log.user.name }
       })) || [];
+
+      console.log('Timeline events:', timelineEvents);
 
       const pdfBlob = await pdf(
         <EDBSummaryPDF 
@@ -104,7 +114,7 @@ const EDBSummaryPDFDialog: React.FC<EDBSummaryPDFDialogProps> = ({ edb }) => {
             edbId: edb.edbId,
             createdAt: edb.createdAt.toString(),
             status: translateStatus(edb.status),
-            employee: edb.creator, // Changed from employee to creator
+            employee: edb.creator,
             department: typeof edb.department === 'string' ? { name: edb.department } : edb.department,
             description: {
               items: Array.isArray(edb.description?.items) ? edb.description.items : []
@@ -113,55 +123,105 @@ const EDBSummaryPDFDialog: React.FC<EDBSummaryPDFDialogProps> = ({ edb }) => {
           timelineEvents={timelineEvents} 
         />
       ).toBlob();
+
+      console.log('PDF blob generated');
+
       const url = URL.createObjectURL(pdfBlob);
+      console.log('PDF URL created:', url);
       setPdfUrl(url);
-    };
+      return url;
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      toast.error('Error generating PDF', {
+        description: err instanceof Error ? err.message : 'An unknown error occurred',
+      });
+      return null;
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
-    generatePDF();
-
-    return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [edb]);
-
-  const handleDownload = () => {
-    if (pdfUrl) {
+  const handleDownload = async () => {
+    let url = pdfUrl;
+    if (!url) {
+      url = await generatePDF();
+    }
+    if (url) {
       const link = document.createElement('a');
-      link.href = pdfUrl;
+      link.href = url;
       link.download = `${edb.edbId}.pdf`;
       link.click();
     }
   };
 
+  const handleButtonClick = async (e: React.MouseEvent) => {
+    if (isMobile) {
+      e.preventDefault();
+      await handleDownload();
+    } else {
+      // For desktop, generate the PDF when the dialog opens
+      await generatePDF();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="h-8 gap-1"
+          onClick={handleButtonClick}
+          disabled={isGenerating}
+        >
+          {isGenerating ? (
+            <SpinnerCircularFixed size={16} thickness={180} speed={100} color="#36ad47" secondaryColor="rgba(0,0,0,0.1)" />
+          ) : (
+            <>
             <FileUp className="h-4 w-4" />
+            <span className="lg:sr-only xl:not-sr-only xl:whitespace-nowrap hidden md:block">
+              Exporter
+            </span>
+          </>
+          )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[70vw] w-full max-h-[90vh] h-full">
-        <DialogHeader>
-          <DialogTitle>Résumé de l&apos;État de Besoin: {edb.edbId}</DialogTitle>
-        </DialogHeader>
-        {pdfUrl ? (
-          <div className="flex flex-col h-full">
-            <iframe
-              src={pdfUrl}
-              className="w-full flex-grow border border-gray-300 rounded h-[42rem]"
-              title="EDB Summary PDF Preview"
-            />
-            <div className="flex flex-row justify-end justify-items-end w-full"><Button onClick={handleDownload} className="mt-4 w-fit">Télécharger le PDF <Download className="h-4 w-4 ml-2"/> </Button></div>
-            
-          </div>
-        ) : (
+      {!isMobile && (
+        <DialogContent className="max-w-[90vw] max-h-[60vh] md:max-w-[70vw] w-full md:max-h-[90vh] h-full">
+          <DialogHeader>
+            <DialogTitle>Résumé de l&apos;État de Besoin: {edb.edbId}</DialogTitle>
+          </DialogHeader>
+          {error ? (
+            <div className="text-red-500">Error: {error}</div>
+          ) : pdfUrl ? (
+            <div className="flex flex-col h-full">
+              <iframe
+                src={pdfUrl}
+                className="w-full flex-grow border border-gray-300 rounded h-[42rem]"
+                title="EDB Summary PDF Preview"
+              />
+              <div className="flex flex-row justify-end justify-items-end w-full">
+                <Button onClick={handleDownload} className="mt-4 w-fit">
+                  Télécharger le PDF <Download className="h-4 w-4 ml-2"/>
+                </Button>
+              </div>
+            </div>
+          ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-            <SpinnerCircularFixed size={90} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
-          </div>
-        )}
-      </DialogContent>
+              <SpinnerCircularFixed size={90} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
+            </div>
+          )}
+        </DialogContent>
+      )}
     </Dialog>
   );
 };

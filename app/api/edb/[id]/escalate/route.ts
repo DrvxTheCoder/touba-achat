@@ -1,8 +1,9 @@
+// api/edb/[id]/escalate/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient, EDBStatus } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
-import { updateEDBStatus } from '../../utils/edbAuditLogUtil'; // Import the utility function
+import { escalateEDB } from '../../utils/edbAuditLogUtil'; // Import the utility function
 
 const prisma = new PrismaClient();
 
@@ -31,14 +32,7 @@ export async function POST(
       return NextResponse.json({ message: 'EDB introuvable' }, { status: 404 });
     }
 
-    const newStatus = EDBStatus.ESCALATED;
-
-    // Update the EDB status and log the event
-    await updateEDBStatus(Number(id),edb.edbId, newStatus, parseInt(session.user.id));
-
-    const updatedEdb = await prisma.etatDeBesoin.findUnique({
-      where: { id: Number(id) },
-    });
+    const updatedEdb = await escalateEDB(Number(id), parseInt(session.user.id), 'Escalation reason');
 
     return NextResponse.json(updatedEdb);
   } catch (error) {

@@ -15,9 +15,7 @@ export const useAllowedRoles = () => {
     const allowedWriteRoles = [
         "ADMIN",
         "IT_ADMIN",
-        "DIRECTEUR",
         "DIRECTEUR_GENERAL",
-        "RESPONSABLE",
     ];
     const allowedFullAccessRoles = [
       "ADMIN",

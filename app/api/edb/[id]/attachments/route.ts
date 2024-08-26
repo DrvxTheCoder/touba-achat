@@ -1,10 +1,9 @@
+// api/edb/[id]/attachments/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, AttachmentType, EDBStatus } from '@prisma/client';
-import { addAttachmentToEDB, updateEDBStatus } from '../../utils/edbAuditLogUtil';
+import { AttachmentType } from '@prisma/client';
+import { addAttachmentToEDB } from '@/app/api/edb/utils/edbAuditLogUtil';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
-
-const prisma = new PrismaClient();
 
 function extractFileNameFromUrl(url: string): string {
   const parts = url.split('/');
@@ -33,14 +32,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ message: 'Invalid request body' }, { status: 400 });
     }
 
-    const edb = await prisma.etatDeBesoin.findUnique({
-      where: { id: edbId },
-    });
-
-    if (!edb) {
-      return NextResponse.json({ message: 'EDB not found' }, { status: 404 });
-    }
-
     const savedAttachments = await Promise.all(
       attachments.map(async (attachment: any) => {
         console.log('Received attachment:', attachment);
@@ -57,15 +48,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
         console.log('Processed attachment data:', attachmentData);
 
-        await addAttachmentToEDB(edbId, userId, attachmentData);
+        const updatedEDB = await addAttachmentToEDB(edbId, userId, attachmentData);
 
-        return attachmentData;
+        return {
+          ...attachmentData,
+          edbStatus: updatedEDB.status
+        };
       })
     );
 
-    return NextResponse.json({ message: 'Attachments saved and events logged successfully', attachments: savedAttachments }, { status: 200 });
+    return NextResponse.json({ 
+      message: 'Attachments saved and events logged successfully', 
+      attachments: savedAttachments,
+      updatedEDBStatus: savedAttachments[savedAttachments.length - 1].edbStatus
+    }, { status: 200 });
+
   } catch (error) {
     console.error('Error saving attachments:', error);
-    return NextResponse.json({ message: 'Error saving attachments', error: (error as Error).message }, { status: 500 });
+    if (error instanceof Error) {
+      return NextResponse.json({ message: 'Error saving attachments', error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ message: 'An unknown error occurred' }, { status: 500 });
   }
 }

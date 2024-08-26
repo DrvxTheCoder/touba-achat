@@ -6,12 +6,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 const statusMapping: Record<string, string[]> = {
   'Brouillon': ['DRAFT'],
   'Soumis': ['SUBMITTED'],
-  'Validé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
+  'Approuvé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
   'Escaladé': ['ESCALATED'],
   'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Facture Rattaché': ['MAGASINIER_ATTACHED'],
   'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],
-  'Approuvé': ['FINAL_APPROVAL'],
+  'Validé': ['FINAL_APPROVAL'],
   'Rejeté': ['REJECTED'],
   'Complété': ['COMPLETED'],
 };
@@ -39,13 +39,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
 
   const variant = displayStatus === 'Rejeté'
     ? 'destructive'
-    : displayStatus === 'Validé'
+    : displayStatus === 'Approuvé'
     ? 'outline'
     : displayStatus === 'Escaladé'
     ? 'outline'
-    : displayStatus === 'Complété'
+    : displayStatus === 'Terminé'
     ? 'default'
-    : displayStatus === 'Approuvé'
+    : displayStatus === 'Validé'
     ? 'default'
     : 'secondary';
 

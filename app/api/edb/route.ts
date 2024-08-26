@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from '../auth/[...nextauth]/auth-options';
 import generateEDBId from './utils/edb-id-generator';
 import { Prisma, EDBStatus } from '@prisma/client';
-import { logEDBEvent } from './utils/edbAuditLogUtil';
+import { createEDB} from './utils/edbAuditLogUtil';
 import { determineRecipients, getNotificationTypeFromStatus } from '../utils/notificationsUtil';
 import { NotificationPayload, sendNotification } from '@/app/actions/sendNotification';
 
@@ -40,6 +40,9 @@ export async function GET(request: Request) {
             array_contains: [{ designation: { contains: search } }]
           }
         },
+        { userCreator: { name: { contains: search, mode: 'insensitive' } } },
+        { userCreator: { email: { contains: search, mode: 'insensitive' } } },
+        { department: { name: { contains: search, mode: 'insensitive' } } },
       ],
       ...(statusFilter.length > 0 ? { status: { in: statusFilter } } : {}),
     };
@@ -202,7 +205,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const resultEventType = EDBEventType.SUBMITTED;
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ message: 'You must be logged in.' }, { status: 401 });
@@ -219,87 +221,25 @@ export async function POST(request: Request) {
 
     console.log('Received body:', body);
 
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
-      include: { employee: true },
-    });
-
-    if (!user || !user.employee) {
-      return NextResponse.json({ message: 'User or employee not found' }, { status: 400 });
-    }
-
-    console.log('User:', user);
-
-    // Generate EDB ID
-    const edbId = generateEDBId();
-    console.log('Generated EDB ID:', edbId);
-
-    // Determine initial status based on user role
-    let initialStatus: EDBStatus = 'SUBMITTED';
-    if (session.user.role === 'RESPONSABLE') {
-      initialStatus = 'APPROVED_RESPONSABLE';
-    } else if (session.user.role === 'DIRECTEUR') {
-      initialStatus = 'APPROVED_DIRECTEUR';
-    } else if (session.user.role === 'DIRECTEUR_GENERAL') {
-      initialStatus = 'APPROVED_DG';
-    }
-
-    // Prepare the data for creating the EDB
-    const edbData = {
-      edbId,
+    const newEDB = await createEDB(parseInt(userId), {
       title,
-      description: { items },
-      references: reference,
-      status: initialStatus,
-      department: { connect: { id: user.employee.currentDepartmentId } },
-      creator: { connect: { id: user.employee.id } },
-      userCreator: { connect: { id: user.id } },
-      category: { connect: { id: parseInt(category) } },
-    };
-
-    console.log('EDB Data:', edbData);
-
-    // Create the new EDB
-    const newEDB = await prisma.etatDeBesoin.create({
-      data: edbData,
+      category: parseInt(category),
+      reference,
+      items
     });
 
     console.log('Created EDB:', newEDB);
 
-    // Log the EDB creation event
-    await logEDBEvent(newEDB.id, parseInt(userId), EDBEventType.SUBMITTED);
-
-    // If the initial status is not SUBMITTED, log a separate validation event
-    if (initialStatus !== 'SUBMITTED') {
-      let validationEventType: EDBEventType;
-      switch (initialStatus) {
-        case 'APPROVED_RESPONSABLE':
-          validationEventType = EDBEventType.APPROVED_RESPONSABLE;
-          break;
-        case 'APPROVED_DIRECTEUR':
-          validationEventType = EDBEventType.APPROVED_DIRECTEUR;
-          break;
-        case 'APPROVED_DG':
-          validationEventType = EDBEventType.APPROVED_DG;
-          break;
-        default:
-          validationEventType = EDBEventType.UPDATED;
-      }
-      await logEDBEvent(newEDB.id, parseInt(userId), validationEventType);
-    }
-    
-    const recipients = await determineRecipients(newEDB, resultEventType, parseInt(session.user.id));
-
-    const notificationPayload: NotificationPayload = {
-      type: getNotificationTypeFromStatus(resultEventType),
-      message: `EDB #${edbId} a été mis à jour vers ${resultEventType}`,
-      entityId: edbId,
+    // Send notification for new EDB
+    const recipients = await determineRecipients(newEDB, newEDB.status, parseInt(userId));
+    await sendNotification({
+      type: getNotificationTypeFromStatus(EDBEventType.SUBMITTED),
+      message: `Nouvel EDB #${newEDB.edbId} créé par ${session.user.name || 'un utilisateur'}`,
+      entityId: newEDB.edbId,
       entityType: 'EDB',
       recipients,
-      additionalData: { updatedBy: userId, departmentId: newEDB .departmentId }
-    };
-  
-    await sendNotification(notificationPayload);
+      additionalData: { createdBy: userId, departmentId: newEDB.departmentId }
+    });
 
     return NextResponse.json(newEDB, { status: 201 });
   } catch (error) {

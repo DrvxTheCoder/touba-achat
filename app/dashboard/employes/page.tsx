@@ -50,13 +50,13 @@ export default function Employes() {
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Employés</h2>
             <div className="flex items-center space-x-2">
               {hasWriteAccess && (<AddEmployeeForm />)}
-              {hasReadAccess && (<TeamSwitcher onDepartmentChange={handleDepartmentChange} />)}
+              {hasWriteAccess && (<TeamSwitcher onDepartmentChange={handleDepartmentChange} />)}
             </div>
           </div>
         </div>
         {hasReadAccess ? (
           isLoading ? (
-            <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
+            <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed h- shadow-sm mb-2">
               <div className="flex flex-col items-center gap-1 text-center">
                 <SpinnerCircularFixed size={90} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
                 <small className="text-xs animated-dots mt-1">Chargement...</small>

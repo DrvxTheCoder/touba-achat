@@ -307,7 +307,7 @@ export const EDBTimelineDialog: React.FC<EDBTimelineDialogProps> = ({ edb }) => 
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="h-8 gap-1">
           <Truck className="h-3.5 w-3.5" />
-          <span className="lg:sr-only xl:not-sr-only xl:whitespace-nowrap">
+          <span className="lg:sr-only xl:not-sr-only xl:whitespace-nowrap hidden md:block">
             Traquer
           </span>
         </Button>

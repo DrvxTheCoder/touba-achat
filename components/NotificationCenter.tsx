@@ -15,7 +15,7 @@ export const NotificationCenter = () => {
 
     const handleNotificationClick = (notification: CustomNotification) => {
         markAsRead(notification.id);
-        router.push(`/dashboard/etats/${notification.etatDeBesoinId}`);
+        // router.push(`/dashboard/etats/${notification.etatDeBesoinId}`);
         // router.push(`/dashboard/ordres-de-mission/${notification.ordreDeMissionId}`);
     };
 
