@@ -13,6 +13,7 @@ export type EDBStatus =
   | 'IT_APPROVED'
   | 'AWAITING_FINAL_APPROVAL'
   | 'APPROVED_DG'
+  | 'FINAL_APPROVAL'
   | 'ESCALATED'
   | 'REJECTED'
   | 'COMPLETED';

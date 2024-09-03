@@ -17,7 +17,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { session, loading } = useRequireAuth([Role.ADMIN, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.MAGASINIER, Role.AUDIT, Role.IT_ADMIN ]);
+  const { session, loading } = useRequireAuth([Role.ADMIN, Role.DIRECTEUR, Role.RESPONSABLE, Role.DIRECTEUR_GENERAL, Role.MAGASINIER, Role.AUDIT, Role.IT_ADMIN, Role.RH ]);
 
   if (loading) {
     return <div>Chargement...</div>;

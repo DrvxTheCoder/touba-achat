@@ -618,7 +618,6 @@ const statusMapping = {
                         </ul>
                     </PopoverContent>
                   </Popover>
-
                   </ul>
                   <span className="font-semibold">Références Techniques</span>
                   <span className="text-muted-foreground">Non-renseigné</span>

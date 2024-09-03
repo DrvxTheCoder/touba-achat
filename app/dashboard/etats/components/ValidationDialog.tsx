@@ -18,9 +18,9 @@ export const ValidationDialog: React.FC<ValidationDialogProps> = ({ isOpen, onCl
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Confirmer votre validation</DialogTitle>
+          <DialogTitle>Confirmer votre approbation</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir valider cet état de besoin ? <p className="text-sm mt-3">Nb: Votre identité sera lié à cet état de besoin.</p> 
+            Êtes-vous sûr de vouloir poursuivre l&apos;approbation cet état de besoin ? <p className="text-sm mt-3">Nb: Votre identité sera lié à cet état de besoin.</p> 
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

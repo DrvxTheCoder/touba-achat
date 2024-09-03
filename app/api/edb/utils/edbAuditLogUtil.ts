@@ -1,3 +1,4 @@
+// edb/utils/edbAuditLogUtil.ts
 import { PrismaClient, EDBEventType, EtatDeBesoin, Prisma, EDBStatus, AttachmentType, NotificationType } from '@prisma/client';
 import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
 import { getEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
@@ -40,16 +41,16 @@ async function sendEDBNotification(
   userId: number,
   additionalData?: Record<string, any>
 ): Promise<void> {
-  const recipients = await determineRecipients(edb, edb.status, userId);
+  const recipients = await determineRecipients(edb, edb.status, userId, 'EDB');
   const userName = await getUserName(userId);
   const notificationMessage = generateNotificationMessage(action, {
-    edbId: edb.edbId,
+    id: edb.edbId,
     status: edb.status,
     userName: userName,
-  });
+  }, 'EDB');
 
   const notificationPayload: NotificationPayload = {
-    type: getNotificationTypeFromStatus(edb.status),
+    type: getNotificationTypeFromStatus(edb.status, 'EDB'),
     message: notificationMessage,
     entityId: edb.edbId,
     entityType: 'EDB',
@@ -183,12 +184,12 @@ export async function validateEDB(edbId: number, userId: number, userRole: strin
   );
 
   const notificationMessage = generateNotificationMessage(action, {
-    edbId: edb.edbId,
+    id: edb.edbId,
     status: newStatus,
     userName: userName,
-  });
+  }, 'EDB');
 
-  const recipients = await determineRecipients(updatedEdb, newStatus, userId);
+  const recipients = await determineRecipients(updatedEdb, newStatus, userId, 'EDB');
 
   await sendNotification({
     type: notificationType,
@@ -481,7 +482,7 @@ export async function finalApproveEDB(
   const updatedEDB = await prisma.etatDeBesoin.update({
     where: { id: edbId },
     data: { 
-      status: 'APPROVED_DG',
+      status: 'FINAL_APPROVAL',
       finalApprovedAt: new Date(),
       finalApprovedBy: userId
     },
@@ -491,7 +492,7 @@ export async function finalApproveEDB(
   await logEDBEvent(
     edbId,
     userId,
-    EDBEventType.APPROVED_DG,
+    EDBEventType.FINAL_APPROVAL,
     { action: 'FINAL_APPROVAL' }
   );
 
@@ -522,6 +523,30 @@ export async function rejectEDB(
   );
 
   await sendEDBNotification(updatedEDB, EDBEventType.REJECTED, userId, { reason });
+
+  return updatedEDB;
+}
+
+export async function markEDBAsCompleted(
+  edbId: number,
+  userId: number
+): Promise<EtatDeBesoin> {
+  const updatedEDB = await prisma.etatDeBesoin.update({
+    where: { id: edbId },
+    data: { 
+      status: 'COMPLETED',
+    },
+    include: { department: true }
+  });
+
+  await logEDBEvent(
+    edbId,
+    userId,
+    EDBEventType.COMPLETED,
+    { action: 'MARKED_AS_COMPLETED' }
+  );
+
+  await sendEDBNotification(updatedEDB, EDBEventType.COMPLETED, userId);
 
   return updatedEDB;
 }

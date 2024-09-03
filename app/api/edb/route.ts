@@ -231,9 +231,9 @@ export async function POST(request: Request) {
     console.log('Created EDB:', newEDB);
 
     // Send notification for new EDB
-    const recipients = await determineRecipients(newEDB, newEDB.status, parseInt(userId));
+    const recipients = await determineRecipients(newEDB, newEDB.status, parseInt(userId), 'EDB');
     await sendNotification({
-      type: getNotificationTypeFromStatus(EDBEventType.SUBMITTED),
+      type: getNotificationTypeFromStatus(EDBEventType.SUBMITTED, 'EDB'),
       message: `Nouvel EDB #${newEDB.edbId} créé par ${session.user.name || 'un utilisateur'}`,
       entityId: newEDB.edbId,
       entityType: 'EDB',

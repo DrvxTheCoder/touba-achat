@@ -98,7 +98,7 @@ export function EDBCards() {
           </svg>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">+{data.active}</div>
+          <div className="text-2xl font-bold">{data.active}</div>
           <p className="text-xs text-muted-foreground">
           +{data.lastHourActive} depuis la dernière heure
           </p>

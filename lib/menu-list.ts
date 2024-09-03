@@ -62,17 +62,17 @@ export function getMenuList(pathname: string): Group[] {
         }
       ]
     },
-    {
-      groupLabel: "Paramètres",
-      menus: [
-        {
-          href: "/account",
-          label: "Mon compte",
-          active: pathname.includes("/account"),
-          icon: Settings,
-          submenus: []
-        }
-      ]
-    }
+    // {
+    //   groupLabel: "Paramètres",
+    //   menus: [
+    //     {
+    //       href: "/account",
+    //       label: "Mon compte",
+    //       active: pathname.includes("/account"),
+    //       icon: Settings,
+    //       submenus: []
+    //     }
+    //   ]
+    // }
   ];
 }

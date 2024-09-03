@@ -113,6 +113,7 @@ import { OpenInNewWindowIcon } from "@radix-ui/react-icons"
 import { cn } from "@/lib/utils"
 import { FinalApprovalDialog } from "./FinalApprovalDialog"
 import { EDBCards } from "./EDBCards"
+import { MarkAsCompletedDialog } from "./MarkAsCompleteDialog"
 
 const ITEMS_PER_PAGE = 5;
 const statusMapping = {
@@ -180,6 +181,7 @@ export default function Etats() {
   const [isFinalApprobation, setIsFinalApprobation] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isEscalating, setIsEscalating] = useState(false);
+  const [isMarkingAsComplete, setIsMarkingAsComplete] = useState(false);
   const [isAttachDocumentDialogOpen, setIsAttachDocumentDialogOpen] = useState(false);
 
   const [currentPdfIndex, setCurrentPdfIndex] = useState<number | null>(null);
@@ -279,6 +281,7 @@ export default function Etats() {
   const [isFinalApprovalDialogOpen, setIsFinalApprovalDialogOpen] = useState(false);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [isEscalationDialogOpen, setIsEscalationDialogOpen] = useState(false);
+  const [isMarkAsCompleteDialogOpen, setIsMarkAsCompleteDialogOpen] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -309,6 +312,10 @@ export default function Etats() {
   const handleReject = async () => {
     setIsRejectionDialogOpen(true);
   };
+
+  const handleMarkAsComplete = async () => {
+    setIsMarkAsCompleteDialogOpen(true);
+  }
 
   const confirmValidation = async () => {
     if (!selectedEDB) return;
@@ -423,6 +430,34 @@ export default function Etats() {
       setIsFinalApprobation(false);
     } finally {
       setIsFinalApprovalDialogOpen(false);
+    }
+  };
+
+  const confirmMarkAsCompleted = async () => {
+    if (!selectedEDB) return;
+    setIsMarkingAsComplete(true);
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.id}/markascompleted`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        setIsMarkingAsComplete(false);
+        throw new Error(errorData.message || 'Erreur lors de opération');
+      }
+      refetch();
+      toast.success("EDB Traité",{
+        description: `L'EDB #${selectedEDB.id} a été marqué comme pourvu.`,
+      });
+      setIsMarkingAsComplete(false);
+    } catch (error : any) {
+      console.error('Error validating EDB:', error);
+      toast.error("Erreur",{
+        description: error.message || "Une erreur est survenue lors de l'opération.",
+      });
+      setIsMarkAsCompleteDialogOpen(false);
+    } finally {
+      setIsMarkAsCompleteDialogOpen(false);
     }
   };
 
@@ -737,6 +772,7 @@ export default function Etats() {
                         {/* <DropdownMenuItem>Modifier</DropdownMenuItem> */}
                         
                         {isMagasinier && (
+                          <>
                             <DropdownMenuItem 
                               onSelect={handleOpenAttachDialog}
                               disabled={hasAttachments}
@@ -744,6 +780,14 @@ export default function Etats() {
                               Joindre document(s)
                               <Paperclip className="ml-2 h-4 w-4" />
                             </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onSelect={handleMarkAsComplete}
+                              disabled={selectedEDB.status !== "FINAL_APPROVAL"}
+                            >
+                              Marquer comme pourvu
+                              <FileCheck2 className="ml-2 h-4 w-4" />
+                            </DropdownMenuItem>
+                            </>
                           )}
                         {/* <DropdownMenuItem disabled>Bon de Commande
                         <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
@@ -752,12 +796,13 @@ export default function Etats() {
                         {!isMagasinier && (
                           <>
                           <DropdownMenuSeparator />
-                          {selectedEDB.status === "SUPPLIER_CHOSEN" && (
+                          {["SUPPLIER_CHOSEN","FINAL_APPROVAL"].includes(selectedEDB.status) && (
                             <DropdownMenuItem 
                               className="text-primary"
                               onClick={handleFinalApproval}
+                              disabled={["COMPLETED","FINAL_APPROVAL"].includes(selectedEDB.status)}
                             >
-                              Approuver
+                              Valider
                               <DropdownMenuShortcut><UserCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                             </DropdownMenuItem>
                           )}
@@ -766,7 +811,7 @@ export default function Etats() {
                               onClick={handleValidate}
                               disabled={!canValidate}
                             >
-                              Valider
+                              Approuver
                               <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                             </DropdownMenuItem>
                             {isDirecteur && (
@@ -782,7 +827,7 @@ export default function Etats() {
                             <DropdownMenuItem 
                               className="text-destructive"
                               onClick={handleReject}
-                              disabled={!canReject}
+                              disabled={["APPROVED_DG","COMPLETED","FINAL_APPROVAL"].includes(selectedEDB.status)}
                             >
                               Rejeter
                               <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
@@ -802,6 +847,13 @@ export default function Etats() {
                     />
                     {selectedEDB && (
                       <>
+                        <MarkAsCompletedDialog
+                          isOpen={isMarkAsCompleteDialogOpen}
+                          onClose={() => setIsMarkAsCompleteDialogOpen(false)}
+                          onConfirm={confirmMarkAsCompleted}
+                          edbId = {selectedEDB.id}
+                          isLoading={isMarkingAsComplete}
+                        />
                         <ValidationDialog 
                           isOpen={isValidationDialogOpen}
                           onClose={() => setIsValidationDialogOpen(false)}

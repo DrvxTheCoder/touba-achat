@@ -77,12 +77,12 @@ export function UserNav() {
           </DropdownMenuItem>
           )}
 
-          <DropdownMenuItem className="hover:cursor-pointer" asChild>
+          {/* <DropdownMenuItem className="hover:cursor-pointer" asChild>
             <Link href="/account" className="flex items-center">
               <User className="w-4 h-4 mr-3 text-muted-foreground" />
               Mon Compte
             </Link>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="hover:cursor-pointer" onClick={() => signOut()}>

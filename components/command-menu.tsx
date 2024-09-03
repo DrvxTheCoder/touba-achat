@@ -67,7 +67,7 @@ return (
             onClick={() => setOpen(true)}
             {...props}
         >
-            <span className="inline-flex">Rechercher...</span>
+            <span className="inline-flex">Liens rapides...</span>
             <kbd className="pointer-events-none absolute right-[0.4rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                 <span className="text-xs">Ctrl+K</span>
             </kbd>
@@ -78,9 +78,9 @@ return (
                 <ScrollArea className="h-72">
                 <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
                 <CommandGroup heading="Liens">
-                    <CommandItem>Tableau de Bord</CommandItem>
-                    <CommandItem>Ajouter un état de besoin</CommandItem>
-                    <CommandItem>Émmetre une demande d&apos;ordre de mission</CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => router.push('/dashboard'))}>Tableau de Bord</CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/etats/nouveau'))}>Émmetre un état de besoin</CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/odm'))} >Émmetre un ordre de mission</CommandItem>
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Thème">

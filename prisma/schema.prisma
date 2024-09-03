@@ -49,6 +49,9 @@ enum NotificationType {
   ODM_CREATED
   ODM_APPROVED_DIRECTOR
   ODM_APPROVED_RH
+  ODM_RH_PROCESSING
+  ODM_COMPLETED
+  ODM_REJECTED
   EDB_REJECTED
 }
 
@@ -83,10 +86,11 @@ enum EDBStatus {
 enum ODMStatus {
   DRAFT
   SUBMITTED
-  APPROVED_DIRECTEUR
-  APPROVED_RH
-  REJECTED
+  AWAITING_DIRECTOR_APPROVAL
+  AWAITING_RH_PROCESSING
+  RH_PROCESSING
   COMPLETED
+  REJECTED
 }
 
 enum CategoryType {
@@ -112,6 +116,17 @@ enum EDBEventType {
   COMPLETED
 }
 
+enum ODMEventType {
+  DRAFT
+  SUBMITTED
+  AWAITING_DIRECTOR_APPROVAL
+  AWAITING_RH_PROCESSING
+  RH_PROCESSING
+  COMPLETED
+  REJECTED
+  UPDATED
+}
+
 model User {
   id                    Int             @id @default(autoincrement())
   email                 String          @unique
@@ -133,6 +148,8 @@ model User {
   uploadedAttachments   Attachment[]    @relation("Uploader")
   chosenSuppliers       FinalSupplier[] @relation("Chooser")
   edbAuditLogs  EtatDeBesoinAuditLog[]
+  OrdreDeMission OrdreDeMission[] @relation("RHProcessor")
+  odmAuditLogs      OrdreDeMissionAuditLog[]
 }
 
 model Employee {
@@ -246,22 +263,48 @@ model FinalSupplier {
 }
 
 model OrdreDeMission {
-  id            Int            @id @default(autoincrement())
-  title         String
-  description   String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  status        ODMStatus      @default(DRAFT)
-  departmentId  Int
-  department    Department     @relation(fields: [departmentId], references: [id])
-  creatorId     Int
-  creator       Employee       @relation("EmployeeCreator", fields: [creatorId], references: [id])
-  userCreatorId Int
-  userCreator   User           @relation("UserCreator", fields: [userCreatorId], references: [id])
-  approverId    Int?
-  approver      User?          @relation("Approver", fields: [approverId], references: [id])
-  notifications Notification[]
+  id                Int            @id @default(autoincrement())
+  odmId             String         @unique
+  title             String
+  missionType       String
+  startDate         DateTime
+  endDate           DateTime
+  location          String
+  description       String
+  hasAccompanying   Boolean        @default(false)
+  accompanyingPersons Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  status            ODMStatus      @default(DRAFT)
+  departmentId      Int
+  department        Department     @relation(fields: [departmentId], references: [id])
+  creatorId         Int
+  creator           Employee       @relation("EmployeeCreator", fields: [creatorId], references: [id])
+  userCreatorId     Int
+  userCreator       User           @relation("UserCreator", fields: [userCreatorId], references: [id])
+  approverId        Int?
+  approver          User?          @relation("Approver", fields: [approverId], references: [id])
+  rhProcessorId     Int?
+  rhProcessor       User?          @relation("RHProcessor", fields: [rhProcessorId], references: [id])
+  notifications     Notification[]
+  missionCostPerDay Float          @default(25000) // Fixed at 25,000 CFA per day
+  expenseItems      Json?          // New JSON field to store expense items
+  totalCost         Float?
+  auditLogs         OrdreDeMissionAuditLog[]
+  rejectionReason   String?
 }
+
+model OrdreDeMissionAuditLog {
+  id                Int           @id @default(autoincrement())
+  ordreDeMissionId  Int
+  ordreDeMission    OrdreDeMission @relation(fields: [ordreDeMissionId], references: [id])
+  userId            Int
+  user              User          @relation(fields: [userId], references: [id])
+  eventType         ODMEventType
+  eventAt           DateTime      @default(now())
+  details           Json?         // For storing any additional event-specific details
+}
+
 
 model Category {
   id   Int            @id @default(autoincrement())

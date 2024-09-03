@@ -1,9 +1,8 @@
 "use client"
 
-import { useTheme } from "next-themes"
-import { Line, LineChart, ResponsiveContainer, Tooltip } from "recharts"
+import { useEffect, useState } from "react"
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
-import { useConfig } from "@/app/hooks/use-config"
 import {
   Card,
   CardContent,
@@ -11,133 +10,106 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { themes } from "@/app/themes"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
-const data = [
-  {
-    average: 400,
-    today: 240,
-  },
-  {
-    average: 300,
-    today: 139,
-  },
-  {
-    average: 200,
-    today: 980,
-  },
-  {
-    average: 278,
-    today: 390,
-  },
-  {
-    average: 189,
-    today: 480,
-  },
-  {
-    average: 239,
-    today: 380,
-  },
-  {
-    average: 349,
-    today: 430,
-  },
-]
+interface ChartDataPoint {
+  date: string;
+  count: number;
+}
 
 export function CardsMetric2() {
-  const { theme: mode } = useTheme()
-  const [config] = useConfig()
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
-  const theme = themes.find((theme) => theme.name === config.theme)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/dashboard/edb-data');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des données');
+        }
+        const result = await response.json();
+        setChartData(result.chartData);
+      } catch (error) {
+        console.error('Erreur:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
-    <Card className="md:col-span-3 col-span-4 space-y-12">
-      <CardHeader>
-        <CardTitle>Fréquence</CardTitle>
-        <CardDescription>
-          Hebdomadaire
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pb-4">
-        <div className="h-[200px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{
-                top: 5,
-                right: 10,
-                left: 10,
-                bottom: 0,
+    <Card className="flex flex-col w-full">
+      <CardContent className="flex flex-1 items-center">
+        <ChartContainer
+          config={{
+            count: {
+              label: "EDBs:",
+              color: "hsl(var(--chart-1))",
+            },
+          }}
+          className="w-full"
+        >
+          <LineChart
+            accessibilityLayer
+            margin={{
+              left: 14,
+              right: 14,
+              top: 10,
+            }}
+            data={chartData}
+          >
+            <CartesianGrid
+              strokeDasharray="4 4"
+              vertical={false}
+              stroke="hsl(var(--muted-foreground))"
+              strokeOpacity={0.5}
+            />
+            <YAxis hide domain={["dataMin - 1", "dataMax + 1"]} />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => {
+                return new Date(value).toLocaleDateString("fr", {
+                  weekday: "short",
+                })
               }}
-            >
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="rounded-lg border bg-background p-2 shadow-sm">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              Moyenne
-                            </span>
-                            <span className="font-bold text-muted-foreground">
-                              {payload[0].value}
-                            </span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              Aujourd&apos;hui
-                            </span>
-                            <span className="font-bold">
-                              {payload[1].value}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  return null
-                }}
-              />
-              <Line
-                type="monotone"
-                strokeWidth={2}
-                dataKey="average"
-                activeDot={{
-                  r: 6,
-                  style: { fill: "var(--theme-primary)", opacity: 0.25 },
-                }}
-                style={
-                  {
-                    stroke: "var(--theme-primary)",
-                    opacity: 0.25,
-                    "--theme-primary": `hsl(${
-                      theme?.cssVars[mode === "dark" ? "dark" : "light"].primary
-                    })`,
-                  } as React.CSSProperties
-                }
-              />
-              <Line
-                type="monotone"
-                dataKey="today"
-                strokeWidth={2}
-                activeDot={{
-                  r: 8,
-                  style: { fill: "var(--theme-primary)" },
-                }}
-                style={
-                  {
-                    stroke: "var(--theme-primary)",
-                    "--theme-primary": `hsl(${
-                      theme?.cssVars[mode === "dark" ? "dark" : "light"].primary
-                    })`,
-                  } as React.CSSProperties
-                }
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+            />
+            <Line
+              dataKey="count"
+              type="natural"
+              fill="var(--color-count)"
+              stroke="var(--color-count)"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{
+                fill: "var(--color-count)",
+                stroke: "var(--color-count)",
+                r: 4,
+              }}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  indicator="line"
+                  labelFormatter={(value) => {
+                    return new Date(value).toLocaleDateString("fr", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  }}
+                />
+              }
+              cursor={false}
+            />
+          </LineChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   )

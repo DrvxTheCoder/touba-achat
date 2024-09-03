@@ -13,6 +13,7 @@ const pathMap: { [key: string]: string } = {
   etats: 'États de Besoins',
   parametres: 'Paramètres',
   nouveau: 'Nouveau',
+  odm: 'Ordres de Missions'
   // Add more mappings as needed
 };
 
@@ -43,7 +44,7 @@ export default function DynamicBreadcrumbs() {
   if (!mounted) {
     // Return a placeholder or null when not mounted
     return (
-      <Breadcrumb className='p-4 '>
+      <Breadcrumb className='p-4 px-6'>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink href="/" className='text-xs'>Accueil</BreadcrumbLink>
@@ -56,7 +57,7 @@ export default function DynamicBreadcrumbs() {
   const breadcrumbs = generateBreadcrumbs(pathname);
 
   return (
-    <Breadcrumb className='p-4'>
+    <Breadcrumb className='p-4 px-6'>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink href="/" className='text-xs'>Accueil</BreadcrumbLink>

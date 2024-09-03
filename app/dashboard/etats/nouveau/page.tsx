@@ -140,14 +140,11 @@ const CreateEDBPage = () => {
     <>
       <title>États de Besoins - Touba App™</title>
       <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins - Nouveau</h2>
-        </div>
 
         <div className="flex items-center justify-center">
-        <Card className='w-[22rem] lg:w-[50rem] mt-8'>
+        <Card className='w-[22rem] lg:w-[50rem] mt-2'>
           <CardHeader className='border-b'>
-            <CardTitle>Créer un EDB</CardTitle>
+            <CardTitle>Créer un État de Besoin</CardTitle>
           </CardHeader>
           <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
@@ -326,8 +323,7 @@ const CreateEDBPage = () => {
                   )}
                 />
                 
-                <CardFooter className="flex justify-between gap-2 pt-4 px-0">
-                  <Button variant="outline" type="button" disabled={isLoading}>Sauvegarder</Button>
+                <CardFooter className="flex justify-end gap-2 pt-4 px-0">
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? 'Chargement...' : 'Émettre'}
                   </Button>

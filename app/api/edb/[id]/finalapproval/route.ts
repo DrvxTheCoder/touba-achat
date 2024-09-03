@@ -4,9 +4,6 @@ import { PrismaClient, EDBStatus, NotificationType, EDBEventType } from '@prisma
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { finalApproveEDB } from '../../utils/edbAuditLogUtil';
-import { sendNotification } from '@/app/actions/sendNotification';
-import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
-import { determineRecipients } from '@/app/api/utils/notificationsUtil';
 
 const prisma = new PrismaClient();
 
