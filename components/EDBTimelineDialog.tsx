@@ -79,7 +79,7 @@ const statusTranslations: Record<EDBEventType, string> = {
   SUPPLIER_CHOSEN: "Fournisseur choisi",
   AWAITING_FINAL_APPROVAL: "En attente de validation finale",
   FINAL_APPROVAL: "Validation finale effectué",
-  COMPLETED: "Terminé"
+  COMPLETED: "Traité par le Service d'Achat"
 };
 
 const keyEventTranslations: Record<KeyEvent, string> = {
@@ -88,7 +88,7 @@ const keyEventTranslations: Record<KeyEvent, string> = {
   MAGASINIER: "Traitement Service Achat",
   SUPPLIER: "Choix du Fournisseur",
   FINAL_APPROVAL: "Validation Finale",
-  COMPLETED: "Delivré"
+  COMPLETED: "Traité"
 };
 
 

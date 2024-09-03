@@ -104,6 +104,7 @@ import { EscalationDialog } from "./EscalationDialog"
 import { StatusBadge } from "./StatusBadge"
 import { canPerformAction } from "../utils/can-perform-action"
 import { AttachDocumentDialog } from "./AttachDocumentDialog"
+import { MarkAsCompletedDialog } from "./MarkAsCompleteDialog"
 import { EDBTimelineDialog } from "@/components/EDBTimelineDialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Role } from "@prisma/client"
@@ -204,6 +205,7 @@ const statusMapping = {
     const [isValidating, setIsValidating] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
     const [isEscalating, setIsEscalating] = useState(false);
+    const [isMarkingAsComplete, setIsMarkingAsComplete] = useState(false);
     const [isAttachDocumentDialogOpen, setIsAttachDocumentDialogOpen] = useState(false);
   
     const [currentPdfIndex, setCurrentPdfIndex] = useState<number | null>(null);
@@ -224,6 +226,7 @@ const statusMapping = {
     const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
     const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
     const [isEscalationDialogOpen, setIsEscalationDialogOpen] = useState(false);
+    const [isMarkAsCompleteDialogOpen, setIsMarkAsCompleteDialogOpen] = useState(false);
   
     const canSelectSupplier = (attachment: Attachment) => {
       if (!session?.user?.role) return false;
@@ -305,6 +308,10 @@ const statusMapping = {
       const handleReject = async () => {
         setIsRejectionDialogOpen(true);
       };
+
+      const handleMarkAsComplete = async () => {
+        setIsMarkAsCompleteDialogOpen(true);
+      }
     
       const confirmValidation = async () => {
         if (!edbData) return;
@@ -392,6 +399,33 @@ const statusMapping = {
         }
       };
 
+      const confirmMarkAsCompleted = async () => {
+        if (!edb) return;
+        setIsMarkingAsComplete(true);
+        try {
+          const response = await fetch(`/api/edb/${edb.id}/markascompleted`, {
+            method: 'POST',
+          });
+          if (!response.ok) {
+            const errorData = await response.json();
+            setIsMarkingAsComplete(false);
+            throw new Error(errorData.message || 'Erreur lors de opération');
+          }
+          toast.success("EDB Traité",{
+            description: `L'EDB #${edb.id} a été marqué comme pourvu.`,
+          });
+          setIsMarkingAsComplete(false);
+        } catch (error : any) {
+          console.error('Error validating EDB:', error);
+          toast.error("Erreur",{
+            description: error.message || "Une erreur est survenue lors de l'opération.",
+          });
+          setIsMarkAsCompleteDialogOpen(false);
+        } finally {
+          setIsMarkAsCompleteDialogOpen(false);
+        }
+      };
+
       useEffect(() => {
         console.log("Dialog open state:", isAttachDocumentDialogOpen);
       }, [isAttachDocumentDialogOpen]);
@@ -440,18 +474,13 @@ const statusMapping = {
     <>
     <title>États de Besoins - Touba App™</title>
     <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
-    <div>
-        <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-lg md:text-3xl font-bold tracking-tight"># {edb.edbId}</h2>
-        </div>
-    </div>
     <div className="grid flex-1 items-start md:gap-8 gap-4 lg:grid-cols-3 xl:grid-cols-3">
       
       <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
         <Card>
         <CardHeader className="flex flex-row items-start border-b">
         <div className="grid gap-0.5">
-        <CardTitle className="group flex items-center gap-2 text-md hover:underline underline-offset-2">
+        <CardTitle className="group flex items-center gap-2 text-md lg:text-xl hover:underline underline-offset-2">
             # {edb.edbId}
             <Button
             size="icon"
@@ -499,48 +528,69 @@ const statusMapping = {
             {/* <DropdownMenuItem>Modifier</DropdownMenuItem> */}
             
             {isMagasinier && (
-                <DropdownMenuItem 
-                    onSelect={handleOpenAttachDialog}
-                    disabled={hasAttachments}
-                >
-                    Joindre document(s)
-                    <Paperclip className="ml-2 h-4 w-4" />
-                </DropdownMenuItem>
-                )}
+                          <>
+                            <DropdownMenuItem 
+                              onSelect={handleOpenAttachDialog}
+                              disabled={hasAttachments}
+                            >
+                              Joindre document(s)
+                              <Paperclip className="ml-2 h-4 w-4" />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onSelect={handleMarkAsComplete}
+                              disabled={edb.status !== "FINAL_APPROVAL"}
+                            >
+                              Marquer comme pourvu
+                              <FileCheck2 className="ml-2 h-4 w-4" />
+                            </DropdownMenuItem>
+                            </>
+                          )}
             {/* <DropdownMenuItem disabled>Bon de Commande
             <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
             </DropdownMenuItem> */}
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-                className="text-primary"
-                onClick={handleValidate}
-                disabled={!canValidate}
-            >
-                Valider
-                <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem>
-            {isDirecteur && (
-            <DropdownMenuItem 
-                className="text-sky-500"
-                onClick={handleEscalate}
-                disabled={!canEscalate}
-            >
-                Escalader
-                <DropdownMenuShortcut><ArrowBigUpDash className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem>
+            {!isMagasinier && (
+            <>
+              <DropdownMenuItem 
+                  className="text-primary"
+                  onClick={handleValidate}
+                  disabled={!canValidate}
+              >
+                  Valider
+                  <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+              </DropdownMenuItem>
+              {isDirecteur && (
+              <DropdownMenuItem 
+                  className="text-sky-500"
+                  onClick={handleEscalate}
+                  disabled={!canEscalate}
+              >
+                  Escalader
+                  <DropdownMenuShortcut><ArrowBigUpDash className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+              </DropdownMenuItem>
+              )}
+              <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={handleReject}
+                  disabled={!canReject}
+              >
+                  Rejeter
+                  <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </>
             )}
-            <DropdownMenuItem 
-                className="text-destructive"
-                onClick={handleReject}
-                disabled={!canReject}
-            >
-                Rejeter
-                <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem>
+
 
 
             </DropdownMenuContent>
         </DropdownMenu>
+            <MarkAsCompletedDialog
+              isOpen={isMarkAsCompleteDialogOpen}
+              onClose={() => setIsMarkAsCompleteDialogOpen(false)}
+              onConfirm={confirmMarkAsCompleted}
+              edbId = {edb.id}
+              isLoading={isMarkingAsComplete}
+            />
             <AttachDocumentDialog 
                 isOpen={isAttachDocumentDialogOpen}
                 onOpenChange={setIsAttachDocumentDialogOpen}

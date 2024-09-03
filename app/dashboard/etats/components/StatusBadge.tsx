@@ -43,7 +43,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
     ? 'outline'
     : displayStatus === 'Escaladé'
     ? 'outline'
-    : displayStatus === 'Terminé'
+    : displayStatus === 'Traité'
     ? 'default'
     : displayStatus === 'Validé'
     ? 'default'

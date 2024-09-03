@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Stamp, Package, ShoppingCart, CheckCircle2, Printer, ArrowUpRight, XCircle, FileText, Paperclip } from 'lucide-react';
+import { User, Stamp, Package, ShoppingCart, CheckCircle2, Printer, ArrowUpRight, XCircle, FileText, Paperclip, PrinterCheck } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EDBStatus, EDBEventType } from '@/app/(utilisateur)/etats-de-besoin/data/types';
 import { Separator } from "@/components/ui/separator"
@@ -35,7 +35,7 @@ const eventTypeIcons: Record<EDBEventType, React.ElementType> = {
   FINAL_APPROVAL: CheckCircle2,
   MAGASINIER_ATTACHED: Package,
   SUPPLIER_CHOSEN: ShoppingCart,
-  COMPLETED: CheckCircle2
+  COMPLETED: PrinterCheck
 };
 
 const eventTypeTranslations: Record<EDBEventType, string> = {
@@ -53,7 +53,7 @@ const eventTypeTranslations: Record<EDBEventType, string> = {
   AWAITING_FINAL_APPROVAL: "En attente d'approbation finale",
   FINAL_APPROVAL: "Approbation finale effectué",
   SUPPLIER_CHOSEN: "Fournisseur choisi",
-  COMPLETED: "Complété"
+  COMPLETED: "Traité"
 };
 
 const formatDate = (dateString: string) => {

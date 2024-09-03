@@ -33,7 +33,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole 
   const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
   const missionCostTotal = odm.missionCostPerDay * days;
 
-  const canValidate = ['DIRECTEUR', 'DIRECTEUR_GENERAL'].includes(userRole) && odm.status === 'SUBMITTED';
+  const canValidate = odm.status === 'SUBMITTED';
   const canProcess = userRole === 'RH' && odm.status === 'AWAITING_RH_PROCESSING';
   const canEdit = userRole === 'RH' && isProcessed;
 
@@ -152,7 +152,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole 
                         </DropdownMenuItem>
                       )}
                       {userRole === "DIRECTEUR" || userRole === "DIRECTEUR_GENERAL" && (
-                        <DropdownMenuItem onClick={handleValidate} disabled={!canValidate} className="text-primary">
+                        <DropdownMenuItem onClick={handleValidate} disabled={canValidate} className="text-primary">
                             Valider
                             <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>

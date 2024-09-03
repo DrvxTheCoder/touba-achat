@@ -498,6 +498,7 @@ export default function Etats() {
       });
     }
   }, [selectedEDB, isMagasinier, hasAttachments]);
+  
   const handleUploadSuccess = useCallback(async (attachments: AttachmentMetadata[]) => {
     if (!selectedEDB) return;
 

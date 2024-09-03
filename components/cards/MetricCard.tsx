@@ -49,9 +49,11 @@ export function MetricCard({ title, value, icon, footer, loading = false, trend 
             </div>
             {footer && <p className="text-xs text-muted-foreground">{footer}</p>}
             {trend !== undefined && (
-              <div className={`flex flex-row gap-1 text-xs ${getTrendColor()}`}>
+              <div className={`flex flex-row gap-1 text-xs `}>
+                {trend !== 0 && (
+                  <Badge className={`w-fit ${getTrendColor()} gap-1`}>{getTrendIcon()} {trend > 0 ? '+' : ''}{trend}%</Badge>
+                )}
                 
-                <Badge className='w-fit bg-red-300/15 gap-1 text-destructive'>{getTrendIcon()} {trend >= 0 ? '+' : ''}{trend}%</Badge>
                 {/* {trend >= 0 ? '+' : ''}{trend}% sur le mois précédent */}
               </div>
             )}
