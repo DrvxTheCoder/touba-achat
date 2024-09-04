@@ -60,8 +60,10 @@ export function generateODMNotificationMessage(
       return `Nouvel ODM #${context.id} créé par ${context.userName}.`;
     case ODMEventType.AWAITING_RH_PROCESSING:
       return `ODM #${context.id} a été approuvé par la Direction - ${context.userName}.`;
+    case ODMEventType.RH_PROCESSING:
+      return `ODM #${context.id} a été approuvé par les Ressources Humaines - ${context.userName}.`;
     case ODMEventType.COMPLETED:
-      return `ODM #${context.id} a été traité et approuvé par les RH - ${context.userName}.`;
+      return `ODM #${context.id} a été traité par les Resssources Humaines - ${context.userName}.`;
     case ODMEventType.REJECTED:
       return `ODM #${context.id} a été rejeté.`; 
     default:

@@ -8,6 +8,7 @@ const statusMapping: Record<string, string[]> = {
   'Soumis': ['SUBMITTED'],
   'Approuvé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
   'Escaladé': ['ESCALATED'],
+  'En cours': ['RH_PROCESSING'],
   'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_RH_PROCESSING', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Facture Rattaché': ['MAGASINIER_ATTACHED'],
   'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],

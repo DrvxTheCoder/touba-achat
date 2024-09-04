@@ -187,6 +187,39 @@ export async function approveODM(
   return updatedODM;
 }
 
+export async function approveODMByRHDirector(
+  odmId: number,
+  userId: number
+): Promise<OrdreDeMission> {
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'AWAITING_RH_PROCESSING') {
+    throw new Error('ODM non éligible pour approbation par le Directeur RH');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: { 
+      status: 'RH_PROCESSING',
+      approverId: userId
+    },
+    include: { department: true }
+  });
+
+  await logODMEvent(odmId, userId, ODMEventType.RH_PROCESSING, { oldStatus: odm.status, newStatus: 'RH_PROCESSING' });
+
+  await sendODMNotification(updatedODM, ODMEventType.RH_PROCESSING, userId);
+
+  return updatedODM;
+}
+
 export async function rejectODM(
   odmId: number,
   userId: number,

@@ -54,8 +54,8 @@ const eventTypeTranslations: Record<ODMEventType, string> = {
   DRAFT: "Brouillon créé",
   SUBMITTED: "Soumis",
   AWAITING_DIRECTOR_APPROVAL: "En attente d'approbation",
-  AWAITING_RH_PROCESSING: "Approuvé par la direction",
-  RH_PROCESSING: "En cours de traitement RH",
+  AWAITING_RH_PROCESSING: "Approuvé par la Direction",
+  RH_PROCESSING: "Approuvé et en cours de traitement (RH)",
   COMPLETED: "Traité",
   REJECTED: "Rejeté",
   UPDATED: "Mis à jour"

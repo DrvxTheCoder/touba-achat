@@ -1,6 +1,6 @@
 "use client"
 // components/ODMSingle.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ODMTimeline } from './ODMEventTimeline';
@@ -15,27 +15,60 @@ import { useRouter } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import ODMSummaryPDFDialog from './ODMSummaryPDFDialog';
+import { useSession } from 'next-auth/react';
+import prisma from '@/lib/prisma';
+import { ODMDRHValidationDialog } from './ODMDRHValidationDialog';
 
 type ODMSingleProps = {
   odm: any; // Replace with proper ODM type
-  userRole: string;
+  userRole?: string;
 };
 
-export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole }) => {
+export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole: initialUserRole }) => {
   const [odm, setOdm] = useState(initialOdm);
+  const [userRole, setUserRole] = useState(initialUserRole);
+  const [userDepartment, setUserDepartment] = useState<string | null>(null);
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch(`/api/employee/${session.user.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.role || initialUserRole);
+            setUserDepartment(data.employee?.currentDepartment?.name || null);
+          } else {
+            console.error('Failed to fetch user details');
+          }
+        } catch (error) {
+          console.error('Error fetching user details:', error);
+        }
+      }
+    };
+    fetchUserDetails();
+  }, [session, initialUserRole]);
+
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
+  const [isDRHValidationDialogOpen, setIsDRHValidationDialogOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const router = useRouter();
-  const isProcessed = odm.status === 'COMPLETED' || odm.status === 'RH_PROCESSING';
+  const isProcessed = odm.status === 'COMPLETED';
   const start = new Date(odm.startDate);
   const end = new Date(odm.endDate);
   const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
   const missionCostTotal = odm.missionCostPerDay * days;
 
+ 
+  const isAuthorized = userRole === "DIRECTEUR" || userRole === "DIRECTEUR_GENERAL";
   const canValidate = odm.status === 'SUBMITTED';
-  const canProcess = userRole === 'RH' && odm.status === 'AWAITING_RH_PROCESSING';
+  const canProcess = userRole === 'RH' && odm.status === 'RH_PROCESSING';
   const canEdit = userRole === 'RH' && isProcessed;
+  const isRHDirector = userRole === "DIRECTEUR" && userDepartment === "Direction Ressources Humaines";
+  const canValidateAsRHDirector = isRHDirector && odm.status === 'AWAITING_RH_PROCESSING';
+
 
   const handleValidate = () => {
     setIsValidationDialogOpen(true);
@@ -49,33 +82,67 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole 
     if (!odm) return;
     setIsValidating(true);
     try {
-      // First, perform the validation
       const approvalResponse = await fetch(`/api/odm/${odm.id}/approval`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}), // Send an empty object as the body
       });
+  
       if (!approvalResponse.ok) {
         const errorData = await approvalResponse.json();
-        throw new Error(errorData.message || 'Failed to validate ODM');
+        throw new Error(errorData.error || 'Failed to validate ODM');
       }
   
-      // Then, fetch the updated ODM data
-      const updatedOdmResponse = await fetch(`/api/odm/${odm.odmId}`);
-      if (!updatedOdmResponse.ok) {
-        throw new Error('Failed to fetch updated ODM data');
-      }
-      const updatedOdm = await updatedOdmResponse.json();
-  
-      setOdm(updatedOdm);
+      const updatedOdm = await approvalResponse.json();
+      setOdm(updatedOdm.odm);
       toast.success("ODM Validé", {
         description: `L'ODM #${odm.odmId} a été validé avec succès.`,
       });
-  
-      // Optionally, you can still redirect if needed
-      // router.push(`/dashboard/odm/${odm.odmId}`);
     } catch (error: any) {
       console.error('Error validating ODM:', error);
       toast.error("Erreur", {
         description: error.message || "Une erreur est survenue lors de la validation de l'ODM.",
+      });
+    } finally {
+      setIsValidating(false);
+      setIsValidationDialogOpen(false);
+    }
+  };
+
+  const handleConfirmDRHValidation = async () => {
+    if (!odm || !isRHDirector) return;
+    setIsValidating(true);
+    try {
+      const approvalResponse = await fetch(`/api/odm/${odm.id}/approval?action=approveRHDirector`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'approveRHDirector' }),
+      });
+  
+      if (!approvalResponse.ok) {
+        const errorData = await approvalResponse.json();
+        throw new Error(errorData.error || 'Failed to validate ODM as RH Director');
+      }
+  
+    // Fetch the updated ODM data
+      const updatedOdmResponse = await fetch(`/api/odm/${odm.id}`);
+      if (!updatedOdmResponse.ok) {
+        throw new Error('Failed to fetch updated ODM data');
+      }
+      const updatedOdm = await updatedOdmResponse.json();
+      setOdm(updatedOdm);
+      
+      toast.success("ODM Validé par DRH", {
+        description: `L'ODM #${odm.odmId} a été validé avec succès par le Directeur RH.`,
+      });
+    } catch (error: any) {
+      console.error('Error validating ODM as RH Director:', error);
+      toast.error("Erreur", {
+        description: error.message || "Une erreur est survenue lors de la validation de l'ODM par le Directeur RH.",
       });
     } finally {
       setIsValidating(false);
@@ -151,10 +218,16 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole 
                           <DropdownMenuShortcut><Edit className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
                       )}
-                      {userRole === "DIRECTEUR" || userRole === "DIRECTEUR_GENERAL" && (
-                        <DropdownMenuItem onClick={handleValidate} disabled={canValidate} className="text-primary">
+                      {isAuthorized && (
+                        <DropdownMenuItem onClick={handleValidate} disabled={!canValidate} className="text-primary">
                             Valider
                             <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                      )}
+                      {canValidateAsRHDirector && (
+                        <DropdownMenuItem onClick={() => setIsDRHValidationDialogOpen(true)} className="text-primary">
+                          Valider (DRH)
+                          <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -246,6 +319,13 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole 
           </div>
         </div>
       </main>
+      <ODMDRHValidationDialog 
+        isOpen={isDRHValidationDialogOpen && isRHDirector}
+        onClose={() => setIsDRHValidationDialogOpen(false)}
+        onConfirm={handleConfirmDRHValidation}
+        odmId={odm.odmId}
+        isLoading={isValidating}
+      />
       <ODMValidationDialog 
         isOpen={isValidationDialogOpen}
         onClose={() => setIsValidationDialogOpen(false)}

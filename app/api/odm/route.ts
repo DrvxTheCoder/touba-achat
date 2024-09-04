@@ -85,12 +85,17 @@ export async function GET(req: Request) {
     // Role-based filtering
     if (session.user.role === 'RESPONSABLE') {
       where.userCreatorId = parseInt(session.user.id);
-    } else if (session.user.role === 'DIRECTEUR') {
+    } 
+    else if (session.user.role === 'DIRECTEUR') {
       const user = await prisma.user.findUnique({
         where: { id: parseInt(session.user.id) },
-        include: { employee: true }
+        include: { employee: { include: { currentDepartment: true } } }
       });
-      where.departmentId = user?.employee?.currentDepartmentId;
+      
+      // Check if the director is from not Ressources Humaines and apply filter
+      if (user?.employee?.currentDepartment?.name !== 'Direction Ressources Humaines') {
+        where.departmentId = user?.employee?.currentDepartmentId;
+      } 
     }
     // For DIRECTEUR_GENERAL, RH, and ADMIN, no additional filtering is needed
 
