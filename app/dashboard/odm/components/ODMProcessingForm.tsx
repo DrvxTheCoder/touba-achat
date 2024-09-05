@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,8 +20,11 @@ interface ODMProcessingFormProps {
 
 interface ExpenseItem {
   type: string;
+  customType?: string;
   amount: number;
 }
+
+const expenseTypes = ['Carburant', 'Péage', 'Frais d\'hôtel', 'Autres'];
 
 export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({ 
   odmId, 
@@ -51,10 +55,14 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const processedExpenseItems = expenseItems.map(item => ({
+        type: item.type === 'Autres' ? item.customType : item.type,
+        amount: item.amount
+      }));
       const response = await fetch(`/api/odm/${odmId}/processing`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expenseItems, totalCost, missionCostPerDay }),
+        body: JSON.stringify({ expenseItems: processedExpenseItems, totalCost, missionCostPerDay }),
       });
       if (!response.ok) throw new Error('Failed to process ODM');
       toast.success("ODM traité avec succès");
@@ -73,6 +81,15 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
 
   const removeExpenseItem = (index: number) => {
     setExpenseItems(expenseItems.filter((_, i) => i !== index));
+  };
+
+  const handleExpenseTypeChange = (value: string, index: number) => {
+    const newItems = [...expenseItems];
+    newItems[index].type = value;
+    if (value !== 'Autres') {
+      delete newItems[index].customType;
+    }
+    setExpenseItems(newItems);
   };
 
   return (
@@ -98,39 +115,53 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
           </div>
           <ScrollArea className="w-full rounded-md h-28 p-3 border border-dashed">
             {expenseItems.map((item, index) => (
-                <div key={index} className="flex gap-2 items-center p-1">
-                <Input
-                    placeholder="Type de dépense"
-                    value={item.type}
+              <div key={index} className="flex gap-2 items-center p-1">
+                <Select
+                  value={item.type}
+                  onValueChange={(value) => handleExpenseTypeChange(value, index)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Type de dépense" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {expenseTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {item.type === 'Autres' && (
+                  <Input
+                    placeholder="Précisez le type"
+                    value={item.customType || ''}
                     onChange={(e) => {
-                    const newItems = [...expenseItems];
-                    newItems[index].type = e.target.value;
-                    setExpenseItems(newItems);
+                      const newItems = [...expenseItems];
+                      newItems[index].customType = e.target.value;
+                      setExpenseItems(newItems);
                     }}
-                />
+                  />
+                )}
                 <Input
-                    type="number"
-                    placeholder="Montant"
-                    value={item.amount}
-                    onChange={(e) => {
+                  type="number"
+                  placeholder="Montant"
+                  value={item.amount}
+                  onChange={(e) => {
                     const newItems = [...expenseItems];
                     newItems[index].amount = Number(e.target.value);
                     setExpenseItems(newItems);
-                    }}
-                    className="w-fit"
+                  }}
+                  className="w-fit"
                 />
                 <Button 
-                    type="button" 
-                    variant="ghost" 
-                    onClick={() => removeExpenseItem(index)}
+                  type="button" 
+                  variant="ghost" 
+                  onClick={() => removeExpenseItem(index)}
                 >
-                    <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-                </div>
+              </div>
             ))}
           </ScrollArea>
 
-          
           <Button type="button" onClick={addExpenseItem} variant="outline">
             Ajouter une dépense
           </Button>
@@ -140,7 +171,6 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
           </div>
           
           <Button type="submit" disabled={isSubmitting} className="w-full">
-            {/* {isSubmitting ? 'Traitement...' : 'Traiter l\'ODM'} */}
             {isSubmitting && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}

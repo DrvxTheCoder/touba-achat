@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
         // Fetch the ODM with related data
         const odm = await prisma.ordreDeMission.findUnique({
-            where: { odmId: odmId },
+            where: { id: parseInt(odmId) },
             include: {
                 creator: {
                     include: {
@@ -50,9 +50,20 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         if (userRole === 'DIRECTEUR') {
             const user = await prisma.user.findUnique({
                 where: { id: userId },
-                include: { employee: true }
+                include: { 
+                    employee: {
+                        include: {
+                            currentDepartment: true
+                        }
+                    } 
+                }
             });
-            if (user?.employee?.currentDepartmentId !== odm.departmentId) {
+
+            // Check if the user is the DIRECTEUR of Ressources Humaines
+            const isRHDirector = user?.employee?.currentDepartment?.name === 'Direction Ressources Humaines';
+
+            // If not RH Director, check if they belong to the same department as the ODM
+            if (!isRHDirector && user?.employee?.currentDepartmentId !== odm.departmentId) {
                 return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
             }
         }

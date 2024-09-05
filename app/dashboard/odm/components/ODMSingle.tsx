@@ -95,8 +95,14 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
         throw new Error(errorData.error || 'Failed to validate ODM');
       }
   
-      const updatedOdm = await approvalResponse.json();
-      setOdm(updatedOdm.odm);
+      // Fetch the updated ODM data
+      const updatedOdmResponse = await fetch(`/api/odm/${odm.id}`);
+      if (!updatedOdmResponse.ok) {
+        throw new Error('Failed to fetch updated ODM data');
+      }
+      const updatedOdm = await updatedOdmResponse.json();
+      setOdm(updatedOdm);
+      
       toast.success("ODM Validé", {
         description: `L'ODM #${odm.odmId} a été validé avec succès.`,
       });
@@ -146,21 +152,27 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       });
     } finally {
       setIsValidating(false);
-      setIsValidationDialogOpen(false);
+      setIsDRHValidationDialogOpen(false);
     }
   };
 
   const handleProcessed = async () => {
     try {
-      const response = await fetch(`/api/odm/${odm.odmId}`);
+      const response = await fetch(`/api/odm/${odm.id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch updated ODM data');
       }
-      const updatedOdm = await response.json();
-      setOdm(updatedOdm);
-      toast.success("ODM traité avec succès", {
-        description: `L'ODM #${odm.odmId} a été traité et mis à jour.`,
-      });
+    // Fetch the updated ODM data
+    const updatedOdmResponse = await fetch(`/api/odm/${odm.id}`);
+    if (!updatedOdmResponse.ok) {
+      throw new Error('Failed to fetch updated ODM data');
+    }
+    const updatedOdm = await updatedOdmResponse.json();
+    setOdm(updatedOdm);
+    
+    toast.success("Traité", {
+      description: `L'ODM #${odm.odmId} a été traité.`,
+    });
       router.refresh();
     } catch (error) {
       console.error('Error fetching updated ODM data:', error);
