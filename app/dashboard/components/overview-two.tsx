@@ -167,13 +167,13 @@ export default function OverviewChart() {
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="90d" className="rounded-lg">
-              Last 3 months
+              Trimestre
             </SelectItem>
             <SelectItem value="30d" className="rounded-lg">
-              Last 30 days
+              Mensuel
             </SelectItem>
             <SelectItem value="7d" className="rounded-lg">
-              Last 7 days
+              Hebdomadaire
             </SelectItem>
           </SelectContent>
         </Select>
