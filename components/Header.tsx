@@ -77,7 +77,7 @@ export default function Header (){
             <nav className="grid gap-2 text-lg font-medium">
               <Link
                 href="#"
-                className="flex items-center gap-2 text-lg font-semibold pb-3"
+                className="flex items-center gap-2 text-lg font-semibold pb-3 text-primary"
               >
                 <CustomLogoSVG width="2rem" />
                 Touba-App™

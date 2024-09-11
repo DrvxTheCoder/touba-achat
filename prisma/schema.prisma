@@ -21,10 +21,13 @@ enum Role {
 
 enum Access {
   APPROVE_EDB
+  APPROVE_ODM
   ATTACH_DOCUMENTS
   CHOOSE_SUPPLIER
   IT_APPROVAL
   FINAL_APPROVAL
+  RH_APPROVE
+  RH_PROCESS
   // Add other specific access types as needed
 }
 

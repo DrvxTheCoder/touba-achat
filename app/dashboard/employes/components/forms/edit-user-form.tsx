@@ -26,6 +26,7 @@ import { Icons } from "@/components/icons"
 import { Employee } from "../data"
 import { useToast } from "@/components/ui/use-toast"
 import { result } from "lodash"
+import { AccessSelect } from "@/components/forms/AccessSelect"
 
 const employeeUpdateSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit comporter au moins 2 caractères." }),
@@ -35,6 +36,7 @@ const employeeUpdateSchema = z.object({
   phoneNumber: z.string().min(9, { message: "Le téléphone doit comporter au moins 10 caractères." })
     .max(15, { message: "Le téléphone ne doit pas dépasser 15 caractères." }),
   department: z.number(),
+  access: z.array(z.enum(['APPROVE_EDB', 'ATTACH_DOCUMENTS', 'CHOOSE_SUPPLIER', 'IT_APPROVAL', 'FINAL_APPROVAL', 'RH_APPROVE', 'RH_PROCESS', 'APPROVE_ODM'])),
   status: z.string({ message: "Veuillez choisir le statut de l\'employé." }),
   userId: z.number(),
 })
@@ -49,7 +51,8 @@ interface UpdateEmployeeFormProps {
 export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormProps) {
   const [updateButtonLoading, setUpdateButtonLoading] = useState(false)
   const [departments, setDepartments] = useState<{ id: number; name: string }[]>([]);
-  const [section, setSection] = useState<"employee" | "credentials">("employee")
+  const [section, setSection] = useState<"employee" | "credentials">("employee");
+  const [open, setOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
 
@@ -71,6 +74,7 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
       phoneNumber: employee.phoneNumber || "",
       department: employee.currentDepartmentId,
       userId: employee.userId,
+      access: employee.access || []
     },
     mode: "onChange",
   })
@@ -119,13 +123,19 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
   };
 
   return (
-    <Dialog>
+    <Dialog onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        form.reset();
+        setSection("employee");
+      }
+    }}>
       <DialogTrigger asChild>
         <div className="w-full">Modifier</div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">Modifier l&apos;employé</DialogTitle>
+          <DialogTitle className="text-xl">Modifier l&apos;employé </DialogTitle>
           <DialogDescription>
             Modifiez les informations de l&apos;employé.
           </DialogDescription>
@@ -241,6 +251,22 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     </FormItem>
                   )}
                 />
+                <FormField
+                      control={form.control}
+                      name="access"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm text-muted-foreground">Accès :</FormLabel>
+                          <FormControl>
+                            <AccessSelect
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                 <FormField
                   control={form.control}
                   name="status"

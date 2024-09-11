@@ -39,11 +39,11 @@ export default async function RootLayout({
             defaultTheme="new-york"
             enableSystem
           >
-            <NotificationProvider>
+
               <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)}/>
               <Toaster richColors position="top-right" closeButton  />
               {children}
-            </NotificationProvider>
+
           </ThemeProvider>
         </AuthProvider>
       </body>

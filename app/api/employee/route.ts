@@ -75,13 +75,31 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         orderBy,
-        include: { currentDepartment: true },
+        include: {
+          currentDepartment: true,
+          user: {
+            select: {
+              access: true,
+              role: true,
+              status: true
+            }
+          }
+        },
       }),
       prisma.employee.count({ where }),
     ]);
 
+    // Transform the employees data to include access directly on the employee object
+    const transformedEmployees = employees.map(employee => ({
+      ...employee,
+      access: employee.user.access,
+      role: employee.user.role,
+      userStatus: employee.user.status,
+      user: undefined // Remove the nested user object
+    }));
+
     return NextResponse.json({
-      employees,
+      employees: transformedEmployees,
       totalPages: Math.ceil(totalCount / limit),
       currentPage: page,
     });
@@ -138,6 +156,7 @@ export async function PUT(request: NextRequest) {
         name: updateData.name,
         email: updateData.email,
         status: updateData.status, // Update the status if needed
+        access: updateData.access
         // Add any other fields that can be updated
       }
     });

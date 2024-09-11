@@ -21,14 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Icons } from "../icons"
-import { PrismaClient } from '@prisma/client'
-import { ToastAction } from "@/components/ui/toast"
-import Link from "next/link"
 import { Plus, PlusCircle } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { AccessSelect } from "./AccessSelect"
 
 const employeeFormSchema = z
   .object({
@@ -53,6 +51,7 @@ const employeeFormSchema = z
     confirmPassword: z.string().min(6, {
       message: "Le mot de passe de confirmation doit comporter au moins 6 caractères.",
     }),
+    access: z.array(z.enum(['APPROVE_EDB', 'ATTACH_DOCUMENTS', 'CHOOSE_SUPPLIER', 'IT_APPROVAL', 'FINAL_APPROVAL', 'RH_APPROVE', 'RH_PROCESS'])),
     role: z.string({ message: "Veuillez sélectionner un rôle." }).min(1, { message: "Veuillez sélectionner un rôle." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -114,8 +113,7 @@ export function AddEmployeeForm() {
           throw new Error(result.error);
         }
         // Handle success with the message from the server
-        toast({
-          title: "Succès - Ajout réussi!",
+        toast.success("Succès - Ajout réussi!",{
           description: result.message || "Employé ajouté avec succès."
         });
         form.reset(); // Reset form on successful submit
@@ -123,10 +121,8 @@ export function AddEmployeeForm() {
       })
       .catch(error => {
         // Handle error with the message from the server or a generic message
-        toast({
-          title: "Erreur - Échec de l\'ajout!",
+        toast.error("Erreur - Échec de l\'ajout!",{
           description: error.message || "Une erreur s'est produite.",
-          variant: 'destructive'
         });
         console.error('There was an error!', error);
       })
@@ -316,6 +312,22 @@ export function AddEmployeeForm() {
                               <SelectItem value="RH">Ressources Humaines</SelectItem>
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="access"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm text-muted-foreground">Accès :</FormLabel>
+                          <FormControl>
+                            <AccessSelect
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

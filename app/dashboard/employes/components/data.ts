@@ -1,3 +1,5 @@
+import { Access } from "@prisma/client";
+
 export type Employee = {
   id: number;
   name: string;
@@ -7,6 +9,7 @@ export type Employee = {
   userId: number;
   currentDepartmentId: number;
   status: string;
+  access: Access[];
   currentDepartment: {
     id: number;
     name: string;

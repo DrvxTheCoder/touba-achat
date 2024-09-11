@@ -37,7 +37,7 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
       break;
     case 'IT_ADMIN':
       if (category && ['Logiciels et licences', 'Matériel informatique'].includes(category)) {
-        canValidate = status === 'AWAITING_IT_APPROVAL';
+        canValidate = ['AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'].includes(status);
         canReject = status === 'AWAITING_IT_APPROVAL';
       }
       break;
@@ -47,8 +47,8 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
       break;
     case 'ADMIN':
       // Admins might have special privileges but in this case, no special actions are allowed
-      canValidate = false;
-      canReject = false;
+      canValidate = true;
+      canReject = true;
       break;
     case 'MAGASINIER':
       canValidate = status === 'AWAITING_MAGASINIER';

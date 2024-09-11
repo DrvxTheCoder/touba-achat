@@ -39,7 +39,7 @@ export default function Sidebar(){
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <div className="flex items-center gap-2 font-semibold space-x-9">
                         <div className="flex items-center gap-1">
-                            <CustomLogoSVG width="2rem" height="2rem" />
+                            <div className="text-primary"><CustomLogoSVG width="2rem" height="2rem" /></div>
                             <Link href="/">Touba-App™</Link>
                         </div>
                     </div>

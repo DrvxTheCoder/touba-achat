@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 export async function addEmployee(body: any) {
-  const { name, department, matriculation, email, password, role, phone } = body;
+  const { name, department, matriculation, email, password, role, access, phone } = body;
 
   try {
     // Check if email already exists
@@ -35,6 +35,7 @@ export async function addEmployee(body: any) {
         email,
         password: hashedPassword,
         role,
+        access
       },
     });
 
