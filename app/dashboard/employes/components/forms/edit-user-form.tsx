@@ -24,7 +24,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Icons } from "@/components/icons"
 import { Employee } from "../data"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { result } from "lodash"
 import { AccessSelect } from "@/components/forms/AccessSelect"
 
@@ -54,7 +54,6 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
   const [section, setSection] = useState<"employee" | "credentials">("employee");
   const [open, setOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
     fetch('/api/departments')
@@ -93,18 +92,15 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
         throw new Error(result.error);
       }
       // Handle success with the message from the server
-      toast({
-        title: "Succès",
+      toast.success("Succès",{
         description: result.message || "Les informations de l'employé ont été mises à jour avec succès.",
       });
       // Close the dialog and refresh the employee list
       setIsDialogOpen(false);
       onUpdate();  // Refresh the employee list
     }).catch((error) => {
-      toast({
-        title: "Erreur - Échec de la modification!",
+      toast.error("Erreur",{
         description: error.message || "Une erreur s'est produite.",
-        variant: 'destructive'
       });
       console.error('There was an error!', error);
     }).finally(() => {
@@ -112,10 +108,8 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
     });
     } catch (error) {
       console.error('Error updating employee:', error);
-      toast({
-        title: "Erreur",
+      toast.error("Erreur",{
         description: "Erreur interne du serveur",
-        variant: "destructive",
       });
     } finally {
       setUpdateButtonLoading(false);
@@ -151,7 +145,13 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     <FormItem>
                       <FormLabel className="text-sm text-muted-foreground">Nom :</FormLabel>
                       <FormControl>
-                        <Input {...field} type="text" />
+                        <Input {...field} type="text"
+                          onKeyDown={(e) => {
+                            if (e.key === ' ') {
+                              e.stopPropagation();
+                            }
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -191,7 +191,12 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     <FormItem>
                       <FormLabel className="text-sm text-muted-foreground" >Matricule :</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ') {
+                              e.stopPropagation();
+                            }
+                          }} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -204,7 +209,12 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     <FormItem className="hidden">
                       <FormLabel className="text-sm text-muted-foreground" >Username :</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ') {
+                              e.stopPropagation();
+                            }
+                          }} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -217,7 +227,12 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     <FormItem>
                       <FormLabel className="text-sm text-muted-foreground" >Téléphone :</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ') {
+                              e.stopPropagation();
+                            }
+                          }} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -245,7 +260,12 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     <FormItem>
                       <FormLabel className="text-sm text-muted-foreground" >Email :</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ') {
+                              e.stopPropagation();
+                            }
+                          }} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

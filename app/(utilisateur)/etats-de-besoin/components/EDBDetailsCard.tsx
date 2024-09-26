@@ -237,7 +237,7 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
       </CardContent>
       <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
         <div className="text-xs text-muted-foreground">
-          Date: <time dateTime={edb.createdAt}>{new Date(edb.createdAt).toLocaleDateString('fr-FR')}</time>
+          Date: <time dateTime={edb.date}>{new Date(edb.date).toLocaleDateString('fr-FR')}</time>
         </div>
       </CardFooter>
       <SupplierSelectionDialog

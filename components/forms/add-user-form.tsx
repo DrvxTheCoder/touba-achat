@@ -173,7 +173,7 @@ export function AddEmployeeForm() {
                         <FormItem>
                           <FormLabel className="text-sm text-muted-foreground">Nom :</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} type="text" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

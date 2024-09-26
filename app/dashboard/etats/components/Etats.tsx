@@ -108,7 +108,7 @@ import { canPerformAction } from "../utils/can-perform-action"
 import { AttachDocumentDialog } from "./AttachDocumentDialog"
 import { EDBTimelineDialog } from "@/components/EDBTimelineDialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Role } from "@prisma/client"
+import { Access, Role } from "@prisma/client"
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons"
 import { cn } from "@/lib/utils"
 import { FinalApprovalDialog } from "./FinalApprovalDialog"
@@ -126,7 +126,7 @@ const statusMapping = {
   'Complété': ['COMPLETED']
 };
 
-type EDBStatus = 
+export type EDBStatus = 
   | 'DRAFT'
   | 'SUBMITTED'
   | 'APPROVED_RESPONSABLE'
@@ -189,7 +189,8 @@ export default function Etats() {
   const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
   const [isChoosingSupplier, setIsChoosingSupplier] = useState(false);
 
-  const isMagasinier = session?.user?.role === Role.MAGASINIER;
+  const isMagasinier = session?.user?.role === Role.MAGASINIER || (session?.user?.access?.includes(Access.ATTACH_DOCUMENTS) ?? false);
+  const canAttach = session?.user?.access?.includes(Access.ATTACH_DOCUMENTS);
   const isDirecteur = session?.user?.role === Role.DIRECTEUR;
   const isEscalated = selectedEDB?.status === 'ESCALATED';
   const canEscalate = selectedEDB?.status === 'APPROVED_RESPONSABLE'
@@ -537,6 +538,19 @@ export default function Etats() {
     }
   }, [selectedEDB]);
 
+  function formatDate(date: Date | string) {
+    if (!(date instanceof Date) && typeof date !== 'string') {
+      return 'Invalid Date';
+    }
+    return new Date(date).toLocaleString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      // hour: '2-digit',
+      // minute: '2-digit'
+    });
+  }
+
   
 
   
@@ -722,7 +736,7 @@ export default function Etats() {
           
           {/* Right-side card for EDB details */}
           <div>
-            <Card className="overflow-hidden lg:block hidden mb-5">
+            <Card className="overflow-hidden lg:block hidden">
               {selectedEDB ? (
                 <>
                 <CardHeader className="flex flex-row items-start border-b">
@@ -776,7 +790,7 @@ export default function Etats() {
                           <>
                             <DropdownMenuItem 
                               onSelect={handleOpenAttachDialog}
-                              disabled={hasAttachments}
+                              disabled={["SUBMITTED","APPROVED_RESPONSABLE","SUPPLIER_CHOSEN","MAGASINIER_ATTACHED","COMPLETED","FINAL_APPROVAL"].includes(selectedEDB.status)}
                             >
                               Joindre document(s)
                               <Paperclip className="ml-2 h-4 w-4" />
@@ -794,7 +808,7 @@ export default function Etats() {
                         <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem> */}
                         
-                        {!isMagasinier && (
+                        {!isMagasinier || canAttach && (
                           <>
                           <DropdownMenuSeparator />
                           {["SUPPLIER_CHOSEN","FINAL_APPROVAL"].includes(selectedEDB.status) && (
@@ -833,7 +847,7 @@ export default function Etats() {
                               Rejeter
                               <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                             </DropdownMenuItem>
-                            </>
+                          </>
                         )}
 
 
@@ -986,12 +1000,11 @@ export default function Etats() {
                     </ScrollArea>
                 </CardContent>
                 <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
-                  <div className="text-xs text-muted-foreground">
-                    Date: <time dateTime={selectedEDB.createdAt}>{selectedEDB.createdAt}</time>
-                  </div>
-                  <div>
-                    
-                  </div>
+                <div className="text-xs text-muted-foreground">Date: {"  "} 
+                    <time dateTime={selectedEDB.date}>
+                        {formatDate(selectedEDB.date)}
+                    </time>
+                </div>
                 </CardFooter>
                 </>
               ) : (

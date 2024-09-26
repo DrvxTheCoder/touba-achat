@@ -4,7 +4,7 @@ import { prisma } from "./prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { JWT } from "next-auth/jwt";
-import { Role, UserStatus } from "@prisma/client";
+import { Access, Role, UserStatus } from "@prisma/client";
 
 // Extend the default session and token types
 declare module "next-auth" {
@@ -14,6 +14,7 @@ declare module "next-auth" {
       role: Role;
       status: UserStatus;
       isSimpleUser: boolean;
+      access: Access[]; // Add this line
     } & DefaultSession["user"];
   }
 
@@ -21,6 +22,7 @@ declare module "next-auth" {
     role: Role;
     status: UserStatus;
     isSimpleUser: boolean;
+    access: Access[]; // Add this line
   }
 }
 
@@ -29,6 +31,7 @@ declare module "next-auth/jwt" {
     id: string;
     role: Role;
     status: UserStatus;
+    access: Access[];
     isSimpleUser: boolean;
   }
 }
@@ -62,6 +65,7 @@ export const { auth, handlers } = NextAuth({
               email: user.email,
               name: user.name,
               role: user.role,
+              access: user.access,
               status: user.status,
               isSimpleUser: user.role === Role.USER,
             };

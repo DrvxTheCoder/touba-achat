@@ -28,7 +28,7 @@ export type EDBStatus =
     };
     status: EDBStatus;
     category: string;
-    createdAt: string;
+    date: any;
     updatedAt: string;
     department: string;
     employee: {

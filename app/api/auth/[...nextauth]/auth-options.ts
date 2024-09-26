@@ -1,7 +1,7 @@
 import { DefaultSession, User, type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { pagesOptions } from './pages-options';
-import { PrismaClient, UserStatus, Role } from '@prisma/client';
+import { PrismaClient, UserStatus, Role, Access } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { JWT } from 'next-auth/jwt';
 
@@ -12,6 +12,7 @@ declare module 'next-auth' {
     id: string;
     role: Role;
     status: UserStatus;
+    access: Access[];
     isSimpleUser: boolean;
   }
 
@@ -20,6 +21,7 @@ declare module 'next-auth' {
       id: string;
       role: Role;
       status: UserStatus;
+      access: Access[];
       isSimpleUser: boolean;
     } & DefaultSession['user'];
   }
@@ -30,6 +32,7 @@ declare module 'next-auth/jwt' {
     id: string;
     role: Role;
     status: UserStatus;
+    access: Access[];
     isSimpleUser: boolean;
   }
 }
@@ -51,6 +54,7 @@ export const authOptions: NextAuthOptions = {
           id: token.id,
           role: token.role as Role,
           status: token.status as UserStatus,
+          access: token.access,
           isSimpleUser: token.isSimpleUser,
         },
       };
@@ -61,6 +65,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
+        token.access = user.access;
         token.status = user.status;
         token.isSimpleUser = user.role === Role.USER;
       }
@@ -100,12 +105,22 @@ export const authOptions: NextAuthOptions = {
           if (!isPasswordValid) {
             throw new Error("Mot de passe incorrecte");
           }
-      
+          const userInfo = {
+            id: user.id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            access: user.access,
+            status: user.status,
+            isSimpleUser: user.role === Role.USER,
+          } as User;
+          console.log(userInfo);
           return {
             id: user.id.toString(),
             email: user.email,
             name: user.name,
             role: user.role,
+            access: user.access,
             status: user.status,
             isSimpleUser: user.role === Role.USER,
           } as User; // Add this type assertion
