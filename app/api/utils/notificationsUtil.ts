@@ -118,7 +118,7 @@ export async function determineRecipients(
 
   // Always notify the creator and the actor
   recipients.add(entity.creatorId);
-  recipients.add(actorId);
+  // recipients.add(actorId);
 
   const edbStatusesAfterDirecteurApproval = [
     'APPROVED_DIRECTEUR',
