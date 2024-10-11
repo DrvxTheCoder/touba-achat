@@ -23,7 +23,7 @@ export default function AuthenticationPage() {
         <div className="relative hidden h-full flex-col p-6 text-white dark:border-r lg:flex">
           <div className="absolute inset-0 bg-zinc-900 opacity-70" />
           <Image
-            src="/assets/img/touba-cover.jpeg"
+            src="/assets/img/bg-touba.jpg"
             alt="Touba Oil background"
             fill
             style={{ objectFit: 'cover' }}
@@ -57,14 +57,14 @@ export default function AuthenticationPage() {
             <small className="px-6 text-xs text-center text-muted-foreground">
             En cliquant sur Continuer, vous acceptez nos{" "}
               <Link
-                href="/terms"
+                href="#"
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Conditions d&apos;utilisation
               </Link>{" "}
               et notre{" "}
               <Link
-                href="/privacy"
+                href="#"
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Politique de confidentialité

@@ -232,12 +232,13 @@ export async function POST(request: Request) {
 
     // Send notification for new EDB
     const recipients = await determineRecipients(newEDB, newEDB.status, parseInt(userId), 'EDB');
+    // Send notification for new EDB
     await sendNotification({
-      type: getNotificationTypeFromStatus(EDBEventType.SUBMITTED, 'EDB'),
-      message: `Nouvel EDB #${newEDB.edbId} créé par ${session.user.name || 'un utilisateur'}`,
       entityId: newEDB.edbId,
       entityType: 'EDB',
-      recipients,
+      newStatus: newEDB.status,
+      actorId: parseInt(userId),
+      actionInitiator: session.user.name || 'Un utilisateur',
       additionalData: { createdBy: userId, departmentId: newEDB.departmentId }
     });
 

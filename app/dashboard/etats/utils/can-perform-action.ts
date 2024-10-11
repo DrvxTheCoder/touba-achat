@@ -47,8 +47,8 @@ export function canPerformAction(status: EDBStatus, role: UserRole, category?: s
       break;
     case 'ADMIN':
       // Admins might have special privileges but in this case, no special actions are allowed
-      canValidate = true;
-      canReject = true;
+      canValidate = ['SUBMITTED','APPROVED_RESPONSABLE','ESCALATED', 'APPROVED_DIRECTEUR', 'AWAITING_FINAL_APPROVAL'].includes(status);
+      canReject = false;
       break;
     case 'MAGASINIER':
       canValidate = status === 'AWAITING_MAGASINIER';

@@ -1,72 +1,139 @@
-//notificationMessade.ts
-import { EDBEventType, ODMEventType, EDBStatus, ODMStatus, NotificationType } from '@prisma/client';
+import { EDBStatus, ODMStatus, NotificationType } from '@prisma/client';
 
 type EntityContext = {
   id: string;
-  status?: EDBStatus | ODMStatus;
-  userName?: string;
+  status: EDBStatus | ODMStatus;
+  actionInitiator: string;
+  entityType: 'EDB' | 'ODM';
+};
+
+const translateStatus = (status: string): string => {
+  const statusTranslations: { [key: string]: string } = {
+    'DRAFT': 'Brouillon',
+    'SUBMITTED': 'Soumis',
+    'APPROVED_RESPONSABLE': 'Approuvé par le Service',
+    'APPROVED_DIRECTEUR': 'Approuvé par la Direction',
+    'APPROVED_DG': 'Approuvé par la Direction Générale',
+    'AWAITING_MAGASINIER': 'En attente du Magasinier',
+    'MAGASINIER_ATTACHED': 'Document attaché par le Magasinier',
+    'AWAITING_SUPPLIER_CHOICE': 'En attente du choix du fournisseur',
+    'SUPPLIER_CHOSEN': 'Fournisseur choisi',
+    'AWAITING_IT_APPROVAL': 'En attente d\'approbation IT',
+    'IT_APPROVED': 'Approuvé par IT',
+    'AWAITING_FINAL_APPROVAL': 'En attente d\'approbation finale',
+    'ESCALATED': 'Escaladé',
+    'REJECTED': 'Rejeté',
+    'FINAL_APPROVAL': 'Approbation finale',
+    'COMPLETED': 'Complété',
+  };
+
+  return statusTranslations[status] || status;
 };
 
 export function generateNotificationMessage(
-  action: EDBEventType | ODMEventType,
-  context: EntityContext,
-  entityType: 'EDB' | 'ODM'
-): string {
-  if (entityType === 'EDB') {
-    return generateEDBNotificationMessage(action as EDBEventType, context);
+  context: EntityContext
+): { subject: string; body: string } {
+  if (context.entityType === 'EDB') {
+    return generateEDBNotificationMessage(context);
   } else {
-    return generateODMNotificationMessage(action as ODMEventType, context);
+    return generateODMNotificationMessage(context);
   }
 }
 
-export function generateEDBNotificationMessage(
-  action: EDBEventType,
+function generateEDBNotificationMessage(
   context: EntityContext
-): string {
-  switch (action) {
-    case EDBEventType.SUBMITTED:
-      return `Nouvel EDB #${context.id} créé par ${context.userName}.`;
-    case EDBEventType.APPROVED_RESPONSABLE:
-      return `EDB #${context.id} a été approuvé par le service - ${context.userName}.`;
-    case EDBEventType.APPROVED_DIRECTEUR:
-      return `EDB #${context.id} a été approuvé par la Direction - ${context.userName}.`;
-    case EDBEventType.ESCALATED:
-      return `EDB #${context.id} a été escaladé à la Direction Générale pour approbation.`;
-    case EDBEventType.APPROVED_DG:
-      return `EDB #${context.id} a été approuvé par la Direction Générale.`;
-    case EDBEventType.MAGASINIER_ATTACHED:
-      return `Facture(s) rattachée(s) à l'EDB #${context.id} par le service d'achat.`;
-    case EDBEventType.SUPPLIER_CHOSEN:
-      return `Un fournisseur final a été choisi pour l'EDB #${context.id}.`;
-    case EDBEventType.FINAL_APPROVAL:
-      return `L'approbation finale de l'EDB #${context.id} effectué par : ${context.userName}.`;
-    case EDBEventType.COMPLETED:
-      return `L'EDB #${context.id} a été marqué comme pourvu par le Service d'Achat : ${context.userName}.`;
-    case EDBEventType.IT_APPROVED:
-      return `L'EDB #${context.id} a été approuvé par le Service IT.`;
-    case EDBEventType.REJECTED:
-      return `L'EDB #${context.id} a été rejeté.`;
+): { subject: string; body: string } {
+  const { id, status, actionInitiator } = context;
+  let subject = `Mise à jour de l'état de besoin (${id})`;
+  let body = '';
+
+  switch (status) {
+    case 'SUBMITTED':
+      subject = `Nouvel EDB (${id}) créé`;
+      body = `Un nouvel état de besoin (${id}) a été créé par ${actionInitiator} et nécessite une approbation.`;
+      break;
+    case 'APPROVED_RESPONSABLE':
+      body = `L'état de besoin (${id}) a été approuvé par le service ${actionInitiator} et requiert maintenant l'approbation de la direction.`;
+      break;
+    case 'APPROVED_DIRECTEUR':
+      body = `L'état de besoin (${id}) a été approuvé par la direction ${actionInitiator} et passe à l'étape suivante: Traitement par le service d'achat.`;
+      break;
+    case 'ESCALATED':
+      subject = `EDB (${id}) escaladé à la Direction Générale`;
+      body = `L'état de besoin (${id}) a été escaladé à la Direction Générale pour approbation par ${actionInitiator}.`;
+      break;
+    case 'AWAITING_MAGASINIER':
+      body = `L'état de besoin (${id}) est en attente de traitement par le magasinier.`;
+      break;
+    case 'MAGASINIER_ATTACHED':
+      body = `Le magasinier ${actionInitiator} a attaché les documents nécessaires à l'EDB (${id}).`;
+      break;
+    case 'AWAITING_SUPPLIER_CHOICE':
+      body = `L'état de besoin (${id}) est prêt pour le choix du fournisseur.`;
+      break;
+    case 'SUPPLIER_CHOSEN':
+      body = `Un fournisseur a été choisi pour l'état de besoin (${id}) par ${actionInitiator}.`;
+      break;
+    case 'AWAITING_IT_APPROVAL':
+      body = `L'état de besoin (${id}) nécessite l'approbation du service IT.`;
+      break;
+    case 'IT_APPROVED':
+      body = `L'état de besoin (${id}) a été approuvé par le service IT (${actionInitiator}).`;
+      break;
+    case 'AWAITING_FINAL_APPROVAL':
+      body = `L'état de besoin (${id}) est en attente de l'approbation finale.`;
+      break;
+    case 'APPROVED_DG':
+      subject = `EDB (${id}) approuvé par la Direction Générale`;
+      body = `L'état de besoin (${id}) a été approuvé par la Direction Générale (${actionInitiator}).`;
+      break;
+    case 'REJECTED':
+      subject = `EDB (${id}) rejeté`;
+      body = `L'état de besoin (${id}) a été rejeté par ${actionInitiator}.`;
+      break;
+    case 'COMPLETED':
+      subject = `EDB (${id}) traité`;
+      body = `L'état de besoin (${id}) a été marqué comme pourvu par ${actionInitiator}.`;
+      break;
     default:
-      return `Une mise à jour a été effectuée sur l'EDB #${context.id}.`;
+      body = `Une mise à jour a été effectuée sur l'EDB (${id}) par ${actionInitiator}. Nouveau statut : ${translateStatus(status)}`;
   }
+
+  return { subject, body };
 }
 
-export function generateODMNotificationMessage(
-  action: ODMEventType,
+function generateODMNotificationMessage(
   context: EntityContext
-): string {
-  switch (action) {
-    case ODMEventType.SUBMITTED:
-      return `Nouvel ODM #${context.id} créé par ${context.userName}.`;
-    case ODMEventType.AWAITING_RH_PROCESSING:
-      return `ODM #${context.id} a été approuvé par la Direction - ${context.userName}.`;
-    case ODMEventType.RH_PROCESSING:
-      return `ODM #${context.id} a été approuvé par les Ressources Humaines - ${context.userName}.`;
-    case ODMEventType.COMPLETED:
-      return `ODM #${context.id} a été traité par les Resssources Humaines - ${context.userName}.`;
-    case ODMEventType.REJECTED:
-      return `ODM #${context.id} a été rejeté.`; 
+): { subject: string; body: string } {
+  const { id, status, actionInitiator } = context;
+  let subject = `Mise à jour de l'ODM (${id})`;
+  let body = '';
+
+  switch (status) {
+    case 'SUBMITTED':
+      subject = `Nouvel ODM (${id}) créé`;
+      body = `Un nouvel ordre de mission (${id}) a été créé par ${actionInitiator}.`;
+      break;
+    case 'AWAITING_DIRECTOR_APPROVAL':
+      body = `L'ordre de mission (${id}) est en attente d'approbation par le directeur.`;
+      break;
+    case 'AWAITING_RH_PROCESSING':
+      body = `L'ordre de mission (${id}) a été approuvé par la direction - ${actionInitiator}.`;
+      break;
+    case 'RH_PROCESSING':
+      body = `L'ordre de mission (${id}) a été approuvé. En cours de traitement par les RH (${actionInitiator}).`;
+      break;
+    case 'COMPLETED':
+      subject = `ODM (${id}) traité`;
+      body = `L'ordre de mission (${id}) a été marqué comme traité par les RH (${actionInitiator}).`;
+      break;
+    case 'REJECTED':
+      subject = `ODM (${id}) rejeté`;
+      body = `L'ODM (${id}) a été rejeté par ${actionInitiator}.`;
+      break;
     default:
-      return `Une mise à jour a été effectuée sur l'ODM #${context.id}.`;
+      body = `Une mise à jour a été effectuée sur l'ODM (${id}) par ${actionInitiator}. Nouveau statut : ${status}`;
   }
+
+  return { subject, body };
 }

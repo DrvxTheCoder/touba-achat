@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { Metadata } from "next"
 import Image from "next/image"
@@ -31,6 +32,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { TestNotificationButton } from "@/components/SimulateBtn"
 import { EDBChartCard } from "./components/cards/EDBChartCard"
 import { EDBDashboardCards } from "./components/EDBDashboardCards"
+
 
 
 export default function Dashboard (){

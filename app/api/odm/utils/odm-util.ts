@@ -1,7 +1,7 @@
 // odm/utils/odm-util.ts
 import { PrismaClient, ODMEventType, OrdreDeMission, Prisma, ODMStatus, NotificationType } from '@prisma/client';
 import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
-import { getEventTypeFromStatus, getODMEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
+import {  getODMEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
 import generateODMId from './odm-id-generator';
 
@@ -43,23 +43,27 @@ async function sendODMNotification(
 ): Promise<void> {
   const recipients = await determineRecipients(odm, odm.status, userId, 'ODM');
   const userName = await getUserName(userId);
-  const notificationMessage = generateNotificationMessage(action, {
+
+  const { subject, body } = generateNotificationMessage({
     id: odm.odmId,
-    userName: userName,
-  }, 'ODM');
+    status: odm.status,
+    actionInitiator: userName,
+    entityType: 'ODM'
+  });
 
   const notificationPayload: NotificationPayload = {
-    type: getNotificationTypeFromStatus(odm.status, 'ODM'),
-    message: notificationMessage,
     entityId: odm.odmId,
     entityType: 'ODM',
-    recipients,
+    newStatus: odm.status,
+    actorId: userId,
+    actionInitiator: userName,
     additionalData: { 
       updatedBy: userId, 
       departmentId: odm.departmentId,
       ...additionalData
     }
   };
+
 
   await sendNotification(notificationPayload);
 }

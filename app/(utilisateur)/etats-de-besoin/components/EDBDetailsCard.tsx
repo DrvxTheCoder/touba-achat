@@ -69,7 +69,11 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
   const isITCategory = ['Matériel informatique', 'Logiciels et licences'].includes(edb.category);
 
   const canSelectSupplier = (attachment: Attachment) => {
-    return isITCategory ? session?.user?.role === 'IT_ADMIN' : !!session?.user;
+    if (isITCategory) {
+      return session?.user?.role === 'ADMIN' || session?.user?.role === 'IT_ADMIN';
+    } else {
+      return !!session?.user;
+    }
   };
   
   const handleSelectSupplier = async (attachment: Attachment) => {
@@ -237,7 +241,7 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
       </CardContent>
       <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
         <div className="text-xs text-muted-foreground">
-          Date: <time dateTime={edb.date}>{new Date(edb.date).toLocaleDateString('fr-FR')}</time>
+          Date: <time dateTime={edb.date}>{edb.date}</time>
         </div>
       </CardFooter>
       <SupplierSelectionDialog

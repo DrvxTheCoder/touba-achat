@@ -124,17 +124,17 @@ const EDBSummaryPDFDialog: React.FC<EDBSummaryPDFDialogProps> = ({ edb }) => {
         />
       ).toBlob();
 
-      console.log('PDF blob generated');
+      console.log('Blob PDF généré');
 
       const url = URL.createObjectURL(pdfBlob);
-      console.log('PDF URL created:', url);
+      console.log('URL PDF créé:', url);
       setPdfUrl(url);
       return url;
     } catch (err) {
-      console.error('Error generating PDF:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      toast.error('Error generating PDF', {
-        description: err instanceof Error ? err.message : 'An unknown error occurred',
+      console.error('Erreur de création PDF:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnu');
+      toast.error('Erreur de création PDF:', {
+        description: err instanceof Error ? err.message : 'Erreur inconnu',
       });
       return null;
     } finally {
@@ -198,10 +198,10 @@ const EDBSummaryPDFDialog: React.FC<EDBSummaryPDFDialogProps> = ({ edb }) => {
       {!isMobile && (
         <DialogContent className="max-w-[90vw] max-h-[60vh] md:max-w-[70vw] w-full md:max-h-[90vh] h-full">
           <DialogHeader>
-            <DialogTitle>Résumé de l&apos;État de Besoin: {edb.edbId}</DialogTitle>
+            <DialogTitle>Résumé EDB: {edb.edbId}</DialogTitle>
           </DialogHeader>
           {error ? (
-            <div className="text-red-500">Error: {error}</div>
+            <center className="text-red-500">Error: {error}</center>
           ) : pdfUrl ? (
             <div className="flex flex-col h-full">
               <iframe

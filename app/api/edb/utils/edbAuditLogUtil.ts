@@ -1,7 +1,7 @@
 // edb/utils/edbAuditLogUtil.ts
 import { PrismaClient, EDBEventType, EtatDeBesoin, Prisma, EDBStatus, AttachmentType, NotificationType } from '@prisma/client';
 import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
-import { getEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
+import {  getNotificationTypeFromStatus, determineRecipients, getEventTypeFromStatus } from '@/app/api/utils/notificationsUtil';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
 import generateEDBId from './edb-id-generator';
 
@@ -43,18 +43,19 @@ async function sendEDBNotification(
 ): Promise<void> {
   const recipients = await determineRecipients(edb, edb.status, userId, 'EDB');
   const userName = await getUserName(userId);
-  const notificationMessage = generateNotificationMessage(action, {
+  const { subject, body } = generateNotificationMessage({
     id: edb.edbId,
     status: edb.status,
-    userName: userName,
-  }, 'EDB');
+    actionInitiator: userName,
+    entityType: 'EDB'
+  });
 
   const notificationPayload: NotificationPayload = {
-    type: getNotificationTypeFromStatus(edb.status, 'EDB'),
-    message: notificationMessage,
     entityId: edb.edbId,
     entityType: 'EDB',
-    recipients,
+    newStatus: edb.status,
+    actorId: userId,
+    actionInitiator: userName,
     additionalData: { 
       updatedBy: userId, 
       departmentId: edb.departmentId,
@@ -183,26 +184,23 @@ export async function validateEDB(edbId: number, userId: number, userRole: strin
     { oldStatus: edb.status, newStatus }
   );
 
-  const notificationMessage = generateNotificationMessage(action, {
-    id: edb.edbId,
-    status: newStatus,
-    userName: userName,
-  }, 'EDB');
 
   const recipients = await determineRecipients(updatedEdb, newStatus, userId, 'EDB');
 
-  await sendNotification({
-    type: notificationType,
-    message: notificationMessage,
+  const notificationPayload: NotificationPayload = {
     entityId: edb.edbId,
     entityType: 'EDB',
-    recipients,
+    newStatus: newStatus,
+    actorId: userId,
+    actionInitiator: userName,
     additionalData: { 
       updatedBy: userId, 
       departmentId: edb.departmentId,
       creatorId: edb.creatorId
     }
-  });
+  };
+
+  await sendNotification(notificationPayload);
 
   return updatedEdb;
 }

@@ -201,14 +201,10 @@ export default function Etats() {
   const isSupplierChosen = !!selectedEDB?.finalSupplier;
 
   const canSelectSupplier = (attachment: Attachment) => {
-    if (!session?.user?.role) return false;
-  
-    const userRole = session.user.role as Role;
-  
     if (isITCategory) {
-      return userRole === 'IT_ADMIN';
+      return session?.user?.role === 'ADMIN' || session?.user?.role === 'IT_ADMIN';
     } else {
-      return canRoleSelectSupplier(userRole);
+      return !!session?.user;
     }
   };
 
@@ -808,7 +804,7 @@ export default function Etats() {
                         <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem> */}
                         
-                        {!isMagasinier || canAttach && (
+                        {!isMagasinier && (
                           <>
                           <DropdownMenuSeparator />
                           {["SUPPLIER_CHOSEN","FINAL_APPROVAL"].includes(selectedEDB.status) && (

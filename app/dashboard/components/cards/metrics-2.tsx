@@ -42,7 +42,7 @@ export function CardsMetric2() {
   }, []);
 
   return (
-    <Card className="flex flex-col w-full">
+    <Card className="col-span-3 flex flex-col w-full">
       <CardContent className="flex flex-1 items-center">
         <ChartContainer
           config={{

@@ -1,8 +1,8 @@
-//notificationsUtil.ts
-import { PrismaClient, EDBEventType, ODMEventType, EtatDeBesoin, OrdreDeMission, User, Prisma, EDBStatus, ODMStatus, AttachmentType, NotificationType, Role } from '@prisma/client';
+import { PrismaClient, EDBStatus, ODMStatus, NotificationType, Role, EDBEventType, ODMEventType } from '@prisma/client';
+import { generateNotificationMessage } from './notificationMessage';
+
 const prisma = new PrismaClient();
 
-// Helper function to get the appropriate EDBEventType based on the new status
 export function getEventTypeFromStatus(status: EDBStatus): EDBEventType {
   switch (status) {
     case 'DRAFT': return EDBEventType.DRAFT_CREATED;
@@ -40,11 +40,9 @@ export function getODMEventTypeFromStatus(status: ODMStatus): ODMEventType {
   }
 }
 
-// Helper function to get the appropriate NotificationType based on the new status
 export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus, entityType: 'EDB' | 'ODM'): NotificationType {
   if (entityType === 'EDB') {
     switch (status) {
-      case 'DRAFT':
       case 'SUBMITTED':
         return NotificationType.EDB_CREATED;
       case 'APPROVED_RESPONSABLE':
@@ -57,45 +55,27 @@ export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus, ent
         return NotificationType.EDB_APPROVED_DG;
       case 'REJECTED':
         return NotificationType.EDB_REJECTED;
-      case 'AWAITING_MAGASINIER':
-      case 'MAGASINIER_ATTACHED':
-      case 'AWAITING_SUPPLIER_CHOICE':
-      case 'SUPPLIER_CHOSEN':
-      case 'AWAITING_IT_APPROVAL':
-      case 'IT_APPROVED':
-      case 'AWAITING_FINAL_APPROVAL':
-      case 'COMPLETED':
-        // For these statuses, we don't have specific notification types defined.
-        // You might want to create new notification types for these or use a generic one.
-        return NotificationType.EDB_CREATED; // Using this as a fallback, but you might want to define a more appropriate type
       default:
-        console.warn(`Unhandled EDB status for notification: ${status}`);
-        return NotificationType.EDB_CREATED; // Default case, you might want to handle this differently
+        return NotificationType.EDB_UPDATED;
     }
   } else {
     switch (status) {
-      case 'DRAFT':
       case 'SUBMITTED':
         return NotificationType.ODM_CREATED;
-      case 'AWAITING_DIRECTOR_APPROVAL':
-        return NotificationType.ODM_CREATED; // You might want to create a new notification type for this
       case 'AWAITING_RH_PROCESSING':
         return NotificationType.ODM_APPROVED_DIRECTOR;
-      case 'RH_PROCESSING':
-        return NotificationType.ODM_RH_PROCESSING;
       case 'COMPLETED':
         return NotificationType.ODM_COMPLETED;
       case 'REJECTED':
         return NotificationType.ODM_REJECTED;
       default:
-        console.warn(`Unhandled ODM status for notification: ${status}`);
-        return NotificationType.ODM_CREATED; // Default case
+        return NotificationType.ODM_UPDATED;
     }
   }
 }
 
 export async function determineRecipients(
-  entity: EtatDeBesoin | OrdreDeMission,
+  entity: any,
   newStatus: EDBStatus | ODMStatus,
   actorId: number,
   entityType: 'EDB' | 'ODM'
@@ -138,83 +118,139 @@ export async function determineRecipients(
 
   // Always notify the creator and the actor
   recipients.add(entity.creatorId);
+  recipients.add(actorId);
 
-  if (entityType === 'EDB') {
-    switch (newStatus) {
-      case 'SUBMITTED':
-        relevantUsers.forEach(user => {
+  const edbStatusesAfterDirecteurApproval = [
+    'APPROVED_DIRECTEUR',
+    'ESCALATED',
+    'AWAITING_MAGASINIER',
+    'MAGASINIER_ATTACHED',
+    'AWAITING_SUPPLIER_CHOICE',
+    'SUPPLIER_CHOSEN',
+    'AWAITING_IT_APPROVAL',
+    'IT_APPROVED',
+    'AWAITING_FINAL_APPROVAL',
+    'APPROVED_DG',
+    'COMPLETED'
+  ];
+
+  relevantUsers.forEach(user => {
+    if (entityType === 'EDB') {
+      // Notify magasinier for all statuses after APPROVED_DIRECTEUR
+      if (user.role === 'MAGASINIER' && edbStatusesAfterDirecteurApproval.includes(newStatus)) {
+        recipients.add(user.id);
+      }
+
+      switch (newStatus) {
+        case 'SUBMITTED':
           if (user.employee?.currentDepartmentId === entity.departmentId && 
               (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR')) {
             recipients.add(user.id);
           }
-        });
-        break;
-      case 'APPROVED_RESPONSABLE':
-        relevantUsers.forEach(user => {
+          break;
+        case 'APPROVED_RESPONSABLE':
           if (user.employee?.currentDepartmentId === entity.departmentId && user.role === 'DIRECTEUR') {
             recipients.add(user.id);
           }
-        });
-        break;
-      case 'APPROVED_DIRECTEUR':
-      case 'ESCALATED':
-      case 'AWAITING_FINAL_APPROVAL':
-        relevantUsers.forEach(user => {
+          break;
+        case 'APPROVED_DIRECTEUR':
+        case 'ESCALATED':
+        case 'AWAITING_FINAL_APPROVAL':
           if (user.role === 'DIRECTEUR_GENERAL') {
             recipients.add(user.id);
           }
-        });
-        break;
-      case 'FINAL_APPROVAL':
-      case 'AWAITING_MAGASINIER':
-        relevantUsers.forEach(user => {
-          if (user.role === 'MAGASINIER') {
-            recipients.add(user.id);
-          }
-        });
-        break;
-      case 'AWAITING_SUPPLIER_CHOICE':
-        relevantUsers.forEach(user => {
+          break;
+        case 'AWAITING_SUPPLIER_CHOICE':
           if (user.access.includes('CHOOSE_SUPPLIER')) {
             recipients.add(user.id);
           }
-        });
-        break;
-      case 'AWAITING_IT_APPROVAL':
-        relevantUsers.forEach(user => {
+          break;
+        case 'AWAITING_IT_APPROVAL':
           if (user.role === 'IT_ADMIN') {
             recipients.add(user.id);
           }
-        });
-        break;
-    }
-  } else {
-    // ODM-specific logic
-    switch (newStatus) {
-      case 'SUBMITTED':
-        relevantUsers.forEach(user => {
+          break;
+      }
+    } else {
+      switch (newStatus) {
+        case 'SUBMITTED':
           if (user.employee?.currentDepartmentId === entity.departmentId && user.role === 'DIRECTEUR') {
             recipients.add(user.id);
           }
-        });
-        break;
-      case 'AWAITING_RH_PROCESSING':
-        relevantUsers.forEach(user => {
+          break;
+        case 'AWAITING_RH_PROCESSING':
+        case 'RH_PROCESSING':
           if (user.role === 'RH') {
             recipients.add(user.id);
           }
-        });
-        break;
-      case 'COMPLETED':
-        recipients.add(entity.creatorId);
-        break;
-      case 'REJECTED':
-        recipients.add(entity.creatorId);
-        break;
+          break;
+      }
     }
-  }
+  });
 
   return Array.from(recipients);
 }
 
-// You might want to add more ODM-specific utility functions here
+export async function createNotification(
+  entityId: string,
+  entityType: 'EDB' | 'ODM',
+  newStatus: EDBStatus | ODMStatus,
+  actorId: number,
+  actionInitiator: string
+) {
+  let entity;
+  let numericEntityId: number | undefined;
+
+  if (entityType === 'EDB') {
+    entity = await prisma.etatDeBesoin.findUnique({ 
+      where: { edbId: entityId },
+      select: { id: true, creatorId: true, departmentId: true }
+    });
+    numericEntityId = entity?.id;
+  } else {
+    entity = await prisma.ordreDeMission.findUnique({ 
+      where: { odmId: entityId },
+      select: { id: true, creatorId: true, departmentId: true }
+    });
+    numericEntityId = entity?.id;
+  }
+
+  if (!entity) {
+    throw new Error(`${entityType} not found`);
+  }
+
+  const recipients = await determineRecipients(entity, newStatus, actorId, entityType);
+  const notificationType = getNotificationTypeFromStatus(newStatus, entityType);
+
+  const { subject, body } = generateNotificationMessage({
+    id: entityId, // Keep using the string ID for the message
+    status: newStatus,
+    actionInitiator,
+    entityType
+  });
+
+  const notification = await prisma.notification.create({
+    data: {
+      type: notificationType,
+      message: body,
+      ...(entityType === 'EDB' ? { etatDeBesoinId: numericEntityId } : { ordreDeMissionId: numericEntityId }),
+      recipients: {
+        create: recipients.map(userId => ({
+          userId,
+          isRead: false,
+          emailSent: false
+        }))
+      }
+    },
+    include: {
+      recipients: {
+        include: {
+          user: true
+        }
+      }
+    }
+  });
+
+  return { notification, subject, body };
+}
+

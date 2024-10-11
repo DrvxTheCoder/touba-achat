@@ -1,6 +1,7 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DIRECT_URL")
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 generator client {
@@ -48,12 +49,16 @@ enum NotificationType {
   EDB_APPROVED_DIRECTOR
   EDB_ESCALATED
   EDB_APPROVED_DG
+  EDB_MAGASINIER_ATTACHED
+  EDB_SUPPLIER_CHOSEN
   EDB_FINAL_APPROVAL
+  EDB_UPDATED
   ODM_CREATED
   ODM_APPROVED_DIRECTOR
   ODM_APPROVED_RH
   ODM_RH_PROCESSING
   ODM_COMPLETED
+  ODM_UPDATED
   ODM_REJECTED
   EDB_REJECTED
 }
