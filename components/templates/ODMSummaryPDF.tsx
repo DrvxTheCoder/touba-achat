@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
 
-const pageURL = "https://touba-achat.vercel.app";
+const pageURL = "https://touba.vercel.app";
 
 Font.register({
     family: 'Ubuntu',

@@ -47,8 +47,14 @@ export async function GET(req: NextRequest) {
   // Calculate aggregated data
   const total = edbs.length;
   const active = edbs.filter(edb => 
-    edb.status !== EDBStatus.COMPLETED && 
-    edb.status !== EDBStatus.REJECTED
+    [
+      'APPROVED_DIRECTEUR',
+      'APPROVED_DG',
+      'MAGASINIER_ATTACHED',
+      'SUPPLIER_CHOSEN',
+      'COMPLETED',
+      'FINAL_APPROVAL'
+    ].includes(edb.status)
   ).length;
   const pending = edbs.filter(edb => 
     [

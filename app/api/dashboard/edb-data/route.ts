@@ -40,7 +40,16 @@ export async function GET(req: NextRequest) {
 
   // Calculate aggregated data
   const total = edbs.length;
-  const active = edbs.filter(edb => edb.status !== 'COMPLETED' && edb.status !== 'REJECTED').length;
+  const active = edbs.filter(edb => 
+    [
+      'APPROVED_DIRECTEUR',
+      'APPROVED_DG',
+      'MAGASINIER_ATTACHED',
+      'SUPPLIER_CHOSEN',
+      'COMPLETED',
+      'FINAL_APPROVAL'
+    ].includes(edb.status)
+  ).length;
   const pending = edbs.filter(edb => edb.status === 'SUBMITTED' || edb.status === 'ESCALATED' || edb.status === 'APPROVED_RESPONSABLE').length;
   const lastMonthTotal = edbs.filter(edb => new Date(edb.createdAt) >= lastMonth).length;
   const lastHourActive = edbs.filter(edb => 
@@ -70,15 +79,33 @@ export async function GET(req: NextRequest) {
   });
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  const chartData = weekDays.map((day, index) => {
+  const chartData = await Promise.all(weekDays.map(async (day, index) => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + index);
     const dataForDay = weeklyData.find(d => new Date(d.createdAt).toDateString() === date.toDateString());
+    
+    const dayEDBs = await prisma.etatDeBesoin.findMany({
+      where: {
+        createdAt: {
+          gte: date,
+          lt: new Date(date.getTime() + 24 * 60 * 60 * 1000), // Next day
+        },
+        ...(role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
+      },
+      include: {
+        finalSupplier: true,
+      },
+    });
+    
+    const amount = dayEDBs.reduce((sum, edb) => sum + (edb.finalSupplier?.amount || 0), 0);
+
     return {
+      name: day,
       date: date.toISOString().split('T')[0],
       count: dataForDay ? dataForDay._count.id : 0,
+      amount: amount,
     };
-  });
+  }));
 
   return NextResponse.json({
     aggregatedData: {
