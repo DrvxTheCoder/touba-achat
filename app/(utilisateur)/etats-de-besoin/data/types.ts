@@ -26,9 +26,14 @@ export type EDBStatus =
     description: {
       items: Array<{ designation: string; quantity: number }>;
     };
+    creator: {
+      name: string;
+      email: string;
+    };
     status: EDBStatus;
     category: string;
     date: any;
+    createdAt: string;
     updatedAt: string;
     department: string;
     employee: {

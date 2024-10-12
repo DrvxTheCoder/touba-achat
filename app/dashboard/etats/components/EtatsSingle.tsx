@@ -627,7 +627,7 @@ const statusMapping = {
         <CardContent className="p-5 text-sm">
                 
                 <div className="grid gap-3">
-                  <text className="text-muted-foreground">Titre: {edb.title}</text>
+                  {/* <text className="text-muted-foreground">Titre: {edb.title}</text> */}
                   <ul className="grid gap-3">
                   <li className="flex items-center justify-between">
                     <span className="font-semibold">Désignation</span>

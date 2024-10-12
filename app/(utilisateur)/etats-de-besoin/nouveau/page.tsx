@@ -30,7 +30,7 @@ import { Icons } from '@/components/icons';
 
 // Define the Zod schema
 const edbSchema = z.object({
-  title: z.string().min(1, "Ce champ est requis"),
+  // title: z.string().min(1, "Ce champ est requis"),
   category: z.string().min(1, "Ce champ est requis"),
   reference: z.string().optional(),
   items: z.array(z.object({
@@ -58,7 +58,7 @@ export default function NouveauEtatsDeBesoinPage() {
     const form = useForm<EdbFormValues>({
       resolver: zodResolver(edbSchema),
       defaultValues: {
-        title: '',
+        // title: '',
         category: '',
         reference: '',
         items: [{ designation: '', quantity: '' }]
@@ -156,7 +156,7 @@ export default function NouveauEtatsDeBesoinPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
             <Form {...form}>
               
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
@@ -168,7 +168,7 @@ export default function NouveauEtatsDeBesoinPage() {
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
-                />
+                /> */}
                 
                 <FormField
                   control={form.control}

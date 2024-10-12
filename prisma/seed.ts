@@ -55,14 +55,12 @@ async function main() {
     { name: 'Services professionnels', type: CategoryType.DEFAULT },
     { name: 'Logiciels et licences', type: CategoryType.DEFAULT },
     { name: 'Mobilier de bureau', type: CategoryType.DEFAULT },
-    { name: 'Équipement de laboratoire', type: CategoryType.DEFAULT },
     { name: 'Uniformes et vêtements de travail', type: CategoryType.DEFAULT },
     { name: 'Équipement de communication', type: CategoryType.DEFAULT },
     { name: 'Fournitures d\'entretien', type: CategoryType.DEFAULT },
     { name: 'Carburant pour véhicules de société', type: CategoryType.DEFAULT },
     { name: 'Équipement environnemental', type: CategoryType.DEFAULT },
     { name: 'Divers / Non-catégorisé', type: CategoryType.DEFAULT },
-    { name: 'Catégorie personnalisée', type: CategoryType.CUSTOM },
   ];
 
   for (const category of categories) {
@@ -124,6 +122,14 @@ async function main() {
       access: [Access.APPROVE_EDB],
       departmentName: 'Direction Ressources Humaines',
       matriculation: '26294',
+    },
+    {
+      name: 'Bineta Dieng',
+      email: 'bineta.dieng@touba-oil.com',
+      role: Role.RH,
+      access: [Access.APPROVE_EDB, Access.RH_PROCESS],
+      departmentName: 'Direction Ressources Humaines',
+      matriculation: '26309',
     },
     {
       name: 'Safietou Ndour',

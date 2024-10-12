@@ -13,6 +13,7 @@ import { SupplierSelectionDialog } from '@/components/SupplierSelectionDialog';
 import { EDBStatus, EDB, Attachment } from '../data/types';
 import { BadgeCheck, Check, Copy, MoreVertical, Paperclip } from "lucide-react";
 import { StatusBadge } from '@/app/dashboard/etats/components/StatusBadge';
+import EDBSummaryPDFDialog from '@/app/dashboard/etats/components/EDBSummaryDialog';
 import { toast } from 'sonner';
 
 type EDBDetailsCardProps = {
@@ -156,7 +157,9 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
               auditLogs: edb.auditLogs
             }} 
           />
-          <DropdownMenu>
+
+          <EDBSummaryPDFDialog edb={edb} />
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="outline" className="h-8 w-8">
                 <MoreVertical className="h-3.5 w-3.5" />
@@ -169,7 +172,7 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled>Supprimer</DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
         </div>
       </CardHeader>
       <CardContent className="p-6 text-sm">

@@ -262,7 +262,7 @@ export async function chooseFinalSupplier(
 export async function createEDB(
   userId: number,
   edbData: {
-    title: string;
+    // title: string;
     category: number;
     reference: string;
     items: any[];
@@ -292,7 +292,7 @@ export async function createEDB(
   const newEDB = await prisma.etatDeBesoin.create({
     data: {
       edbId,
-      title: edbData.title,
+      // title: edbData.title,
       description: { items: edbData.items },
       references: edbData.reference,
       status: initialStatus,
@@ -333,7 +333,7 @@ export async function createEDBForUser(
   loggedInUserId: number,
   targetUserId: number,
   edbData: {
-    title: string;
+    // title: string;
     category: number;
     reference: string;
     items: any[]; // Consider creating a more specific type for items
@@ -363,7 +363,7 @@ export async function createEDBForUser(
   const newEDB = await prisma.etatDeBesoin.create({
     data: {
       edbId,
-      title: edbData.title,
+      // title: edbData.title,
       description: { items: edbData.items },
       references: edbData.reference,
       status: initialStatus,

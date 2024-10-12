@@ -27,14 +27,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, category, reference, items, userId } = body;
+    // const { title, category, reference, items, userId } = body;
+    const { category, reference, items, userId } = body;
 
     if (!userId) {
       return NextResponse.json({ message: 'ID requit.' }, { status: 400 });
     }
 
     const newEDB = await createEDBForUser(parseInt(loggedInUserId), parseInt(userId), {
-      title,
+      // title,
       category: parseInt(category),
       reference,
       items

@@ -217,12 +217,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, category, reference, items } = body;
+    // const { title, category, reference, items } = body;
+    const { category, reference, items } = body;
 
     console.log('Received body:', body);
 
     const newEDB = await createEDB(parseInt(userId), {
-      title,
+      // title,
       category: parseInt(category),
       reference,
       items

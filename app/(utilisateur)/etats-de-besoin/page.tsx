@@ -111,7 +111,7 @@ export default function EtatsDeBesoinPage() {
                   <TableHeader className="bg-muted">
                     <TableRow className="rounded-lg border-0">
                       <TableHead className="rounded-l-lg">ID</TableHead>
-                      <TableHead className="hidden sm:table-cell">Titre</TableHead>
+                      {/* <TableHead className="hidden sm:table-cell">Titre</TableHead> */}
                       <TableHead className="hidden sm:table-cell">Catégorie</TableHead>
                       <TableHead className="rounded-r-lg md:rounded-none text-right md:text-left">Statut</TableHead>
                       <TableHead className="hidden sm:table-cell text-right rounded-r-lg">Montant (XOF)</TableHead>

@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 import { getEmployees, Employee } from '../../employes/components/data'; // Adjust the import path as needed
 
 const edbSchema = z.object({
-  title: z.string().min(1, "Ce champ est requis"),
+  // title: z.string().min(1, "Ce champ est requis"),
   category: z.string().min(1, "Ce champ est requis"),
   reference: z.string().optional(),
   items: z.array(z.object({
@@ -50,7 +50,7 @@ const CreateEDBPage = () => {
   const form = useForm<EdbFormValues>({
     resolver: zodResolver(edbSchema),
     defaultValues: {
-      title: '',
+      // title: '',
       category: '',
       reference: '',
       items: [{ designation: '', quantity: '' }],
@@ -211,7 +211,7 @@ const CreateEDBPage = () => {
                   )}
                 />
               
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
@@ -223,7 +223,7 @@ const CreateEDBPage = () => {
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
-                />
+                /> */}
                 
                 <FormField
                   control={form.control}

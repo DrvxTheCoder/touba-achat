@@ -903,7 +903,7 @@ export default function Etats() {
                 <CardContent className="p-5 text-sm">
                 
                   <div className="grid gap-3">
-                    <small className="text-xs text-muted-foreground"><b>Titre:</b> {selectedEDB.title}</small>
+                    {/* <small className="text-xs text-muted-foreground"><b>Titre:</b> {selectedEDB.title}</small> */}
                     <ul className="grid gap-3">
                     <li className="flex items-center justify-between px-3">
                       <span className="font-semibold">Désignation</span>
