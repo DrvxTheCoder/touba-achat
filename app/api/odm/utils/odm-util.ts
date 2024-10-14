@@ -164,10 +164,10 @@ export async function approveODM(
     newStatus = 'AWAITING_RH_PROCESSING';
     eventType = ODMEventType.AWAITING_RH_PROCESSING;
   } 
-  // else if (userRole === 'RH' && odm.status === 'AWAITING_RH_PROCESSING') {
-  //   newStatus = 'COMPLETED';
-  //   eventType = ODMEventType.COMPLETED;
-  // }
+  else if (userRole === 'ADMIN' && odm.status === 'SUBMITTED') {
+    newStatus = 'AWAITING_RH_PROCESSING';
+    eventType = ODMEventType.COMPLETED;
+  }
   else if (userRole === 'DIRECTEUR_GENERAL' && odm.status === 'SUBMITTED'){
     newStatus = 'AWAITING_RH_PROCESSING';
     eventType = ODMEventType.AWAITING_RH_PROCESSING;

@@ -62,7 +62,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
   const missionCostTotal = odm.missionCostPerDay * days;
 
  
-  const isAuthorized = userRole === "DIRECTEUR" || userRole === "DIRECTEUR_GENERAL";
+  const isAuthorized = userRole === "DIRECTEUR" || userRole === "DIRECTEUR_GENERAL" || userRole === "ADMIN";
   const canValidate = odm.status === 'SUBMITTED';
   const canProcess = userRole === 'RH' && odm.status === 'RH_PROCESSING';
   const canEdit = userRole === 'RH' && isProcessed;

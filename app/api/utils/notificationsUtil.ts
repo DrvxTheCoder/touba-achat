@@ -179,6 +179,9 @@ export async function determineRecipients(
           }
           break;
         case 'AWAITING_RH_PROCESSING':
+          if (user.employee?.currentDepartmentId === 3  && user.role === 'DIRECTEUR') {
+            recipients.add(user.id);
+          }
         case 'RH_PROCESSING':
           if (user.role === 'RH') {
             recipients.add(user.id);
