@@ -289,6 +289,14 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
                 )}
                 </div>
                 <Separator className="my-4" />
+                <div>
+                <text className="">Description: </text>
+                  <p className='text-sm text-muted-foreground'>
+                    {odm.description}
+                  </p>
+                </div>
+
+                <Separator className="my-4" />
                 <div className="grid gap-3">
               <div className="font-semibold">Information Employé</div>
                 <dl className="grid gap-3 text-sm">
