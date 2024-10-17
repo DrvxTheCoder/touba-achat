@@ -67,7 +67,7 @@ export default function Dashboard (){
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Dashboard</h2>
             <div className="flex items-center space-x-2">
               {/* <TestNotificationButton/> */}
-            <TeamSwitcher />
+            {/* <TeamSwitcher /> */}
             
             </div>
           </div>

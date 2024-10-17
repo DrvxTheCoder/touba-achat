@@ -130,7 +130,7 @@ export default function Dashboard() {
           <Activity className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">1</div>
+          <div className="text-3xl font-bold">N/A</div>
         </CardContent>
         <CardFooter>
         <p className="text-xs text-muted-foreground">
