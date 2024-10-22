@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Stamp, Package, ShoppingCart, CheckCircle2, Printer, ArrowUpRight, XCircle, FileText, Paperclip, PrinterCheck } from 'lucide-react';
+import { User, Stamp, Package, ShoppingCart, CheckCircle2, Printer, ArrowUpRight, XCircle, FileText, Paperclip, PrinterCheck, PackageOpenIcon } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EDBStatus, EDBEventType } from '@/app/(utilisateur)/etats-de-besoin/data/types';
 import { Separator } from "@/components/ui/separator"
@@ -31,6 +31,7 @@ const eventTypeIcons: Record<EDBEventType, React.ElementType> = {
   ATTACHMENT_ADDED: Paperclip,
   ATTACHMENT_REMOVED: Paperclip,
   ESCALATED: ArrowUpRight,
+  DELIVERED: PackageOpenIcon,
   AWAITING_FINAL_APPROVAL: CheckCircle2,
   FINAL_APPROVAL: CheckCircle2,
   MAGASINIER_ATTACHED: Package,
@@ -49,6 +50,7 @@ const eventTypeTranslations: Record<EDBEventType, string> = {
   ATTACHMENT_ADDED: "Pièce jointe ajoutée",
   ATTACHMENT_REMOVED: "Pièce jointe supprimée",
   ESCALATED: "Escaladé",
+  DELIVERED: "Livré",
   MAGASINIER_ATTACHED: "Facture rattaché par le Service d'Achat",
   AWAITING_FINAL_APPROVAL: "En attente d'approbation finale",
   FINAL_APPROVAL: "Approbation finale effectué",

@@ -29,10 +29,16 @@ async function customSignIn(email: string, password: string): Promise<{ success:
       try {
         // Try to parse it as JSON
         const parsedError = JSON.parse(decodedError);
-        errorMessage = parsedError.message || "Une erreur s'est produite lors de la connexion";
+        if (parsedError.message.length() > 30){
+          errorMessage = "Une erreur s'est produite lors de la connexion. Vérifiez votre connexion internet et ressayez.";
+        }else {
+          errorMessage = parsedError.message
+        }
+        
+
       } catch {
         // If it's not JSON, use it as is
-        errorMessage = decodedError;
+        errorMessage = "Une erreur s'est produite lors de la connexion. Vérifiez votre connexion internet et ressayez.";
       }
 
       return { success: false, message: errorMessage };

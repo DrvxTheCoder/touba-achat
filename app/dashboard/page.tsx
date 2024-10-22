@@ -32,6 +32,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { TestNotificationButton } from "@/components/SimulateBtn"
 import { EDBChartCard } from "./components/cards/EDBChartCard"
 import { EDBDashboardCards } from "./components/EDBDashboardCards"
+import { OpenInNewWindowIcon } from "@radix-ui/react-icons"
 
 
 
@@ -67,6 +68,7 @@ export default function Dashboard (){
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Dashboard</h2>
             <div className="flex items-center space-x-2">
               {/* <TestNotificationButton/> */}
+            <Link href={"/acceuil"}><Button variant={"outline"}>Accueil <OpenInNewWindowIcon className="ml-2" /></Button></Link>
             {/* <TeamSwitcher /> */}
             
             </div>

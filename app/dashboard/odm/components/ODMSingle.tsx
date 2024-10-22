@@ -1,6 +1,6 @@
 "use client"
 // components/ODMSingle.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ODMTimeline } from './ODMEventTimeline';
@@ -8,7 +8,9 @@ import { ODMProcessingForm } from './ODMProcessingForm';
 import { ODMEditProcessingDialog } from './ODMEditProcessingForm';
 import { ODMValidationDialog } from './ODMValidationDialog';
 import { StatusBadge } from '../../etats/components/StatusBadge';
-import { BadgeCheck, Ban, Calculator, Clock, Copy, Edit, FileClock, MoreVertical } from 'lucide-react';
+import { BadgeCheck, Ban, Calculator, Clock, Copy, Edit, FileClock, MoreVertical, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
 import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
@@ -18,6 +20,7 @@ import ODMSummaryPDFDialog from './ODMSummaryPDFDialog';
 import { useSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
 import { ODMDRHValidationDialog } from './ODMDRHValidationDialog';
+import { Icons } from '@/components/icons';
 
 type ODMSingleProps = {
   odm: any; // Replace with proper ODM type
@@ -29,6 +32,53 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
   const [userRole, setUserRole] = useState(initialUserRole);
   const [userDepartment, setUserDepartment] = useState<string | null>(null);
   const { data: session } = useSession();
+
+  // Add these states
+const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+const [isDeleting, setIsDeleting] = useState(false);
+
+// Add this helper function to check if user can delete
+const canDelete = useMemo(() => {
+  if (!odm || !session?.user) return false;
+  
+  if (session.user.role === 'ADMIN') return true;
+  
+  return (
+    odm.creator?.user?.id === session.user.id && 
+    ['DRAFT', 'SUBMITTED'].includes(odm.status)
+  );
+}, [odm, session?.user]);
+
+// Add this function to handle deletion
+const handleDelete = async () => {
+  if (!odm) return;
+  setIsDeleting(true);
+  try {
+    const response = await fetch(`/api/odm/${odm.id}/delete`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erreur lors de la suppression');
+    }
+    
+    toast.success("ODM Supprimé", {
+      description: `L'ODM #${odm.odmId} a été supprimé avec succès.`,
+    });
+    
+    // Redirect to the ODMs list
+    router.push('/dashboard/odm');
+  } catch (error: any) {
+    console.error('Error deleting ODM:', error);
+    toast.error("Erreur", {
+      description: error.message || "Une erreur est survenue lors de la suppression.",
+    });
+  } finally {
+    setIsDeleting(false);
+    setIsDeleteDialogOpen(false);
+  }
+};
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -242,12 +292,23 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
                           <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                        disabled={!canDelete}
+                      >
+                        Supprimer
+                        <DropdownMenuShortcut>
+                          <Trash2 className="ml-4 h-4 w-4" />
+                        </DropdownMenuShortcut>
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </CardHeader>
               <CardContent className="p-5">
               <div className="grid gap-3">
+                <strong className="">{odm.missionType}</strong>
                 <text className="">Objet: {odm.title}</text>
                 {isProcessed && odm.expenseItems ? (
                 <div>
@@ -359,6 +420,33 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
         onClose={() => setIsEditDialogOpen(false)}
         onProcessed={handleProcessed}
       />
+      {/* Add this just before the closing tag of your component */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer l&apos;ODM #{odm.odmId} ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting && (
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

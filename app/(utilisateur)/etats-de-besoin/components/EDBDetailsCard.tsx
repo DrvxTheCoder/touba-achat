@@ -43,6 +43,17 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+function formatDate(date: Date | string) {
+  if (!(date instanceof Date) && typeof date !== 'string') {
+    return 'Invalid Date';
+  }
+  return new Date(date).toLocaleString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
 export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
   const { data: session } = useSession();
   const [currentPdfIndex, setCurrentPdfIndex] = useState<number | null>(null);
@@ -244,7 +255,9 @@ export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
       </CardContent>
       <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
         <div className="text-xs text-muted-foreground">
-          Date: <time dateTime={edb.date}>{edb.date}</time>
+          Date: <time dateTime={edb.createdAt}>
+                        {formatDate(edb.createdAt)}
+                    </time>
         </div>
       </CardFooter>
       <SupplierSelectionDialog

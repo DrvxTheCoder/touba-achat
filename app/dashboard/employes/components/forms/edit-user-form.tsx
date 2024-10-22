@@ -27,6 +27,7 @@ import { Employee } from "../data"
 import { toast } from "sonner"
 import { result } from "lodash"
 import { AccessSelect } from "@/components/forms/AccessSelect"
+import { Access } from "@prisma/client"
 
 const employeeUpdateSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit comporter au moins 2 caractères." }),
@@ -36,7 +37,7 @@ const employeeUpdateSchema = z.object({
   phoneNumber: z.string().min(9, { message: "Le téléphone doit comporter au moins 10 caractères." })
     .max(15, { message: "Le téléphone ne doit pas dépasser 15 caractères." }),
   department: z.number(),
-  access: z.array(z.enum(['APPROVE_EDB', 'ATTACH_DOCUMENTS', 'CHOOSE_SUPPLIER', 'IT_APPROVAL', 'FINAL_APPROVAL', 'RH_APPROVE', 'RH_PROCESS', 'APPROVE_ODM'])),
+  access: z.array(z.nativeEnum(Access)),
   status: z.string({ message: "Veuillez choisir le statut de l\'employé." }),
   userId: z.number(),
 })

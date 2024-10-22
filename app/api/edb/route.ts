@@ -207,13 +207,13 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json({ message: 'You must be logged in.' }, { status: 401 });
+      return NextResponse.json({ message: 'Connexion requise.' }, { status: 401 });
     }
 
     const { id: userId, status: userStatus, role } = session.user;
 
     if (userStatus !== 'ACTIVE') {
-      return NextResponse.json({ message: 'Your account is not active.' }, { status: 403 });
+      return NextResponse.json({ message: 'Votre compte est inactif. Veuillez contacter votre administrateur.' }, { status: 403 });
     }
 
     const body = await request.json();

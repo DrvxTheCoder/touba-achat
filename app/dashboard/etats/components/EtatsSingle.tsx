@@ -17,7 +17,8 @@ import {
   Ban,
   FileCheck2,
   BadgeCheck,
-  ArrowBigUpDash
+  ArrowBigUpDash,
+  Trash2
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -111,6 +112,8 @@ import { Role } from "@prisma/client"
 import { EDBTimeline } from "@/components/EDBTimeline"
 import { Router } from "next/router"
 import EDBSummaryPDFDialog from "./EDBSummaryDialog"
+import { useRouter } from "next/navigation"
+import { DeleteDialog } from "./DeleteDialog"
 
 const statusMapping = {
     'Brouillon': ['DRAFT'],
@@ -119,7 +122,7 @@ const statusMapping = {
     'En attente': ['AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
     'Traitement en cours': ['MAGASINIER_ATTACHED', 'SUPPLIER_CHOSEN'],
     'Rejeté': ['REJECTED'],
-    'Complété': ['COMPLETED']
+    'Traité': ['COMPLETED']
   };
   
   type EDBStatus = 
@@ -227,6 +230,9 @@ const statusMapping = {
     const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
     const [isEscalationDialogOpen, setIsEscalationDialogOpen] = useState(false);
     const [isMarkAsCompleteDialogOpen, setIsMarkAsCompleteDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const router = useRouter();
   
     const canSelectSupplier = (attachment: Attachment) => {
       if (!session?.user?.role) return false;
@@ -239,6 +245,49 @@ const statusMapping = {
         return canRoleSelectSupplier(userRole);
       }
     };
+
+    const handleDelete = async () => {
+      if (!edb) return;
+      setIsDeleting(true);
+      try {
+        const response = await fetch(`/api/edb/${edb.id}/delete`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la suppression');
+        }
+        
+        toast.success("EDB Supprimé", {
+          description: `L'EDB #${edb.edbId} a été supprimé avec succès.`,
+        });
+        
+        // Redirect to the EDBs list
+        router.push('/dashboard/etats');
+      } catch (error: any) {
+        console.error('Error deleting EDB:', error);
+        toast.error("Erreur", {
+          description: error.message || "Une erreur est survenue lors de la suppression.",
+        });
+      } finally {
+        setIsDeleting(false);
+        setIsDeleteDialogOpen(false);
+      }
+    };
+    
+    // Add this helper function to check if the user can delete the EDB
+    const canDelete = useMemo(() => {
+      if (!edb || !session?.user?.role) return false;
+      const userRole = session.user.role as Role;
+      
+      if (userRole === 'ADMIN') return true;
+      
+      return (
+        edb.userCreatorId === session.user.id && 
+        ['DRAFT', 'SUBMITTED'].includes(edb.status)
+      );
+    }, [edb, session?.user]);
   
     const handleSelectSupplier = async (attachment: Attachment) => {
       setIsSupplierDialogOpen(true);
@@ -580,8 +629,16 @@ const statusMapping = {
             </>
             )}
 
-
-
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              disabled={!canDelete}
+            >
+              Supprimer
+              <DropdownMenuShortcut>
+                <Trash2 className="ml-4 h-4 w-4" />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
             <MarkAsCompletedDialog
@@ -590,6 +647,14 @@ const statusMapping = {
               onConfirm={confirmMarkAsCompleted}
               edbId = {edb.id}
               isLoading={isMarkingAsComplete}
+            />
+
+            <DeleteDialog
+              isOpen={isDeleteDialogOpen}
+              onClose={() => setIsDeleteDialogOpen(false)}
+              onConfirm={handleDelete}
+              entityId={edb.edbId}
+              isLoading={isDeleting}
             />
             <AttachDocumentDialog 
                 isOpen={isAttachDocumentDialogOpen}

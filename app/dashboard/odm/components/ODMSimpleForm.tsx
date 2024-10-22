@@ -12,6 +12,22 @@ import { PlusCircle, Trash2 } from "lucide-react";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DateRange } from 'react-day-picker';
 import { Icons } from '@/components/icons';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const MISSION_TYPES = [
+  'Audit & Inspection',
+  'Formation & Certification',
+  'Informatique',
+  'Maintenance & Réparation',
+  'Réunion & Conférence',
+  'Supervision de Site',
+  'Exploration & Prospection',
+  'Commercial & Marketing',
+  'Logistique & Transport',
+  'Sécurité & HSE',
+  'Autre'
+] as const;
+
 
 const accompanyingPersonSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -42,8 +58,10 @@ interface ODMFormProps {
   isLoading: boolean;
 }
 
+
+
 export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps) {
-  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<ODMFormData>({
+  const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ODMFormData>({
     resolver: zodResolver(odmFormSchema),
     defaultValues: initialData || {
       title: '',
@@ -72,6 +90,15 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
       dateRange: undefined
     };
     onSubmit(transformedData);
+    reset({
+      title: '',
+      missionType: '',
+      location: '',
+      dateRange: { from: new Date(), to: new Date() },
+      description: '',
+      hasAccompanying: false,
+      accompanyingPersons: [],
+    });
   };
 
   return (
@@ -84,8 +111,30 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
 
       <div>
         <Label htmlFor="missionType">Type de Mission</Label>
-        <Input id="missionType" {...register('missionType')} />
-        {errors.missionType && <p className="text-red-500 text-sm">{errors.missionType.message}</p>}
+        <Controller
+          name="missionType"
+          control={control}
+          render={({ field }) => (
+            <Select
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner le type de mission" />
+              </SelectTrigger>
+              <SelectContent>
+                {MISSION_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.missionType && (
+          <p className="text-red-500 text-sm">{errors.missionType.message}</p>
+        )}
       </div>
 
       <div>

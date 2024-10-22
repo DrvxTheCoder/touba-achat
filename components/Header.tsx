@@ -44,6 +44,7 @@ export default function Header (){
 
     const links = hasReadAccess ? [
       { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
+      { href: "/acceuil", icon: HomeIcon, label: "Accueil", badgeCount: 0 },
       { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
       { href: "/dashboard/odm", icon: LuggageIcon, label: "Ordres de Missions", badgeCount: 0 },
       { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },

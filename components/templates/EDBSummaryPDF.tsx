@@ -37,6 +37,7 @@ type EDBSummaryPDFProps = {
       name: string;
       email: string;
     }
+    finalAmount? : number;
     department?: string | { name: string };
     description?: {
       items?: EDBItem[];
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
   sectionTwo: { margin: 5, padding: 10, borderWidth: 1, borderStyle: 'dashed', borderRadius: 15 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
   header: { fontSize: 18, marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
-  amount: { fontSize: 16 , marginBottom: 5, textAlign: 'right', fontWeight: 'bold' },
+  amount: { fontSize: 16 , marginTop: 10, textAlign: 'right', fontWeight: 'bold' },
   text: { fontSize: 12, marginBottom: 10 },
   topSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', margin: 10, marginBottom: 20 },
   logo: { width: 50 },
@@ -125,6 +126,10 @@ const EDBSummaryPDF: React.FC<EDBSummaryPDFProps> = ({ edb, timelineEvents }) =>
               <Text style={styles.text}>Aucun article spécifié</Text>
             )}
           </View>
+          {edb.finalAmount && (
+            <Text style={styles.amount}>Total: {edb.finalAmount} XOF</Text>
+          )}
+          
         </View>
         <View style={styles.section}>
           <Text style={styles.header}>Chronologie de Validation</Text>

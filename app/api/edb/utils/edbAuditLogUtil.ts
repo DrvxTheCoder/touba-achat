@@ -90,6 +90,73 @@ export async function updateEDBStatus(
   return updatedEDB;
 }
 
+export async function deleteEDB(edbId: number, userId: number): Promise<void> {
+  const edb = await prisma.etatDeBesoin.findUnique({
+    where: { id: edbId },
+    include: {
+      category: true,
+      auditLogs: true,
+      notifications: {
+        include: {
+          recipients: true
+        }
+      },
+      attachments: true,
+      finalSupplier: true
+    }
+  });
+
+  if (!edb) {
+    throw new Error('EDB introuvable');
+  }
+
+  // Start transaction to ensure all related records are deleted
+  await prisma.$transaction(async (tx) => {
+    // Delete all notification recipients
+    if (edb.notifications.length > 0) {
+      await tx.notificationRecipient.deleteMany({
+        where: {
+          notificationId: {
+            in: edb.notifications.map(n => n.id)
+          }
+        }
+      });
+    }
+
+    // Delete notifications
+    await tx.notification.deleteMany({
+      where: { etatDeBesoinId: edbId }
+    });
+
+    // Delete audit logs
+    await tx.etatDeBesoinAuditLog.deleteMany({
+      where: { etatDeBesoinId: edbId }
+    });
+
+    // Delete attachments
+    await tx.attachment.deleteMany({
+      where: { edbId }
+    });
+
+    // Delete final supplier if exists
+    if (edb.finalSupplier) {
+      await tx.finalSupplier.delete({
+        where: { edbId }
+      });
+    }
+
+    // Delete orders
+    await tx.order.deleteMany({
+      where: { etatDeBesoinId: edbId }
+    });
+
+    // Finally delete the EDB
+    await tx.etatDeBesoin.delete({
+      where: { id: edbId }
+    });
+  });
+}
+
 export async function removeAttachmentFromEDB(
   edbId: number,
   userId: number,
@@ -521,6 +588,68 @@ export async function rejectEDB(
   );
 
   await sendEDBNotification(updatedEDB, EDBEventType.REJECTED, userId, { reason });
+
+  return updatedEDB;
+}
+
+export async function markEDBAsDelivered(
+  edbId: number,
+  userId: number
+): Promise<EtatDeBesoin> {
+  const updatedEDB = await prisma.etatDeBesoin.update({
+    where: { id: edbId },
+    data: { 
+      status: 'DELIVERED',
+    },
+    include: { department: true, category: true }
+  });
+
+  await logEDBEvent(
+    edbId,
+    userId,
+    EDBEventType.DELIVERED,
+    { action: 'MARKED_AS_DELIVERED' }
+  );
+
+  // Determine recipients
+  const creator = await prisma.user.findUnique({
+    where: { id: updatedEDB.userCreatorId },
+    include: { employee: true }
+  });
+
+  const director = await prisma.user.findFirst({
+    where: { 
+      role: 'DIRECTEUR',
+      employee: { currentDepartmentId: updatedEDB.departmentId }
+    }
+  });
+
+  let recipients = [creator?.id, director?.id].filter(Boolean) as number[];
+
+  if (updatedEDB.category.name === 'Informatique') {
+    const adminAndITAdmins = await prisma.user.findMany({
+      where: {
+        role: { in: ['ADMIN', 'IT_ADMIN'] }
+      },
+      select: { id: true }
+    });
+    recipients = [...recipients, ...adminAndITAdmins.map(user => user.id)];
+  }
+
+  const notificationPayload: NotificationPayload = {
+    entityId: updatedEDB.edbId,
+    entityType: 'EDB',
+    newStatus: 'DELIVERED',
+    actorId: userId,
+    actionInitiator: (await getUserName(userId)),
+    additionalData: { 
+      updatedBy: userId, 
+      departmentId: updatedEDB.departmentId,
+      categoryId: updatedEDB.categoryId
+    },
+  };
+
+  await sendNotification(notificationPayload);
 
   return updatedEDB;
 }

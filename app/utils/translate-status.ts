@@ -6,7 +6,7 @@ export const translateStatus = (status: string): string => {
       'APPROVED_DIRECTEUR': 'Approuvé par la Direction',
       'APPROVED_DG': 'Approuvé par la Direction Générale',
       'AWAITING_MAGASINIER': 'En attente du Magasinier',
-      'MAGASINIER_ATTACHED': 'Document attaché par le Magasinier',
+      'MAGASINIER_ATTACHED': 'Facture rattaché par le Magasinier',
       'AWAITING_SUPPLIER_CHOICE': 'En attente du choix du fournisseur',
       'SUPPLIER_CHOSEN': 'Fournisseur choisi',
       'AWAITING_IT_APPROVAL': 'En attente d\'approbation IT',

@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import Link from "next/link";
-import PlaceholderContent from "../../components/placeholder";
 import { ContentLayout } from "@/components/user-panel/content-layout";
 import { PlusCircle } from "lucide-react";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,20 +16,18 @@ import {
     BreadcrumbList,
     BreadcrumbPage,
     BreadcrumbSeparator
-  } from "@/components/ui/breadcrumb";
+} from "@/components/ui/breadcrumb";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CategoryType } from "@prisma/client"
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ReloadIcon } from '@radix-ui/react-icons';
 import { Icons } from '@/components/icons';
+import { toast } from 'sonner';
 
 // Define the Zod schema
 const edbSchema = z.object({
-  // title: z.string().min(1, "Ce champ est requis"),
   category: z.string().min(1, "Ce champ est requis"),
   reference: z.string().optional(),
   items: z.array(z.object({
@@ -47,22 +44,21 @@ type Category = {
 
 type EdbFormValues = z.infer<typeof edbSchema>;
 
+const defaultValues: EdbFormValues = {
+  category: '',
+  reference: '',
+  items: [{ designation: '', quantity: '' }]
+};
+
 export default function NouveauEtatsDeBesoinPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [error, setError] = useState<string | null>(null);
-    
-    const { toast } = useToast();
     const router = useRouter();
   
     const form = useForm<EdbFormValues>({
       resolver: zodResolver(edbSchema),
-      defaultValues: {
-        // title: '',
-        category: '',
-        reference: '',
-        items: [{ designation: '', quantity: '' }]
-      }
+      defaultValues
     });
   
     const fetchCategories = async () => {
@@ -73,7 +69,7 @@ export default function NouveauEtatsDeBesoinPage() {
         const fetchedCategories = await response.json();
         setCategories(fetchedCategories);
       } catch (err) {
-        setError("Erreur lors de la récupération des catégories");
+        toast.error("Erreur lors de la récupération des catégories");
       } finally {
         setIsLoading(false);
       }
@@ -108,18 +104,24 @@ export default function NouveauEtatsDeBesoinPage() {
   
         const result = await response.json();
         
-        toast({
-          title: "EDB créé avec succès",
-          description: `L'EDB ${result.edbId} a été créé.`,
+        // Show success toast
+        toast.success("EDB créé avec succès", {
+          description: `L'EDB ${result.edbId} a été créé.`
         });
-  
-        router.push('/etats-de-besoin');
+
+        // Reset form to default values
+        form.reset(defaultValues);
+        
+        // Redirect after a short delay to ensure the toast is visible
+        setTimeout(() => {
+          router.push('/etats-de-besoin');
+          router.refresh(); // Refresh the page data
+        }, 1000);
+
       } catch (err) {
         setError('Une erreur est survenue lors de la création de l\'EDB');
-        toast({
-          title: "Erreur",
-          description: "Impossible de créer l'EDB. Veuillez réessayer.",
-          variant: "destructive",
+        toast.error("Erreur", {
+          description: "Impossible de créer l'EDB. Veuillez réessayer."
         });
       } finally {
         setIsLoading(false);

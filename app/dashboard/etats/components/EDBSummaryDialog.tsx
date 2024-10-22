@@ -51,7 +51,7 @@ const translateStatus = (status: string): string => {
       'APPROVED_DIRECTEUR': 'Approuvé par la Direction',
       'APPROVED_DG': 'Approuvé par la Direction Générale',
       'AWAITING_MAGASINIER': 'En attente du Magasinier',
-      'MAGASINIER_ATTACHED': 'Document attaché par le Magasinier',
+      'MAGASINIER_ATTACHED': 'Facture rattaché par le Magasinier',
       'AWAITING_SUPPLIER_CHOICE': 'En attente du choix du fournisseur',
       'SUPPLIER_CHOSEN': 'Fournisseur choisi',
       'AWAITING_IT_APPROVAL': 'En attente d\'approbation IT',
@@ -60,7 +60,7 @@ const translateStatus = (status: string): string => {
       'ESCALATED': 'Escaladé',
       'REJECTED': 'Rejeté',
       'FINAL_APPROVAL': 'Approbation finale',
-      'COMPLETED': 'Complété',
+      'COMPLETED': 'Traité',
     };
   
     return statusTranslations[status] || status;
@@ -79,11 +79,11 @@ const translateStatus = (status: string): string => {
       'ATTACHMENT_ADDED': 'Pièce jointe ajoutée',
       'ATTACHMENT_REMOVED': 'Pièce jointe supprimée',
       'ESCALATED': 'Escaladé',
-      'MAGASINIER_ATTACHED': 'Document attaché par le Magasinier',
+      'MAGASINIER_ATTACHED': 'Facture rattaché par le Magasinier',
       'SUPPLIER_CHOSEN': 'Fournisseur choisi',
       'AWAITING_FINAL_APPROVAL': 'En attente d\'approbation finale',
       'FINAL_APPROVAL': 'Approbation finale',
-      'COMPLETED': 'Complété',
+      'COMPLETED': 'Traité',
     };
   
     return eventTranslations[eventType] || eventType;

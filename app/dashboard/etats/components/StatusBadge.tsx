@@ -12,6 +12,7 @@ const statusMapping: Record<string, string[]> = {
   'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_RH_PROCESSING', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Facture Rattaché': ['MAGASINIER_ATTACHED'],
   'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],
+  'Livré': ['DELIVERED'],
   'Validé': ['FINAL_APPROVAL'],
   'Rejeté': ['REJECTED'],
   'Traité': ['COMPLETED'],

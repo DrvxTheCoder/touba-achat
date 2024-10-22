@@ -19,7 +19,8 @@ import {
   BadgeCheck,
   ArrowBigUpDash,
   CheckIcon,
-  UserCheck
+  UserCheck,
+  TruckIcon
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -114,6 +115,7 @@ import { cn } from "@/lib/utils"
 import { FinalApprovalDialog } from "./FinalApprovalDialog"
 import { EDBCards } from "./EDBCards"
 import { MarkAsCompletedDialog } from "./MarkAsCompleteDialog"
+import { MarkAsDeliveredDialog } from "./MarkAsDeliveredDialog"
 
 const ITEMS_PER_PAGE = 5;
 const statusMapping = {
@@ -122,8 +124,9 @@ const statusMapping = {
   'Validé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
   'En attente': ['APPROVED_RESPONSABLE','AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Traitement en cours': ['MAGASINIER_ATTACHED', 'SUPPLIER_CHOSEN'],
+  'Livré': ['DELIVERED'],
   'Rejeté': ['REJECTED'],
-  'Complété': ['COMPLETED']
+  'Traité': ['COMPLETED']
 };
 
 export type EDBStatus = 
@@ -135,10 +138,12 @@ export type EDBStatus =
   | 'MAGASINIER_ATTACHED'
   | 'AWAITING_SUPPLIER_CHOICE'
   | 'SUPPLIER_CHOSEN'
+  | 'DELIVERED'
   | 'AWAITING_IT_APPROVAL'
   | 'IT_APPROVED'
   | 'AWAITING_FINAL_APPROVAL'
   | 'APPROVED_DG'
+  | 'DELIVERED'
   | 'ESCALATED'
   | 'REJECTED'
   | 'COMPLETED';
@@ -182,6 +187,7 @@ export default function Etats() {
   const [isRejecting, setIsRejecting] = useState(false);
   const [isEscalating, setIsEscalating] = useState(false);
   const [isMarkingAsComplete, setIsMarkingAsComplete] = useState(false);
+  const [isMarkingAsDelivered, setIsMarkingAsDelivered] = useState(false);
   const [isAttachDocumentDialogOpen, setIsAttachDocumentDialogOpen] = useState(false);
 
   const [currentPdfIndex, setCurrentPdfIndex] = useState<number | null>(null);
@@ -189,7 +195,8 @@ export default function Etats() {
   const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
   const [isChoosingSupplier, setIsChoosingSupplier] = useState(false);
 
-  const isMagasinier = session?.user?.role === Role.MAGASINIER || (session?.user?.access?.includes(Access.ATTACH_DOCUMENTS) ?? false);
+  const isMagasinier = session?.user?.role === Role.MAGASINIER;
+  // const isMagasinier = session?.user?.role === Role.MAGASINIER || (session?.user?.access?.includes(Access.ATTACH_DOCUMENTS) ?? false);
   const canAttach = session?.user?.access?.includes(Access.ATTACH_DOCUMENTS);
   const isDirecteur = session?.user?.role === Role.DIRECTEUR;
   const isEscalated = selectedEDB?.status === 'ESCALATED';
@@ -279,6 +286,7 @@ export default function Etats() {
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [isEscalationDialogOpen, setIsEscalationDialogOpen] = useState(false);
   const [isMarkAsCompleteDialogOpen, setIsMarkAsCompleteDialogOpen] = useState(false);
+  const [isMarkAsDeliveredDialogOpen, setIsMarkAsDeliveredDialogOpen] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -312,6 +320,10 @@ export default function Etats() {
 
   const handleMarkAsComplete = async () => {
     setIsMarkAsCompleteDialogOpen(true);
+  }
+
+  const handleMarkAsDelivered = async () => {
+    setIsMarkAsDeliveredDialogOpen(true);
   }
 
   const confirmValidation = async () => {
@@ -455,6 +467,37 @@ export default function Etats() {
       setIsMarkAsCompleteDialogOpen(false);
     } finally {
       setIsMarkAsCompleteDialogOpen(false);
+    }
+  };
+
+  const confirmMarkAsDelivered = async () => {
+    if (!selectedEDB) return;
+    setIsMarkingAsDelivered(true); // You'll need to create this state
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.id}/markasdelivered`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        setIsMarkingAsDelivered(false);
+        throw new Error(errorData.message || 'Erreur lors de la livraison');
+      }
+      
+      refetch();
+      toast.success("EDB Livré", {
+        description: `L'EDB #${selectedEDB.edbId} a été marqué comme livré.`,
+      });
+      setIsMarkingAsDelivered(false);
+    } catch (error: any) {
+      console.error('Error marking EDB as delivered:', error);
+      toast.error("Erreur", {
+        description: "Une erreur est survenue lors l'action.",
+      });
+      setIsMarkAsDeliveredDialogOpen(false); // You'll need to create this state
+    } finally {
+      setIsMarkAsDeliveredDialogOpen(false);
+      setIsMarkingAsDelivered(false);
     }
   };
 
@@ -767,7 +810,7 @@ export default function Etats() {
                       edb={{
                         id: selectedEDB.id,
                         edbId: selectedEDB.edbId || selectedEDB.id, // Fallback to id if edbId is not present
-                        status: selectedEDB.status as EDBStatus,
+                        status: selectedEDB.status,
                         auditLogs: selectedEDB.auditLogs || [] // Provide an empty array if auditLogs is undefined
                       }} 
                     />
@@ -792,6 +835,13 @@ export default function Etats() {
                               <Paperclip className="ml-2 h-4 w-4" />
                             </DropdownMenuItem>
                             <DropdownMenuItem 
+                              onSelect={handleMarkAsDelivered}
+                              disabled={selectedEDB.status !== "SUPPLIER_CHOSEN"}
+                            >
+                              Marquer comme livré
+                              <TruckIcon className="ml-2 h-4 w-4" />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
                               onSelect={handleMarkAsComplete}
                               disabled={selectedEDB.status !== "FINAL_APPROVAL"}
                             >
@@ -807,7 +857,7 @@ export default function Etats() {
                         {!isMagasinier && (
                           <>
                           <DropdownMenuSeparator />
-                          {["SUPPLIER_CHOSEN","FINAL_APPROVAL"].includes(selectedEDB.status) && (
+                          {["DELIVERED","FINAL_APPROVAL"].includes(selectedEDB.status) && (
                             <DropdownMenuItem 
                               className="text-primary"
                               onClick={handleFinalApproval}
@@ -864,6 +914,13 @@ export default function Etats() {
                           onConfirm={confirmMarkAsCompleted}
                           edbId = {selectedEDB.id}
                           isLoading={isMarkingAsComplete}
+                        />
+                        <MarkAsDeliveredDialog
+                          isOpen={isMarkAsDeliveredDialogOpen}
+                          onClose={() => setIsMarkAsDeliveredDialogOpen(false)}
+                          onConfirm={confirmMarkAsDelivered}
+                          edbId = {selectedEDB.id}
+                          isLoading={isMarkingAsDelivered}
                         />
                         <ValidationDialog 
                           isOpen={isValidationDialogOpen}

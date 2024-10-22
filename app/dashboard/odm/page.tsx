@@ -20,6 +20,7 @@ import { ODMSimpleForm } from "./components/ODMSimpleForm";
 import { ODMDataTable } from "./components/table/ODMDataTable";
 import { ODMMetrics } from "./components/ODMMetricCards";
 import clsx from "clsx";
+import router from "next/router";
 
 export default function OrdresDeMissions (){
     const { data: session } = useSession();
@@ -31,37 +32,40 @@ export default function OrdresDeMissions (){
     const isRH = userRole === 'RH';
   
     const handleSubmit = async (data: any) => {
-        setIsODMFormLoading(true);
-        try {
-          const response = await fetch('/api/odm', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-          });
+      setIsODMFormLoading(true);
+      try {
+        const response = await fetch('/api/odm', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
     
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Une erreur s\'est produite'); 
-          }
-    
-          const newODM = await response.json();
-          console.log('New ODM created:', newODM);
-          
-          toast.success("Ordre de Mission émis", {
-            description: "Votre ordre de mission a été enregistré.",
-          });
-          setIsDialogOpen(false);
-        } catch (error) {
-          console.error('Error creating ODM:', error);
-          toast.error("Erreur", {
-            description: error instanceof Error ? error.message : "Une erreur s'est produite lors de la création de l'ODM.",
-          });
-        } finally{
-            setIsODMFormLoading(false);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Une erreur s\'est produite'); 
         }
-      };
+    
+        const newODM = await response.json();
+        console.log('New ODM created:', newODM);
+        
+        toast.success("Ordre de Mission émis", {
+          description: "Votre ordre de mission a été enregistré.",
+        });
+        setIsDialogOpen(false);
+        return true; // Indicate success
+      } catch (error) {
+        console.error('Error creating ODM:', error);
+        toast.error("Erreur", {
+          description: error instanceof Error ? error.message : "Une erreur s'est produite lors de la création de l'ODM.",
+        });
+        return false; // Indicate failure
+      } finally {
+        setIsODMFormLoading(false);
+        router.push("dashboard/odm");
+      }
+    };
   
     return(
       <>

@@ -1,4 +1,4 @@
-import { PrismaClient, EDBStatus, ODMStatus, NotificationType, Role, EDBEventType, ODMEventType } from '@prisma/client';
+import { PrismaClient, EDBStatus, ODMStatus, NotificationType, Role, EDBEventType, ODMEventType, Access } from '@prisma/client';
 import { generateNotificationMessage } from './notificationMessage';
 
 const prisma = new PrismaClient();
@@ -51,6 +51,8 @@ export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus, ent
         return NotificationType.EDB_APPROVED_DIRECTOR;
       case 'ESCALATED':
         return NotificationType.EDB_ESCALATED;
+      case 'DELIVERED':
+        return NotificationType.EDB_DELIVERED;
       case 'APPROVED_DG':
         return NotificationType.EDB_APPROVED_DG;
       case 'REJECTED':
@@ -62,8 +64,12 @@ export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus, ent
     switch (status) {
       case 'SUBMITTED':
         return NotificationType.ODM_CREATED;
+      case 'APPROVED_DIRECTEUR':
+        return NotificationType.ODM_APPROVED_DIRECTOR;
       case 'AWAITING_RH_PROCESSING':
         return NotificationType.ODM_APPROVED_DIRECTOR;
+      case 'AWAITING_FINANCE_APPROVAL':
+        return NotificationType.ODM_AWAITING_FINANCE_APPROVAL;
       case 'COMPLETED':
         return NotificationType.ODM_COMPLETED;
       case 'REJECTED':
@@ -101,7 +107,7 @@ export async function determineRecipients(
         { role: 'MAGASINIER' },
         { role: 'IT_ADMIN' },
         { role: 'RH' },
-        { access: { has: 'CHOOSE_SUPPLIER' } }
+        { access: { has: Access.CHOOSE_SUPPLIER } }
       ]
     },
     select: {
@@ -110,7 +116,12 @@ export async function determineRecipients(
       access: true,
       employee: {
         select: {
-          currentDepartmentId: true
+          currentDepartmentId: true,
+          currentDepartment: {
+            select: {
+              name: true
+            }
+          }
         }
       }
     }
@@ -131,6 +142,7 @@ export async function determineRecipients(
     'IT_APPROVED',
     'AWAITING_FINAL_APPROVAL',
     'APPROVED_DG',
+    'DELIVERED',
     'COMPLETED'
   ];
 
@@ -153,6 +165,11 @@ export async function determineRecipients(
             recipients.add(user.id);
           }
           break;
+        case 'DELIVERED':
+          if (user.employee?.currentDepartmentId === entity.departmentId && 
+            (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR')) {
+          recipients.add(user.id);
+          }
         case 'APPROVED_DIRECTEUR':
         case 'ESCALATED':
         case 'AWAITING_FINAL_APPROVAL':
@@ -179,9 +196,16 @@ export async function determineRecipients(
           }
           break;
         case 'AWAITING_RH_PROCESSING':
-          if (user.employee?.currentDepartmentId === 3  && user.role === 'DIRECTEUR') {
-            recipients.add(user.id);
-          }
+          // Check for Director in RH department by name
+          relevantUsers.forEach(user => {
+            if (
+              user.role === 'DIRECTEUR' && 
+              user.employee?.currentDepartment?.name === 'Direction Ressources Humaines'
+            ) {
+              recipients.add(user.id);
+            }
+          });
+          break;
         case 'RH_PROCESSING':
           if (user.role === 'RH') {
             recipients.add(user.id);

@@ -26,7 +26,7 @@ const edbSchema = z.object({
     designation: z.string().min(1, "Ce champ est requis"),
     quantity: z.string().min(1, "Requis").regex(/^\d+$/, "La quantité doit être un nombre")
   })).min(1, "Au moins un élément est requis"),
-  userId: z.number().min(1, "Ce champ est requis")
+  // userId: z.number().min(1, "Ce champ est requis")
 });
 
 type Category = {
@@ -54,7 +54,7 @@ const CreateEDBPage = () => {
       category: '',
       reference: '',
       items: [{ designation: '', quantity: '' }],
-      userId: 0
+      // userId: 0
     }
   });
 
@@ -98,7 +98,7 @@ const CreateEDBPage = () => {
     setIsLoading(true);
     setError(null);
   
-    const endpoint = '/api/edb/helper-edb';
+    const endpoint = '/api/edb';
   
     try {
       const response = await fetch(endpoint, {
@@ -150,7 +150,7 @@ const CreateEDBPage = () => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
             <Form {...form}>
 
-            <FormField
+            {/* <FormField
                   control={form.control}
                   name="userId"
                   render={({ field }) => (
@@ -209,7 +209,7 @@ const CreateEDBPage = () => {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
               
                 {/* <FormField
                   control={form.control}

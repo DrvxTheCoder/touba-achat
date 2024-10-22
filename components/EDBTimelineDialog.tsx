@@ -57,9 +57,10 @@ const eventTypeToKeyEvent: Record<EDBEventType, KeyEvent> = {
   ATTACHMENT_REMOVED: 'APPROVAL',
   ESCALATED: 'APPROVAL',
   MAGASINIER_ATTACHED: 'MAGASINIER',
+  SUPPLIER_CHOSEN: 'SUPPLIER',
+  DELIVERED: 'SUPPLIER',
   AWAITING_FINAL_APPROVAL: 'FINAL_APPROVAL',
   FINAL_APPROVAL: 'FINAL_APPROVAL',
-  SUPPLIER_CHOSEN: 'SUPPLIER',
   COMPLETED: 'COMPLETED'
 
 };
@@ -77,6 +78,7 @@ const statusTranslations: Record<EDBEventType, string> = {
   ESCALATED: "Escaladé",
   MAGASINIER_ATTACHED: "Pièce jointe par le Magasinier",
   SUPPLIER_CHOSEN: "Fournisseur choisi",
+  DELIVERED: "Livré",
   AWAITING_FINAL_APPROVAL: "En attente de validation finale",
   FINAL_APPROVAL: "Validation finale effectué",
   COMPLETED: "Traité par le Service d'Achat"
@@ -86,7 +88,7 @@ const keyEventTranslations: Record<KeyEvent, string> = {
   CREATION: "Création",
   APPROVAL: "Approbation",
   MAGASINIER: "Traitement Service Achat",
-  SUPPLIER: "Choix du Fournisseur",
+  SUPPLIER: "Fournisseur",
   FINAL_APPROVAL: "Validation Finale",
   COMPLETED: "Traité"
 };
@@ -155,7 +157,8 @@ const getEventStatus = (edb: EDBTimelineProps['edb'], keyEvent: KeyEvent) => {
     case 'MAGASINIER':
       return isLaterStageCompleted || latestEvent.eventType === 'MAGASINIER_ATTACHED' ? 'COMPLETED' : 'IN_PROGRESS';
     case 'SUPPLIER':
-      return isLaterStageCompleted || latestEvent.eventType === 'SUPPLIER_CHOSEN' ? 'COMPLETED' : 'PENDING';
+      if (latestEvent.eventType === 'SUPPLIER_CHOSEN') return 'IN_PROGRESS';
+      return isLaterStageCompleted || latestEvent.eventType === 'DELIVERED' ? 'COMPLETED' : 'PENDING';
     case 'FINAL_APPROVAL':
       return isLaterStageCompleted || latestEvent.eventType === 'FINAL_APPROVAL' ? 'COMPLETED' : 'IN_PROGRESS';
     case 'COMPLETED':

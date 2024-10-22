@@ -75,6 +75,7 @@ export type EDBStatus =
     | 'ESCALATED'
     | 'MAGASINIER_ATTACHED'
     | 'SUPPLIER_CHOSEN'
+    | 'DELIVERED'
     | 'AWAITING_FINAL_APPROVAL'
     | 'FINAL_APPROVAL'
     | 'COMPLETED';

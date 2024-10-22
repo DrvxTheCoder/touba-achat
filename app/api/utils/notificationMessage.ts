@@ -18,13 +18,14 @@ const translateStatus = (status: string): string => {
     'MAGASINIER_ATTACHED': 'Document attaché par le Magasinier',
     'AWAITING_SUPPLIER_CHOICE': 'En attente du choix du fournisseur',
     'SUPPLIER_CHOSEN': 'Fournisseur choisi',
+    'DELIVERED': 'Livré',
     'AWAITING_IT_APPROVAL': 'En attente d\'approbation IT',
     'IT_APPROVED': 'Approuvé par IT',
     'AWAITING_FINAL_APPROVAL': 'En attente d\'approbation finale',
     'ESCALATED': 'Escaladé',
     'REJECTED': 'Rejeté',
     'FINAL_APPROVAL': 'Approbation finale',
-    'COMPLETED': 'Complété',
+    'COMPLETED': 'Traité',
   };
 
   return statusTranslations[status] || status;
@@ -73,6 +74,10 @@ function generateEDBNotificationMessage(
       break;
     case 'SUPPLIER_CHOSEN':
       body = `Un fournisseur a été choisi pour l'état de besoin (${id}) par ${actionInitiator}.`;
+      break;
+    case 'DELIVERED':
+      subject = `Articles de l'EDB livrés`;
+      body = `Les articles de l'état de besoin (${id}) sont disponibles chez le magasinier.`;
       break;
     case 'AWAITING_IT_APPROVAL':
       body = `L'état de besoin (${id}) nécessite l'approbation du service IT.`;

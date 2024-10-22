@@ -37,9 +37,6 @@ export const ODMTableRow: React.FC<ODMTableRowProps> = ({ odm }) => {
     };
 
 
-    const handleRowClick = () => {
-        router.push(`/dashboard/odm/${odm.odmId}`);
-    };
 
     const truncateText = (text: string, maxLength: number) => {
         if (text.length <= maxLength) return text;
@@ -50,12 +47,16 @@ export const ODMTableRow: React.FC<ODMTableRowProps> = ({ odm }) => {
     const truncatedTitle = truncateText(odm.title, 40);
 
   return (
-    <TableRow className={`cursor-pointer hover:bg-muted/80`} onClick={handleRowClick} >
+    <TableRow >
       <TableCell>
         <div className="hidden text-xs text-muted-foreground md:inline">
           {odm.creator?.name}
         </div>
-        <div className="text-xs md:font-medium">#{odm.odmId}</div>
+        <div className="text-xs md:font-medium">
+          <Link className="hover:underline" href={`/dashboard/odm/${odm.odmId}`}>
+          #{odm.odmId}
+          </Link>
+        </div>
       </TableCell>
       <TableCell className="hidden sm:table-cell">{truncatedTitle}</TableCell>
       <TableCell className="text-right md:text-left">

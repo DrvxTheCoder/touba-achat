@@ -119,6 +119,53 @@ export async function createODM(
   return newODM;
 }
 
+export async function deleteODM(odmId: number, userId: number): Promise<void> {
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: {
+      notifications: {
+        include: {
+          recipients: true
+        }
+      },
+      auditLogs: true
+    }
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  // Start transaction to ensure all related records are deleted
+  await prisma.$transaction(async (tx) => {
+    // Delete all notification recipients
+    if (odm.notifications.length > 0) {
+      await tx.notificationRecipient.deleteMany({
+        where: {
+          notificationId: {
+            in: odm.notifications.map(n => n.id)
+          }
+        }
+      });
+    }
+
+    // Delete notifications
+    await tx.notification.deleteMany({
+      where: { ordreDeMissionId: odmId }
+    });
+
+    // Delete audit logs
+    await tx.ordreDeMissionAuditLog.deleteMany({
+      where: { ordreDeMissionId: odmId }
+    });
+
+    // Finally delete the ODM
+    await tx.ordreDeMission.delete({
+      where: { id: odmId }
+    });
+  });
+}
+
 export async function updateODMStatus(
   id: number,
   odmId: string,
