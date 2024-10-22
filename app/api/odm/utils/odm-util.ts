@@ -301,16 +301,18 @@ export async function processODMByRH(
   odmId: number,
   userId: number,
   processingData: {
+    missionCostPerDay : number,
     expenseItems: { type: string; amount: number; description?: string }[];
     totalCost: number;
   }
 ): Promise<OrdreDeMission> {
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
-    data: { 
+    data: {
       status: 'COMPLETED',
       totalCost: processingData.totalCost,
       rhProcessorId: userId,
+      missionCostPerDay: processingData.missionCostPerDay,
       expenseItems: processingData.expenseItems as any // Prisma will handle JSON conversion
     },
     include: { department: true }
@@ -332,13 +334,15 @@ export async function editODMProcessing(
   odmId: number,
   userId: number,
   processingData: {
+    missionCostPerDay: number,
     expenseItems: { type: string; amount: number; description?: string }[];
     totalCost: number;
   }
 ): Promise<OrdreDeMission> {
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
-    data: { 
+    data: {
+      missionCostPerDay : processingData.missionCostPerDay, 
       totalCost: processingData.totalCost,
       expenseItems: processingData.expenseItems as any // Prisma will handle JSON conversion
     },

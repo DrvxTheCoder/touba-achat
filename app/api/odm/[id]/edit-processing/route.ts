@@ -18,9 +18,9 @@ export async function PUT(
     }
 
     const id = parseInt(params.id);
-    const { expenseItems, totalCost } = await req.json();
+    const { missionCostPerDay, expenseItems, totalCost } = await req.json();
 
-    const updatedODM = await editODMProcessing(id, parseInt(session.user.id), { expenseItems, totalCost });
+    const updatedODM = await editODMProcessing(id, parseInt(session.user.id), { missionCostPerDay, expenseItems, totalCost });
 
     return NextResponse.json(updatedODM);
   } catch (error) {
