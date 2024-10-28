@@ -9,6 +9,7 @@ export type CustomNotification = {
   message: string;
   type: NotificationType;
   createdAt: string;
+  isRead: boolean;
   etatDeBesoinId: string | null;
   ordreDeMissionId: number | null;
   // Add any other fields that your API returns

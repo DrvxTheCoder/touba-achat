@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -7,12 +7,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePickerWithRange } from '@/components/DatePickerWithRange';
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DateRange } from 'react-day-picker';
 import { Icons } from '@/components/icons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import RichTextEditor from './RichTextEditor';
+
+interface RichTextContent {
+  type: 'doc';
+  content: Array<{
+    type: string;
+    content?: Array<{
+      type: string;
+      text?: string;
+      marks?: Array<{ type: string }>;
+    }>;
+    attrs?: Record<string, any>;
+  }>;
+}
 
 const MISSION_TYPES = [
   'Audit & Inspection',
@@ -28,7 +41,6 @@ const MISSION_TYPES = [
   'Autre'
 ] as const;
 
-
 const accompanyingPersonSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   role: z.string().min(1, "Le rôle est requis"),
@@ -38,6 +50,7 @@ const odmFormSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   missionType: z.string().min(1, "Le type de mission est requis"),
   location: z.string().min(1, "Le lieu est requis"),
+  vehicule: z.string().optional(),
   dateRange: z.object({
     from: z.date(),
     to: z.date(),
@@ -45,12 +58,16 @@ const odmFormSchema = z.object({
     message: "La date de fin doit être après la date de début",
     path: ["to"],
   }),
-  description: z.string().min(1, "La description est requise"),
+  description: z.any().refine((val) => {
+    return val?.type === 'doc' && Array.isArray(val?.content);
+  }, "La description est requise"),
   hasAccompanying: z.boolean(),
   accompanyingPersons: z.array(accompanyingPersonSchema).optional(),
 });
 
-type ODMFormData = z.infer<typeof odmFormSchema>;
+type ODMFormData = z.infer<typeof odmFormSchema> & {
+  description: RichTextContent;
+};
 
 interface ODMFormProps {
   onSubmit: (data: any) => void;
@@ -58,17 +75,24 @@ interface ODMFormProps {
   isLoading: boolean;
 }
 
-
-
 export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps) {
+  const defaultDescription: RichTextContent = {
+    type: 'doc',
+    content: [{ 
+      type: 'paragraph',
+      content: []
+    }]
+  };
+
   const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ODMFormData>({
     resolver: zodResolver(odmFormSchema),
     defaultValues: initialData || {
       title: '',
       missionType: '',
       location: '',
+      vehicule: '',
       dateRange: { from: new Date(), to: new Date() },
-      description: '',
+      description: defaultDescription,
       hasAccompanying: false,
       accompanyingPersons: [],
     }
@@ -82,7 +106,6 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
   const hasAccompanying = watch("hasAccompanying");
 
   const handleFormSubmit = (data: ODMFormData) => {
-    // Transform the data before submitting
     const transformedData = {
       ...data,
       startDate: data.dateRange.from,
@@ -95,7 +118,7 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
       missionType: '',
       location: '',
       dateRange: { from: new Date(), to: new Date() },
-      description: '',
+      description: defaultDescription,
       hasAccompanying: false,
       accompanyingPersons: [],
     });
@@ -104,13 +127,13 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-2">
       <div>
-        <Label htmlFor="title">Titre</Label>
-        <Input id="title" {...register('title')} />
+        {/* <Label htmlFor="title">Titre</Label> */}
+        <Input id="title" {...register('title')} placeholder='Titre' />
         {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
       </div>
 
       <div>
-        <Label htmlFor="missionType">Type de Mission</Label>
+        {/* <Label htmlFor="missionType">Type de Mission</Label> */}
         <Controller
           name="missionType"
           control={control}
@@ -120,7 +143,7 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
               defaultValue={field.value}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Sélectionner le type de mission" />
+                <SelectValue placeholder="Type de mission" />
               </SelectTrigger>
               <SelectContent>
                 {MISSION_TYPES.map((type) => (
@@ -138,13 +161,46 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
       </div>
 
       <div>
-        <Label htmlFor="location">Lieu</Label>
-        <Input id="location" {...register('location')} />
+        {/* <Label htmlFor="location">Lieu</Label> */}
+        <Input id="location" {...register('location')} placeholder='Lieu' />
         {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
       </div>
 
       <div>
-        <Label>Date</Label>
+          {/* <Label htmlFor="vehicule">
+            Matricule du Véhicule{" "}
+            <span className="text-muted-foreground text-xs">(optionnel)</span>
+          </Label> */}
+          <Input 
+            id="vehicule" 
+            {...register('vehicule')}
+            placeholder="Matricule du Véhicule (optionnel)"
+          />
+        </div>
+
+      <div>
+        {/* <Label htmlFor="description">Description</Label> */}
+        <Controller
+          name="description"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor
+              value={field.value}
+              onChange={field.onChange}
+              error={!!errors.description}
+              placeholder="Description..."
+            />
+          )}
+        />
+        {errors.description && (
+          <p className="text-red-500 text-sm">
+            {errors.description.message as string}
+          </p>
+        )}
+      </div>
+
+      <div className='flex flex-row gap-2 items-center'>
+        <Label>Période: </Label>
         <Controller
             name="dateRange"
             control={control}
@@ -165,13 +221,8 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
         </div>
 
 
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" {...register('description')} />
-        {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-      </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 py-2">
         <Controller
           name="hasAccompanying"
           control={control}
@@ -188,7 +239,7 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
             />
           )}
         />
-        <Label htmlFor="hasAccompanying">Personnes accompagnantes</Label>
+        <Label htmlFor="hasAccompanying">Collaborateurs</Label>
       </div>
 
       {hasAccompanying && (
@@ -224,7 +275,7 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
         </div>
       )}
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full my-3" disabled={isLoading}>
         {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}

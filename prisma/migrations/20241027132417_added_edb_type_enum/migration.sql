@@ -1,0 +1,8 @@
+-- CreateEnum
+CREATE TYPE "EDBType" AS ENUM ('STANDARD', 'STOCK');
+
+-- AlterEnum
+ALTER TYPE "EDBEventType" ADD VALUE 'STOCK_CREATED';
+
+-- AlterTable
+ALTER TABLE "EtatDeBesoin" ADD COLUMN     "type" "EDBType" NOT NULL DEFAULT 'STANDARD';

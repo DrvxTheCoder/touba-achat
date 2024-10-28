@@ -77,6 +77,7 @@ export async function createODM(
     endDate: Date;
     location: string;
     description: string;
+    vehicule?: string;
     hasAccompanying: boolean;
     accompanyingPersons?: { name: string; role: string }[];
   }

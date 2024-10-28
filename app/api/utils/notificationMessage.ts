@@ -126,7 +126,7 @@ function generateODMNotificationMessage(
       body = `L'ordre de mission (${id}) a été approuvé par la direction - ${actionInitiator}.`;
       break;
     case 'RH_PROCESSING':
-      body = `L'ordre de mission (${id}) a été approuvé. En cours de traitement par les RH (${actionInitiator}).`;
+      body = `L'ordre de mission (${id}) a été approuvé. En cours de traitement par les Ressources Humaines (${actionInitiator}).`;
       break;
     case 'COMPLETED':
       subject = `ODM (${id}) traité`;

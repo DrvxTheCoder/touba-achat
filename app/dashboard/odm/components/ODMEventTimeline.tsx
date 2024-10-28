@@ -81,7 +81,7 @@ export const ODMTimeline: React.FC<ODMTimelineProps> = ({ odm }) => {
     <div className="bg-background rounded-lg border p-4">
       <h2 className="text-lg font-semibold mb-4">Événements</h2>
       <Separator className="my-2" />
-      <ScrollArea className="h-[15rem]">
+      <ScrollArea className="h-[25rem]">
         <div className="relative">
           {sortedLogs.map((log, index) => {
             const Icon = eventTypeIcons[log.eventType];

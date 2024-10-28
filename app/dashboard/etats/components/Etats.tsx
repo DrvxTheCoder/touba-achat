@@ -605,6 +605,7 @@ export default function Etats() {
                     <CategoriesDialog />
                   )} 
                   <Link href="/dashboard/etats/nouveau"><Button variant="outline">Nouveau <PlusCircle className="ml-2 h-4 w-4"/></Button></Link>
+                  {isMagasinier && (<Link href="/dashboard/etats/stock"><Button variant="outline">EDB Simple <OpenInNewWindowIcon className="ml-2 h-4 w-4"/></Button></Link>)}
                 </div>
             </div>
         </div>

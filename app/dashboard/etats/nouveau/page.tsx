@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CategoryType } from "@prisma/client"
+import { CategoryType, Department } from "@prisma/client"
 import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -16,7 +16,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { getEmployees, Employee } from '../../employes/components/data'; // Adjust the import path as needed
+import { getEmployees, Employee } from '../../employes/components/data'; 
+import StockEdbDialog from '../components/StockEDBForm';
 
 const edbSchema = z.object({
   // title: z.string().min(1, "Ce champ est requis"),
@@ -44,6 +45,7 @@ const CreateEDBPage = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [departments, setDepartments] = useState<Department[]>([]);
   
   const router = useRouter();
 
@@ -72,27 +74,40 @@ const CreateEDBPage = () => {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch('/api/departments');
+      if (!response.ok) throw new Error('Erreur serveur');
+      const data = await response.json();
+      setDepartments(data);
+    } catch (err) {
+      setError("Erreur lors de la récupération des départements");
+    }
+  };
+
   const fetchEmployees = async (search: string = '') => {
     try {
-      const data = await getEmployees(1, 5, search); // Adjust limit as needed
+      const data = await getEmployees(1, 10, search); // Adjust limit as needed
       setEmployees(data.employees);
     } catch (err) {
       setError("Erreur lors de la récupération des employés");
     }
   };
 
+
   useEffect(() => {
     fetchCategories();
-    fetchEmployees();
+    // fetchEmployees();
+    fetchDepartments();
   }, []);
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchEmployees(searchTerm);
-    }, 300);
+  // useEffect(() => {
+  //   const delayDebounceFn = setTimeout(() => {
+  //     fetchEmployees(searchTerm);
+  //   }, 300);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
+  //   return () => clearTimeout(delayDebounceFn);
+  // }, [searchTerm]);
 
   const onSubmit = async (data: EdbFormValues) => {
     setIsLoading(true);
@@ -136,10 +151,54 @@ const CreateEDBPage = () => {
     }
   };
 
+  const handleStockEdbSubmit = async (data: {
+    description: {
+      items: Array<{ name: string; quantity: number }>;
+      comment?: string;
+    };
+    categoryId: number;
+  }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/edb/stock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create stock EDB');
+      }
+
+      const result = await response.json();
+      toast.success("Demande stock créée", {
+        description: `La demande ${result.edbId} a été créée avec succès.`,
+      });
+
+      router.push('/dashboard/etats');
+    } catch (error) {
+      console.error('Error creating stock EDB:', error);
+      toast.error("Erreur", {
+        description: "Une erreur est survenue lors de la création de la demande stock.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <title>États de Besoins - Touba App™</title>
       <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
+      <div className="flex items-center space-x-2 justify-end">
+      {/* <StockEdbDialog 
+        categories={categories} 
+        departments={departments}
+        onSubmit={handleStockEdbSubmit}
+      /> */}
+      </div>
 
         <div className="flex items-center justify-center">
         <Card className='w-[22rem] lg:w-[50rem] mt-2'>

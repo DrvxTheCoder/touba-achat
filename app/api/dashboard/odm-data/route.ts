@@ -13,7 +13,13 @@ export async function GET(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: parseInt(session.user.id) },
-    include: { employee: { include: { currentDepartment: true } } },
+    include: { 
+      employee: { 
+        include: { 
+          currentDepartment: true 
+        } 
+      } 
+    },
   });
 
   if (!user) {
@@ -22,6 +28,7 @@ export async function GET(req: NextRequest) {
 
   const { role } = user;
   const departmentId = user.employee?.currentDepartmentId;
+  const isHRDirector = role === Role.DIRECTEUR && user.employee?.currentDepartment?.name === 'Direction Ressources Humaines';
 
   // Parse month and year from query parameters
   const url = new URL(req.url);
@@ -35,13 +42,18 @@ export async function GET(req: NextRequest) {
   const startOfMonth = new Date(targetYear, targetMonth, 1);
   const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
 
+  // Determine department filter based on user role and department
+  const departmentFilter = (role === Role.RESPONSABLE || (role === Role.DIRECTEUR && !isHRDirector))
+    ? { departmentId }
+    : {};
+
   let odmQuery = {
     where: {
       createdAt: {
         gte: startOfMonth,
         lte: endOfMonth,
       },
-      ...(role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
+      ...departmentFilter,
     },
   };
 
@@ -66,7 +78,7 @@ export async function GET(req: NextRequest) {
         gte: previousMonthStart,
         lte: previousMonthEnd,
       },
-      ...(role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
+      ...departmentFilter,
     },
   });
 

@@ -5,6 +5,32 @@ import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/
 import QRCode from 'qrcode';
 
 const pageURL = "https://touba.vercel.app";
+const parseRichTextContent = (content: any) => {
+  if (!content || !content.content) return '';
+
+  return content.content.map((node: any) => {
+    if (node.type === 'paragraph') {
+      const textContent = node.content?.map((textNode: any) => {
+        let text = textNode.text || '';
+        if (textNode.marks) {
+          // You could add styling based on marks, but @react-pdf has limited styling options
+          text = textNode.marks.reduce((acc: string, mark: any) => {
+            return acc; // Currently just returning text, you can add basic styling if needed
+          }, text);
+        }
+        return text;
+      }).join('') || '';
+
+      return textContent + '\n';
+    } else if (node.type === 'bulletList') {
+      return node.content?.map((listItem: any, index: number) => {
+        const itemContent = listItem.content?.[0]?.content?.map((textNode: any) => textNode.text).join('') || '';
+        return `• ${itemContent}\n`;
+      }).join('') || '';
+    }
+    return '';
+  }).join('');
+};
 
 Font.register({
     family: 'Ubuntu',
@@ -18,11 +44,62 @@ Font.register({
         fontWeight: 'bold',
       }
     ],
-  }); 
+  });
+
+  Font.register({
+    family: 'Inter',
+    fonts: [
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyeMZhrib2Bg-4.ttf',
+        fontWeight: 100,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuDyfMZhrib2Bg-4.ttf',
+        fontWeight: 200,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuOKfMZhrib2Bg-4.ttf',
+        fontWeight: 300,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf',
+        fontWeight: 400,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fMZhrib2Bg-4.ttf',
+        fontWeight: 500,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYMZhrib2Bg-4.ttf',
+        fontWeight: 600,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf',
+        fontWeight: 700,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuDyYMZhrib2Bg-4.ttf',
+        fontWeight: 800,
+      },
+      {
+        src: 'http://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuBWYMZhrib2Bg-4.ttf',
+        fontWeight: 900,
+      },
+    ],
+  });
+
+Font.register({
+  family: 'Oswald',
+  src: 'https://fonts.gstatic.com/s/oswald/v13/Y_TKV6o8WovbUd3m_X9aAA.ttf'
+});
 
 type ExpenseItem = {
   type: string;
   amount: number;
+};
+type AccompanyingPerson = {
+  name: string;
+  role: string;
 };
 
 type TimelineEvent = {
@@ -35,6 +112,7 @@ type TimelineEvent = {
 
 type ODMSummaryPDFProps = {
   odm: {
+    
     odmId: string;
     createdAt: string | Date;
     status: string;
@@ -42,6 +120,7 @@ type ODMSummaryPDFProps = {
       name: string;
       email: string;
     };
+    vehicule: string;
     department: string | { name: string };
     title: string;
     location: string;
@@ -51,21 +130,24 @@ type ODMSummaryPDFProps = {
     missionCostPerDay: number;
     totalCost: number;
     expenseItems: ExpenseItem[];
+    accompanyingPersons?: AccompanyingPerson[];
   };
+  
   timelineEvents: TimelineEvent[];
   isRHUser: boolean;
 };
 
 const styles = StyleSheet.create({
-    boldText: {fontWeight: 'bold'},
+    boldText: {fontSize: 12, fontWeight: 'bold', fontFamily: 'Inter'},
     page: { padding: 30, position: 'relative', fontFamily: 'Ubuntu' },
     section: { margin: 5, padding: 10 },
     sectionTwo: { margin: 5, padding: 10, borderWidth: 1, borderStyle: 'dashed', borderRadius: 15 },
-    title: { fontSize: 24, marginBottom: 15, textAlign: 'center', fontWeight: 'bold' },
-    header: { fontSize: 18, marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
-    amount: { fontSize: 16 , marginTop: 10, textAlign: 'right', fontWeight: 'bold' },
-    text: { fontSize: 12, marginBottom: 5, lineHeight: 1.5 },
-    topSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', margin: 10, marginBottom: 20 },
+    sectionThree: { marginTop: 5 },
+    title: { fontSize: 24, marginBottom: 15, textAlign: 'center', fontWeight: 'bold', fontFamily: 'Oswald' },
+    header: { fontSize: 18, marginBottom: 10, textAlign: 'center', fontWeight: 'bold' },
+    amount: { fontSize: 16 , marginTop: 10, textAlign: 'right', fontWeight: 'bold', fontFamily: 'Oswald' },
+    text: { fontSize: 12, lineHeight: 1.5 },
+    topSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', margin: 10, marginBottom: 10 },
     logo: { width: 50 },
     qrCode: { width: 80, height: 80 },
     watermark: { position: 'absolute', top: '50%', left: '45%', transform: 'translate(-50%, -50%)', opacity: 0.1, width: 200 },
@@ -76,7 +158,7 @@ const styles = StyleSheet.create({
     timeline: { marginTop: 20 },
     stamp: { position: 'absolute', bottom: 50, right: 50, width: 130 },
     stampText: { position: 'absolute', fontSize: 12, bottom: 120, right: 50},
-    footer: { marginTop: 50, fontSize: 16}
+    footer: { marginTop: 50, fontSize: 16, fontFamily: 'Oswald'}
   });
 
 const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRHUser }) => {
@@ -137,12 +219,38 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
           <Text style={styles.text}>Lieu: {odm.location}</Text> */}
           <Text style={styles.text}>Durée: {`${days} jour(s)`}</Text>
           <Text style={styles.text}>
-                Cette mission entre dans un cadre strictement professionnel.
+                Mlle. Véhicule: {odm.vehicule}
+          </Text>
+          <Text style={styles.text}>
+            {odm.accompanyingPersons !== undefined && (
+              <>
+              Collaborateur(s):
+                {odm.accompanyingPersons?.map((item, index) => (
+                  <Text key={index}> {`${item.name} - ${item.role}`},</Text>
+              ))}
+              </>
+            )}
+          </Text>
+
+          <View style={styles.sectionThree}>
+            <Text style={styles.boldText}>
+              Description 
             </Text>
-            
             <Text style={styles.text}>
-                Son déplacement et ses frais de séjour sont entièrement pris en charge par TOUBA OIL SAU.
+              {parseRichTextContent(odm.description)}
             </Text>
+          </View>
+
+          <View style={styles.sectionThree}>
+            <Text style={styles.text}>
+                  Cette mission entre dans un cadre strictement professionnel. Son déplacement et ses frais de séjour sont entièrement pris en charge par TOUBA OIL SAU.
+            </Text>
+          </View>
+
+
+            
+
+            
         </View>
         <View style={styles.section}>
           <Text style={styles.header}>Dépenses</Text>
@@ -152,7 +260,7 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
               <View style={styles.tableCol}><Text style={styles.tableCell}>MONTANT</Text></View>
             </View>
             <View style={styles.tableRow}>
-              <View style={styles.tableCol}><Text style={styles.tableCell}>Frais de Mission</Text></View>
+              <View style={styles.tableCol}><Text style={styles.tableCell}>Frais de Mission - {`(${odm.missionCostPerDay} x ${days}jr)`}</Text></View>
               <View style={styles.tableCol}><Text style={styles.tableCell}>{missionCost} XOF</Text></View>
             </View>
             {odm.expenseItems.map((item, index) => (

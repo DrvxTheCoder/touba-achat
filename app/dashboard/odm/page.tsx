@@ -99,7 +99,7 @@ export default function OrdresDeMissions (){
               (
               <div>
                 <Card className="overflow-hidden lg:block hidden mb-5">
-                <CardHeader>
+                <CardHeader className="mb-0">
                     <CardTitle className="text-2xl">Emettre un ODM</CardTitle>
                     <CardDescription>
                     Entrez les détails de votre mission.

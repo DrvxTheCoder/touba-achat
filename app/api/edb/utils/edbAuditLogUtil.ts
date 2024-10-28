@@ -613,7 +613,7 @@ export async function markEDBAsDelivered(
 
   // Determine recipients
   const creator = await prisma.user.findUnique({
-    where: { id: updatedEDB.userCreatorId },
+    where: { id:updatedEDB.userCreatorId },
     include: { employee: true }
   });
 

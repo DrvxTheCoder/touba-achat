@@ -127,6 +127,7 @@ enum EDBEventType {
   DELIVERED
   IT_APPROVED
   COMPLETED
+  STOCK_CREATED
 }
 
 enum ODMEventType {
@@ -139,6 +140,11 @@ enum ODMEventType {
   COMPLETED
   REJECTED
   UPDATED
+}
+
+enum EDBType {
+  STANDARD    // Regular EDBs that need validation
+  STOCK       // Items directly from stock (auto-completed)
 }
 
 model User {
@@ -180,6 +186,7 @@ model Employee {
   departmentHistory   EmployeeDepartmentHistory[]
   createdEdbs         EtatDeBesoin[]              @relation("EmployeeCreator")
   createdOdms         OrdreDeMission[]            @relation("EmployeeCreator")
+  stockEdbs           StockEtatDeBesoin[]         @relation("StockCreator")
 }
 
 model Department {
@@ -189,6 +196,8 @@ model Department {
   edbs             EtatDeBesoin[]
   odms             OrdreDeMission[]
   employeeHistory  EmployeeDepartmentHistory[]
+  stockEdbs        StockEtatDeBesoin[]
+  
 }
 
 model EmployeeDepartmentHistory {
@@ -250,6 +259,20 @@ model EtatDeBesoinAuditLog {
   details       Json?         // For storing any additional event-specific details
 }
 
+model StockEtatDeBesoin {
+  id                    Int            @id @default(autoincrement())
+  edbId                 String         @unique
+  description          Json           // Will contain items and comment
+  createdAt            DateTime       @default(now())
+  employeeId           Int?         
+  employee             Employee?      @relation("StockCreator", fields: [employeeId], references: [id])
+  externalEmployeeName  String?        
+  departmentId         Int
+  department           Department     @relation(fields: [departmentId], references: [id])
+  categoryId           Int
+  category             Category       @relation(fields: [categoryId], references: [id])
+}
+
 model Attachment {
   id           Int      @id @default(autoincrement())
   edbId        Int
@@ -284,12 +307,13 @@ model OrdreDeMission {
   startDate         DateTime
   endDate           DateTime
   location          String
-  description       String
+  description       Json
   hasAccompanying   Boolean        @default(false)
   accompanyingPersons Json?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   status            ODMStatus      @default(DRAFT)
+  vehicule          String?
   departmentId      Int
   department        Department     @relation(fields: [departmentId], references: [id])
   creatorId         Int
@@ -323,8 +347,9 @@ model OrdreDeMissionAuditLog {
 model Category {
   id   Int            @id @default(autoincrement())
   name String         @unique
-  edbs EtatDeBesoin[]
-  type CategoryType @default(CUSTOM)
+  edbs                EtatDeBesoin[]
+  type                CategoryType @default(CUSTOM)
+  stockEdbs           StockEtatDeBesoin[]
 }
 
 model Order {

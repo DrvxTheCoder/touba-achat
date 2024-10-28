@@ -131,6 +131,28 @@ export async function determineRecipients(
   recipients.add(entity.creatorId);
   // recipients.add(actorId);
 
+  if (entityType === 'ODM' && newStatus === 'AWAITING_RH_PROCESSING') {
+    // Separate query to find HR director
+    const hrDirector = await prisma.user.findFirst({
+      where: {
+        role: 'DIRECTEUR',
+        employee: {
+          currentDepartment: {
+            name: 'Direction Ressources Humaines'
+          }
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (hrDirector) {
+      recipients.add(hrDirector.id);
+    } else {
+      console.warn('No HR Director found for ODM notification');
+    }
+  }
   const edbStatusesAfterDirecteurApproval = [
     'APPROVED_DIRECTEUR',
     'ESCALATED',
@@ -195,7 +217,6 @@ export async function determineRecipients(
             recipients.add(user.id);
           }
           break;
-        case 'AWAITING_RH_PROCESSING':
           // Check for Director in RH department by name
           relevantUsers.forEach(user => {
             if (

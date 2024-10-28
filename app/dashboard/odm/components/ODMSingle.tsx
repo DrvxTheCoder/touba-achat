@@ -21,6 +21,7 @@ import { useSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
 import { ODMDRHValidationDialog } from './ODMDRHValidationDialog';
 import { Icons } from '@/components/icons';
+import RichTextDisplay from './RichTextDisplay';
 
 type ODMSingleProps = {
   odm: any; // Replace with proper ODM type
@@ -99,6 +100,16 @@ const handleDelete = async () => {
     };
     fetchUserDetails();
   }, [session, initialUserRole]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+};
+const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
 
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
   const [isDRHValidationDialogOpen, setIsDRHValidationDialogOpen] = useState(false);
@@ -235,7 +246,7 @@ const handleDelete = async () => {
   return (
     <>
       <title>Ordre de Mission - Touba App™</title>
-      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
+      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6 pb-10">
         <div className="grid grid-cols-4 gap-4">
           <div className="col-span-4 lg:col-span-2">
             <Card>
@@ -308,8 +319,11 @@ const handleDelete = async () => {
               </CardHeader>
               <CardContent className="p-5">
               <div className="grid gap-3">
-                <strong className="">{odm.missionType}</strong>
-                <text className="">Objet: {odm.title}</text>
+                <strong className="">Objet: {odm.title}</strong>
+                <text className="text-sm">Periode: {dateRange}</text>
+                <text className="text-sm">Type: {odm.missionType}</text>
+                
+                
                 {isProcessed && odm.expenseItems ? (
                 <div>
                     <h3 className="font-semibold mb-2">Dépenses:</h3>
@@ -351,13 +365,17 @@ const handleDelete = async () => {
                 </div>
                 <Separator className="my-4" />
                 <div>
-                <text className="">Description: </text>
-                  <p className='text-sm text-muted-foreground'>
-                    {odm.description}
-                  </p>
+                  <text className="">Description: </text>
+                  <div className='text-sm text-muted-foreground'>
+                    <RichTextDisplay content={odm.description} />
+                  </div>
+                </div>
+                <Separator className="my-2" />
+                <div>
+                  Véhicule: {odm.vehicule}
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-2" />
                 <div className="grid gap-3">
               <div className="font-semibold">Information Employé</div>
                 <dl className="grid gap-3 text-sm">
