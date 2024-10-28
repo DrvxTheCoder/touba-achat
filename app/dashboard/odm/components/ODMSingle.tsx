@@ -322,6 +322,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                 <strong className="">Objet: {odm.title}</strong>
                 <text className="text-sm">Periode: {dateRange}</text>
                 <text className="text-sm">Type: {odm.missionType}</text>
+                <text className="text-sm">Lieu: {odm.location}</text>
                 
                 
                 {isProcessed && odm.expenseItems ? (
