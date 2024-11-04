@@ -61,6 +61,11 @@ import { accounts, mails } from "@/app/dashboard/components/data"
 import { MailList } from "@/app/dashboard/components/mail-list"
 import { Notifications } from "./components/Notifications"
 import { SpinnerCircular } from "spinners-react";
+import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
+import DashboardMetrics from "./components/DashboardCards";
+import { PieChartCard } from "./components/Piechart";
+import { AreaChartCard } from "./components/AreaChart";
+import { QuickViewTabs } from "./components/FormTabs";
 
 
 export default function Dashboard() {
@@ -102,101 +107,70 @@ export default function Dashboard() {
       };
   return (
     <ContentLayout title="Accueil">
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbPage>Accueil</BreadcrumbPage>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-      </BreadcrumbList>
-    </Breadcrumb>
+    <DynamicBreadcrumbs />
 
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-    <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <Card className="sm:col-span-2">
-        <CardHeader className="pb-3">
-            <CardTitle>Salut, {session?.user?.name ? getFirstName(session.user.name) : 'Utilisateur'} 👋</CardTitle>
-            <CardDescription className="max-w-lg text-balance leading-relaxed">
-                Bienvenu sur l&apos;application <text className="text-primary">ToubaApp</text>. Cliquez sur le button ci-dessous pour émettre un état de besoin.
-            </CardDescription>
-        </CardHeader>
-        <CardFooter>
-            <Link href="/etats-de-besoin/nouveau"><Button>Nouvel état de besoin</Button></Link>
-        </CardFooter>
-        </Card>
-        <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Actif</CardTitle>
-          <Activity className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">N/A</div>
-        </CardContent>
-        <CardFooter>
-        <p className="text-xs text-muted-foreground">
-            EDB(s) en cours de traitement
-          </p>
-        </CardFooter>
-        </Card>
-    </div>
-    <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 mb-8">
-    <Card className="sm:col-span-2">
-            <CardHeader className="flex flex-row items-center">
-            <div className="grid gap-2">
-                <CardTitle>Récents</CardTitle>
-                <CardDescription>
-                Vos états de besoins les plus recent.
-                </CardDescription>
-            </div>
-            <Button asChild size="sm" className="ml-auto gap-1" variant="outline">
-                <Link href="/etats-de-besoin">
-                Voir tout
-                <ArrowUpRight className="h-4 w-4" />
-                </Link>
-            </Button>
-            </CardHeader>
-            <CardContent>
-            <Table>
-                  <TableHeader className="bg-muted">
-                    <TableRow className="rounded-lg border-0">
-                    <TableHead className="rounded-l-lg">
-                      ID
-                    </TableHead>
-                    <TableHead className="hidden sm:table-cell">Titre</TableHead>
-                    <TableHead className="hidden sm:table-cell">
-                      Catégorie
-                    </TableHead>
-                    <TableHead className="rounded-r-lg md:rounded-none text-right md:text-left">
-                      Statut
-                    </TableHead>
-                    <TableHead className="hidden sm:table-cell text-right rounded-r-lg">
-                      Montant (XOF)
-                    </TableHead>
+    <DashboardMetrics />
+    <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">   
+      {/* <Card className="col-span-2 rounded-2xl">
+          <CardHeader className="flex flex-row items-center">
+          <div className="grid gap-2">
+              <CardTitle>Récents</CardTitle>
+              <CardDescription>
+              Vos états de besoins les plus recent.
+              </CardDescription>
+          </div>
+          <Button asChild size="sm" className="ml-auto gap-1" variant="outline">
+              <Link href="/etats-de-besoin">
+              Voir tout
+              <ArrowUpRight className="h-4 w-4" />
+              </Link>
+          </Button>
+          </CardHeader>
+          <CardContent>
+          <Table>
+                <TableHeader className="bg-muted">
+                  <TableRow className="rounded-lg border-0">
+                  <TableHead className="rounded-l-lg">
+                    ID
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">Titre</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Catégorie
+                  </TableHead>
+                  <TableHead className="rounded-r-lg md:rounded-none text-right md:text-left">
+                    Statut
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell text-right rounded-r-lg">
+                    Montant (XOF)
+                  </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                      <div className="flex justify-center items-center h-24">
+                        <SpinnerCircular size={40} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
+                      </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                  {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                        <div className="flex justify-center items-center h-24">
-                          {/* <RefreshCwIcon className="h-6 w-6 animate-spin" /> */}
-                          <SpinnerCircular size={40} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
-                        </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : edbs.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center">Aucun état de besoin trouvé.</TableCell>
-                      </TableRow>
-                    ) : (
-                      edbs.map((edb) => (
-                        <EDBTableRow key={edb.id} edb={edb} onClick={() => setSelectedEDB(edb)} isSelected={selectedEDB?.id === edb.id} />
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                  ) : edbs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">Aucun état de besoin trouvé.</TableCell>
+                    </TableRow>
+                  ) : (
+                    edbs.map((edb) => (
+                      <EDBTableRow key={edb.id} edb={edb} onClick={() => setSelectedEDB(edb)} isSelected={selectedEDB?.id === edb.id} />
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+          </CardContent>
+      </Card> */}
+      <QuickViewTabs />
+      <PieChartCard />
+      <AreaChartCard />
 
     </div>
   </main>

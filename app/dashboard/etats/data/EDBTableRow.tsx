@@ -22,7 +22,7 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
   return (
     <TableRow 
       onClick={() => onRowClick(edb)} 
-      className={`cursor-pointer hover:bg-muted/80 ${isSelected ? 'bg-muted/80' : ''}`}
+      className={`cursor-pointer hover:bg-muted/60  ${isSelected ? 'bg-muted/60' : ''}`}
     >
       <TableCell>
         <div className="text-xs md:font-medium"># {displayId}</div>

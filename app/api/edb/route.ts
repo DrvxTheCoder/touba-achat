@@ -82,24 +82,25 @@ export async function GET(request: Request) {
           ]
         };
       break;
+      // case 'MAGASINIER':
+      //   // Show only validated EDBs (approved by director or higher)
+      //   where = {
+      //     AND: [
+      //       { ...where }, // Keep existing search and status filters
+      //       {
+      //         status: {
+      //           notIn: [
+      //             'DRAFT',
+      //             'SUBMITTED',
+      //             'APPROVED_RESPONSABLE',
+      //             'REJECTED'
+      //           ]
+      //         }
+      //       }
+      //     ]
+      //   };
+      // break;
       case 'MAGASINIER':
-        // Show only validated EDBs (approved by director or higher)
-        where = {
-          AND: [
-            { ...where }, // Keep existing search and status filters
-            {
-              status: {
-                notIn: [
-                  'DRAFT',
-                  'SUBMITTED',
-                  'APPROVED_RESPONSABLE',
-                  'REJECTED'
-                ]
-              }
-            }
-          ]
-        };
-      break;
       case 'ADMIN':
       case 'DIRECTEUR_GENERAL':
       case 'AUDIT':

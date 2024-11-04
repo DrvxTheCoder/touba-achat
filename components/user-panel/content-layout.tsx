@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/user-panel/navbar";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface ContentLayoutProps {
   title: string;
@@ -9,7 +10,9 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
   return (
     <div>
       <Navbar title={title} />
-      <div className="pt-8 pb-5 px-3 md:px-8">{children}</div>
+      <ScrollArea className="px-3 md:h-[52rem]">
+      {children}
+      </ScrollArea>
     </div>
   );
 }

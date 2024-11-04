@@ -7,6 +7,7 @@ export type Employee = {
   matriculation: string;
   phoneNumber: string;
   userId: number;
+  jobTitle: string,
   currentDepartmentId: number;
   status: string;
   access: Access[];

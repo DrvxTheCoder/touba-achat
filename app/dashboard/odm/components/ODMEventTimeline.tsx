@@ -1,6 +1,6 @@
 // components/ODMTimeline.tsx
 import React from 'react';
-import { User, Stamp, Plane, CheckCircle2, XCircle, FileText, Clock } from 'lucide-react';
+import { User, Stamp, Plane, CheckCircle2, XCircle, FileText, Clock, Calculator } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator"
 
@@ -10,6 +10,7 @@ type ODMStatus =
   | 'AWAITING_DIRECTOR_APPROVAL'
   | 'AWAITING_RH_PROCESSING'
   | 'RH_PROCESSING'
+  | 'AWAITING_FINANCE_APPROVAL'
   | 'COMPLETED'
   | 'REJECTED';
 
@@ -19,6 +20,7 @@ type ODMEventType =
   | 'AWAITING_DIRECTOR_APPROVAL'
   | 'AWAITING_RH_PROCESSING'
   | 'RH_PROCESSING'
+  | 'AWAITING_FINANCE_APPROVAL'
   | 'COMPLETED'
   | 'REJECTED'
   | 'UPDATED';
@@ -45,6 +47,7 @@ const eventTypeIcons: Record<ODMEventType, React.ElementType> = {
   AWAITING_DIRECTOR_APPROVAL: Clock,
   AWAITING_RH_PROCESSING: Clock,
   RH_PROCESSING: Stamp,
+  AWAITING_FINANCE_APPROVAL: Calculator,
   COMPLETED: CheckCircle2,
   REJECTED: XCircle,
   UPDATED: FileText
@@ -56,7 +59,8 @@ const eventTypeTranslations: Record<ODMEventType, string> = {
   AWAITING_DIRECTOR_APPROVAL: "En attente d'approbation",
   AWAITING_RH_PROCESSING: "Approuvé par la Direction",
   RH_PROCESSING: "Approuvé et en cours de traitement (RH)",
-  COMPLETED: "Traité",
+  AWAITING_FINANCE_APPROVAL:"Traité par les Ressources Humaines",
+  COMPLETED: "Approuvé par la DAF",
   REJECTED: "Rejeté",
   UPDATED: "Mis à jour"
 };

@@ -8,7 +8,7 @@ import { ODMProcessingForm } from './ODMProcessingForm';
 import { ODMEditProcessingDialog } from './ODMEditProcessingForm';
 import { ODMValidationDialog } from './ODMValidationDialog';
 import { StatusBadge } from '../../etats/components/StatusBadge';
-import { BadgeCheck, Ban, Calculator, Clock, Copy, Edit, FileClock, MoreVertical, Trash2 } from 'lucide-react';
+import { BadgeCheck, Ban, Calculator, Clock, Copy, Edit, FileClock, MoreVertical, RefreshCw, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 import { toast } from 'sonner';
@@ -22,6 +22,10 @@ import prisma from '@/lib/prisma';
 import { ODMDRHValidationDialog } from './ODMDRHValidationDialog';
 import { Icons } from '@/components/icons';
 import RichTextDisplay from './RichTextDisplay';
+import { ODM_CATEGORY_LABELS } from '../utils/odm';
+import { Access } from '@prisma/client';
+import { ODMFinanceApprovalDialog } from './ODMFinanceApprovalDialog';
+import Link from 'next/link';
 
 type ODMSingleProps = {
   odm: any; // Replace with proper ODM type
@@ -32,6 +36,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
   const [odm, setOdm] = useState(initialOdm);
   const [userRole, setUserRole] = useState(initialUserRole);
   const [userDepartment, setUserDepartment] = useState<string | null>(null);
+  const [userJobTitle, setUserJobTitle] = useState<string | null>(null);
   const { data: session } = useSession();
 
   // Add these states
@@ -90,6 +95,7 @@ const handleDelete = async () => {
             const data = await response.json();
             setUserRole(data.role || initialUserRole);
             setUserDepartment(data.employee?.currentDepartment?.name || null);
+            setUserJobTitle(data.employee?.jobTitle || null);
           } else {
             console.error('Failed to fetch user details');
           }
@@ -116,7 +122,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
   const [isValidating, setIsValidating] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const router = useRouter();
-  const isProcessed = odm.status === 'COMPLETED';
+  const isProcessed = (odm.status === 'AWAITING_FINANCE_APPROVAL') || (odm.status === 'COMPLETED');
   const start = new Date(odm.startDate);
   const end = new Date(odm.endDate);
   const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
@@ -129,6 +135,10 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
   const canEdit = userRole === 'RH' && isProcessed;
   const isRHDirector = userRole === "DIRECTEUR" && userDepartment === "Direction Ressources Humaines";
   const canValidateAsRHDirector = isRHDirector && odm.status === 'AWAITING_RH_PROCESSING';
+
+  const isFinanceDirector = userRole === "DIRECTEUR" && userDepartment === "Direction Administrative et Financière";
+  const canApproveFinance = isFinanceDirector && odm.status === 'AWAITING_FINANCE_APPROVAL';
+  const [isFinanceApprovalDialogOpen, setIsFinanceApprovalDialogOpen] = useState(false);
 
 
   const handleValidate = () => {
@@ -243,6 +253,55 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
     }
   };
 
+  const handleFinanceApproval = async (reason?: string) => {
+    setIsValidating(true);
+    try {
+      const response = await fetch(`/api/odm/${odm.id}/finance-approval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved: true, reason }),
+      });
+  
+      if (!response.ok) throw new Error('Failed to approve ODM');
+      
+      // const updatedOdm = await response.json();
+      // setOdm(updatedOdm);
+      toast.success("ODM validé avec succès!");
+      router.push('/dashboard/odm');
+      
+    } catch (error) {
+      console.error('Error approving ODM:', error);
+      toast.error("Erreur lors de l'approbation");
+    } finally {
+      setIsValidating(false);
+      setIsFinanceApprovalDialogOpen(false);
+    }
+  };
+
+  const handleFinanceReject = async (reason: string) => {
+    setIsValidating(true);
+    try {
+      const response = await fetch(`/api/odm/${odm.id}/finance-approval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved: false, reason }),
+      });
+  
+      if (!response.ok) throw new Error('Failed to approve ODM');
+      
+      // const updatedOdm = await response.json();
+      // setOdm(updatedOdm);
+      toast.success("ODM rejeté");
+      router.push('/dashboard/odm');
+    } catch (error) {
+      console.error('Error approving ODM:', error);
+      toast.error("Erreur lors de l'approbation");
+    } finally {
+      setIsValidating(false);
+      setIsFinanceApprovalDialogOpen(false);
+    }
+  };
+
   return (
     <>
       <title>Ordre de Mission - Touba App™</title>
@@ -293,13 +352,19 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                       )}
                       {isAuthorized && (
                         <DropdownMenuItem onClick={handleValidate} disabled={!canValidate} className="text-primary">
-                            Valider
-                            <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                            Approuver
+                        <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
                       )}
                       {canValidateAsRHDirector && (
                         <DropdownMenuItem onClick={() => setIsDRHValidationDialogOpen(true)} className="text-primary">
-                          Valider (DRH)
+                          Validation (DRH)
+                          <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                      )}
+                      {canApproveFinance && (
+                        <DropdownMenuItem onClick={() => setIsFinanceApprovalDialogOpen(true)} className="text-primary">
+                          Validation (DAF)
                           <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
                       )}
@@ -315,39 +380,62 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  <Button variant={"outline"} className="h-8 gap-1" onClick={() => router.refresh()}><RefreshCw className="h-4 w-4" /></Button>
                 </div>
               </CardHeader>
               <CardContent className="p-5">
               <div className="grid gap-3">
                 <strong className="">Objet: {odm.title}</strong>
-                <text className="text-sm">Periode: {dateRange}</text>
+                <text className="text-sm">Periode: {dateRange} {`- ${days} jour(s)`}</text>
                 <text className="text-sm">Type: {odm.missionType}</text>
                 <text className="text-sm">Lieu: {odm.location}</text>
                 
                 
                 {isProcessed && odm.expenseItems ? (
                 <div>
-                    <h3 className="font-semibold mb-2">Dépenses:</h3>
-                    <ScrollArea className="w-full rounded-md h-24 p-3 border border-dashed">
-                    <ul className="text-xs lg:text-sm">
-                        <li className="flex justify-between">
-                        <span>Frais de Mission {`(${odm.missionCostPerDay} x ${days}jrs)`}</span>
-                        <span>{missionCostTotal.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
-                        </li>
-                        {odm.expenseItems.map((item: any, index: number) => (
-                        <li key={index} className="flex justify-between">
-                            <span>{item.type}</span>
-                            <span>{item.amount.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
-                        </li>
-                        ))}
-                    </ul>
-                    </ScrollArea>
-                    <div className="mt-2 font-semibold flex justify-between px-2">
-                    <span>Total:</span>
-                    <span>{odm.totalCost ? odm.totalCost.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' }) : 'Non calculé'}</span>
-                    </div>
+                <h3 className="font-semibold mb-2">Dépenses:</h3>
+                <ScrollArea className="w-full rounded-md h-max max-h-48 p-3 border border-dashed text-muted-foreground">
+                  <ul className="text-xs lg:text-sm space-y-2">
+                    {/* Main mission cost */}
+                    <li className="flex justify-between">
+                      <span>{odm.creator?.user?.name || odm.creator?.name || 'N/A'} {`(${odm.missionCostPerDay.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })} x ${days}jrs)`}</span>
+                      <span>{missionCostTotal.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
+                    </li>
 
+                    {/* Accompanying persons costs */}
+                    {odm.hasAccompanying && odm.accompanyingPersons?.map((person: any, index: number) => (
+                      <li key={index} className="flex justify-between">
+                        <span>
+                          {person.name}
+                          {` (${person.costPerDay.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })} x ${days}jrs)`}
+                        </span>
+                        <span>
+                          {(person.costPerDay * days).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
+                        </span>
+                      </li>
+                    ))}
+
+                    {/* Separator for additional expenses */}
+                    {odm.expenseItems.length > 0 && (
+                      <li className="border-t pt-2 mt-2">
+                        <span className="font-medium">Dépenses additionnelles:</span>
+                      </li>
+                    )}
+
+                    {/* Additional expenses */}
+                    {odm.expenseItems.map((item: any, index: number) => (
+                      <li key={index} className="flex justify-between">
+                        <span>{item.type}</span>
+                        <span>{item.amount.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+                <div className="mt-2 font-semibold flex justify-between px-2">
+                  <span>Total:</span>
+                  <span>{odm.totalCost ? odm.totalCost.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' }) : 'Non calculé'}</span>
                 </div>
+              </div>
                 ) : (
                 <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground">
                     <center className="mb-2"><FileClock className="h-10 w-10 opacity-50" /></center>
@@ -358,7 +446,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                     <div className="text-sm">
                         <div>{"Collaborateur(s): "}
                         {odm.accompanyingPersons.map((person: any, index: number) => (
-                            <text key={index}>{person.name} - {person.role},</text>
+                            <text key={index}>{person.name},</text>
                         ))}
                         </div>
                     </div>
@@ -411,6 +499,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                 startDate={odm.startDate}
                 endDate={odm.endDate}
                 missionCostPerDay={odm.missionCostPerDay}
+                accompanyingPersons={odm.hasAccompanying ? odm.accompanyingPersons : []}
               />
             </div>
           )}
@@ -438,6 +527,15 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         onProcessed={handleProcessed}
+      />
+      <ODMFinanceApprovalDialog 
+        isOpen={isFinanceApprovalDialogOpen}
+        onClose={() => setIsFinanceApprovalDialogOpen(false)}
+        onConfirm={handleFinanceApproval}
+        onReject={handleFinanceReject}
+        odmId={odm.odmId}
+        isLoading={isValidating}
+        totalAmount={odm.totalCost || 0}
       />
       {/* Add this just before the closing tag of your component */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

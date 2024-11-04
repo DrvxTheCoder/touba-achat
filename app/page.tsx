@@ -27,11 +27,12 @@ const HomeRedirect: React.FC = () => {
       if (!session) {
         router.replace('/auth');
       } else {
-        if (['ADMIN', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'MAGASINIER', 'RH', 'AUDIT', 'RESPONSABLE'].includes(session.user.role)) {
-          router.replace('/dashboard');
-        } else {
-          router.replace('/acceuil');
-        }
+        router.replace('/acceuil');
+        // if (['ADMIN', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'MAGASINIER', 'RH', 'AUDIT', 'RESPONSABLE'].includes(session.user.role)) {
+        //   router.replace('/dashboard');
+        // } else {
+        //   router.replace('/acceuil');
+        // }
       }
 
       setProgress(100);

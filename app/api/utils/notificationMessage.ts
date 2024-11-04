@@ -54,7 +54,7 @@ function generateEDBNotificationMessage(
       body = `Un nouvel état de besoin (${id}) a été créé par ${actionInitiator} et nécessite une approbation.`;
       break;
     case 'APPROVED_RESPONSABLE':
-      body = `L'état de besoin (${id}) a été approuvé par le service ${actionInitiator} et requiert maintenant l'approbation de la direction.`;
+      body = `L'état de besoin (${id}) a été approuvé par le service (${actionInitiator}) et nécessite l'approbation de la direction.`;
       break;
     case 'APPROVED_DIRECTEUR':
       body = `L'état de besoin (${id}) a été approuvé par la direction ${actionInitiator} et passe à l'étape suivante: Traitement par le service d'achat.`;
@@ -128,9 +128,12 @@ function generateODMNotificationMessage(
     case 'RH_PROCESSING':
       body = `L'ordre de mission (${id}) a été approuvé. En cours de traitement par les Ressources Humaines (${actionInitiator}).`;
       break;
+    case 'AWAITING_FINANCE_APPROVAL':
+      body = `L'ordre de mission (${id}) a été traité par les Ressources Humaines et nécessite l'approbation de la Direction Administrative et Financière (${actionInitiator}).`;
+      break;
     case 'COMPLETED':
       subject = `ODM (${id}) traité`;
-      body = `L'ordre de mission (${id}) a été marqué comme traité par les RH (${actionInitiator}).`;
+      body = `L'ordre de mission (${id}) a été approuvé par la Direction Administrative et Financière (${actionInitiator}).`;
       break;
     case 'REJECTED':
       subject = `ODM (${id}) rejeté`;

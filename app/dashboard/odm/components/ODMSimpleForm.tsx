@@ -1,5 +1,6 @@
+// components/odm/ODMSimpleForm.tsx
 import React from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
@@ -7,12 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePickerWithRange } from '@/components/DatePickerWithRange';
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlusCircle, Trash2 } from "lucide-react";
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { DateRange } from 'react-day-picker';
 import { Icons } from '@/components/icons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AccompanyingPersonsFieldArray } from './AccompanyingPersonsForm';
+import { ODMPersonCategory } from '../utils/odm';
 import RichTextEditor from './RichTextEditor';
+import { DateRange } from 'react-day-picker';
 
 interface RichTextContent {
   type: 'doc';
@@ -41,9 +42,13 @@ const MISSION_TYPES = [
   'Autre'
 ] as const;
 
+// Updated schema for accompanying persons
 const accompanyingPersonSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
-  role: z.string().min(1, "Le rôle est requis"),
+  category: z.nativeEnum(ODMPersonCategory, {
+    errorMap: () => ({ message: "La catégorie est requise" })
+  }),
+  costPerDay: z.number().min(0, "Le coût journalier est requis")
 });
 
 const odmFormSchema = z.object({
@@ -62,7 +67,10 @@ const odmFormSchema = z.object({
     return val?.type === 'doc' && Array.isArray(val?.content);
   }, "La description est requise"),
   hasAccompanying: z.boolean(),
-  accompanyingPersons: z.array(accompanyingPersonSchema).optional(),
+  accompanyingPersons: z.array(accompanyingPersonSchema)
+    .optional()
+    .nullable()
+    .default([]),
 });
 
 type ODMFormData = z.infer<typeof odmFormSchema> & {
@@ -84,7 +92,7 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
     }]
   };
 
-  const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ODMFormData>({
+  const form = useForm<ODMFormData>({
     resolver: zodResolver(odmFormSchema),
     defaultValues: initialData || {
       title: '',
@@ -98,10 +106,7 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "accompanyingPersons",
-  });
+  const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } = form;
 
   const hasAccompanying = watch("hasAccompanying");
 
@@ -124,16 +129,17 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
     });
   };
 
+  const requiredFields = watch(["title", "missionType", "location", "dateRange", "description"]);
+  const isFormValid = requiredFields.every(field => field !== undefined && field !== '');
+
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-2">
       <div>
-        {/* <Label htmlFor="title">Titre</Label> */}
         <Input id="title" {...register('title')} placeholder='Titre' />
         {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
       </div>
 
       <div>
-        {/* <Label htmlFor="missionType">Type de Mission</Label> */}
         <Controller
           name="missionType"
           control={control}
@@ -161,25 +167,19 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
       </div>
 
       <div>
-        {/* <Label htmlFor="location">Lieu</Label> */}
         <Input id="location" {...register('location')} placeholder='Lieu' />
         {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
       </div>
 
       <div>
-          {/* <Label htmlFor="vehicule">
-            Matricule du Véhicule{" "}
-            <span className="text-muted-foreground text-xs">(optionnel)</span>
-          </Label> */}
-          <Input 
-            id="vehicule" 
-            {...register('vehicule')}
-            placeholder="Matricule du Véhicule (optionnel)"
-          />
-        </div>
+        <Input 
+          id="vehicule" 
+          {...register('vehicule')}
+          placeholder="Matricule du Véhicule (optionnel)"
+        />
+      </div>
 
       <div>
-        {/* <Label htmlFor="description">Description</Label> */}
         <Controller
           name="description"
           control={control}
@@ -202,25 +202,23 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
       <div className='flex flex-row gap-2 items-center'>
         <Label>Période: </Label>
         <Controller
-            name="dateRange"
-            control={control}
-            render={({ field }) => (
+          name="dateRange"
+          control={control}
+          render={({ field }) => (
             <DatePickerWithRange
-                className="w-full"
-                onChange={(range: DateRange | undefined) => {
+              className="w-full"
+              onChange={(range: DateRange | undefined) => {
                 field.onChange({
-                    from: range?.from || new Date(),
-                    to: range?.to || range?.from || new Date()
+                  from: range?.from || new Date(),
+                  to: range?.to || range?.from || new Date()
                 });
-                }}
-                value={field.value}
+              }}
+              value={field.value}
             />
-            )}
+          )}
         />
         {errors.dateRange && <p className="text-red-500 text-sm">{errors.dateRange.message}</p>}
-        </div>
-
-
+      </div>
 
       <div className="flex items-center space-x-2 py-2">
         <Controller
@@ -242,44 +240,16 @@ export function ODMSimpleForm({ onSubmit, initialData, isLoading }: ODMFormProps
         <Label htmlFor="hasAccompanying">Collaborateurs</Label>
       </div>
 
-      {hasAccompanying && (
-        <div className="space-y-4">
-          <ScrollArea className="w-full rounded-md h-28 p-2 border mb-2">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex space-x-2 gap-1 mb-2 p-1">
-                <Input
-                  {...register(`accompanyingPersons.${index}.name` as const)}
-                  placeholder="Nom complet"
-                />
-                <Input
-                  {...register(`accompanyingPersons.${index}.role` as const)}
-                  placeholder="Rôle"
-                />
-                <Button type="button" variant="ghost" onClick={() => remove(index)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => append({ name: '', role: '' })}
-            >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Ajouter
-            </Button>
-          </ScrollArea>
-          {errors.accompanyingPersons && <p className="text-red-500 text-sm">{errors.accompanyingPersons.message}</p>}
+      <AccompanyingPersonsFieldArray
+        form={form}
+        hasAccompanying={hasAccompanying}
+      />
 
-        </div>
-      )}
-
-      <Button type="submit" className="w-full my-3" disabled={isLoading}>
+      <Button type="submit" className="w-full my-3" disabled={!isFormValid || isLoading}>
         {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            <b>Émettre</b>
+          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+        )}
+        <b>Émettre</b>
       </Button>
     </form>
   );

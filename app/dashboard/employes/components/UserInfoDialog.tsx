@@ -24,6 +24,7 @@ interface UserInfo {
   employee?: {
     matriculation: string;
     phoneNumber?: string;
+    jobTitle: string,
     currentDepartment: {
       name: string;
     };
@@ -94,6 +95,10 @@ export const UserInfoDialog: React.FC<UserInfoProps> = ({ userId }) => {
                 <div className="flex items-center gap-4">
                   <Hash className="h-4 w-4" />
                   <p>Matricule: {userInfo.employee.matriculation}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Briefcase className="h-4 w-4" />
+                  <p>Fonction/Titre : {userInfo.employee.jobTitle}</p>
                 </div>
                 {userInfo.employee.phoneNumber && (
                   <div className="flex items-center gap-4">

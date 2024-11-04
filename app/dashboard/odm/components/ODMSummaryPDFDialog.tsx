@@ -75,6 +75,7 @@ const ODMSummaryPDFDialog: React.FC<ODMSummaryPDFDialogProps> = ({ odm }) => {
             ...odm,
             status: translateStatus(odm.status),
             department: typeof odm.department === 'string' ? { name: odm.department } : odm.department,
+            jobTile: typeof odm.jobTitle === 'string'
           }}
           timelineEvents={timelineEvents}
           isRHUser = {isRHUser}

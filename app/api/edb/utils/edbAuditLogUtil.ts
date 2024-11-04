@@ -1,5 +1,5 @@
 // edb/utils/edbAuditLogUtil.ts
-import { PrismaClient, EDBEventType, EtatDeBesoin, Prisma, EDBStatus, AttachmentType, NotificationType } from '@prisma/client';
+import { PrismaClient, EDBEventType, EtatDeBesoin, Prisma, EDBStatus, AttachmentType, NotificationType, Access } from '@prisma/client';
 import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
 import {  getNotificationTypeFromStatus, determineRecipients, getEventTypeFromStatus } from '@/app/api/utils/notificationsUtil';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
@@ -15,7 +15,7 @@ async function getUserName(userId: number): Promise<string> {
   return user?.name || 'Utilisateur inconnu';
 }
 
-async function logEDBEvent(
+export async function logEDBEvent(
   edbId: number,
   userId: number,
   eventType: EDBEventType,
@@ -35,7 +35,7 @@ async function logEDBEvent(
   }
 }
 
-async function sendEDBNotification(
+export async function sendEDBNotification(
   edb: EtatDeBesoin,
   action: EDBEventType,
   userId: number,
@@ -199,6 +199,7 @@ export async function validateEDB(edbId: number, userId: number, userRole: strin
 
   switch (userRole) {
     case 'RESPONSABLE':
+    case 'RH':
       if (edb.status === 'SUBMITTED') {
         newStatus = 'APPROVED_RESPONSABLE';
         notificationType = NotificationType.EDB_APPROVED_SUPERIOR;
@@ -400,10 +401,10 @@ export async function createEDBForUser(
   loggedInUserId: number,
   targetUserId: number,
   edbData: {
-    // title: string;
     category: number;
-    reference: string;
-    items: any[]; // Consider creating a more specific type for items
+    reference?: string;
+    items: Array<{ designation: string; quantity: number }>;
+    existingEdbId?: string; // Make edbId optional
   }
 ): Promise<EtatDeBesoin> {
   const targetUser = await prisma.user.findUnique({
@@ -415,13 +416,14 @@ export async function createEDBForUser(
     throw new Error('Impossible de trouver l\'employé');
   }
 
-  const edbId = generateEDBId();
+  // Use provided edbId or generate new one
+  const edbId = edbData.existingEdbId || generateEDBId();
 
   // Determine initial status based on the target user's role
   let initialStatus: EDBStatus = 'SUBMITTED';
-  if (targetUser.role === 'RESPONSABLE') {
+  if (targetUser.role === 'RESPONSABLE' ) {
     initialStatus = 'APPROVED_RESPONSABLE';
-  } else if (targetUser.role === 'DIRECTEUR') {
+  } else if (targetUser.role === 'DIRECTEUR' || (targetUser.access && targetUser.access.includes('APPROVE_EDB' as Access))) {
     initialStatus = 'APPROVED_DIRECTEUR';
   } else if (targetUser.role === 'DIRECTEUR_GENERAL') {
     initialStatus = 'APPROVED_DG';
@@ -430,7 +432,6 @@ export async function createEDBForUser(
   const newEDB = await prisma.etatDeBesoin.create({
     data: {
       edbId,
-      // title: edbData.title,
       description: { items: edbData.items },
       references: edbData.reference,
       status: initialStatus,
@@ -443,7 +444,7 @@ export async function createEDBForUser(
   });
 
   // Log the EDB creation event
-  await logEDBEvent(newEDB.id, loggedInUserId, EDBEventType.SUBMITTED);
+  await logEDBEvent(newEDB.id, targetUserId, EDBEventType.SUBMITTED);
 
   // If the initial status is not SUBMITTED, log a separate validation event
   if (initialStatus !== 'SUBMITTED') {
@@ -461,10 +462,10 @@ export async function createEDBForUser(
       default:
         validationEventType = EDBEventType.UPDATED;
     }
-    await logEDBEvent(newEDB.id, loggedInUserId, validationEventType);
+    await logEDBEvent(newEDB.id, targetUserId, validationEventType);
   }
 
-  // Send notification
+
   await sendEDBNotification(newEDB, EDBEventType.SUBMITTED, loggedInUserId, {
     createdFor: targetUser.name,
     createdBy: loggedInUserId

@@ -34,6 +34,7 @@ const employeeFormSchema = z
       .string()
       .min(2, { message: "Le nom doit comporter au moins 2 caractères." }),
     department: z.string().min(1, { message: "Veuillez sélectionner une direction." }),
+    jobTitle: z.string().min(1, { message: "La fonction est requise." }),
     matriculation: z
       .string()
       .min(2, { message: "La matricule doit comporter au moins 2 caractères." })
@@ -171,9 +172,8 @@ export function AddEmployeeForm() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground">Nom :</FormLabel>
                           <FormControl>
-                            <Input {...field} type="text" />
+                            <Input {...field} type="text" placeholder="Nom complet" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -184,7 +184,6 @@ export function AddEmployeeForm() {
                       name="department"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Direction :</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -208,9 +207,20 @@ export function AddEmployeeForm() {
                       name="matriculation"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Matricule :</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} placeholder="Matricule"/>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="jobTitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input {...field} placeholder="Fonction/Titre"/>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -221,9 +231,8 @@ export function AddEmployeeForm() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Téléphone :</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} placeholder="Nº Téléphone"/>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -238,6 +247,7 @@ export function AddEmployeeForm() {
                           !form.watch("name") ||
                           !form.watch("department") ||
                           !form.watch("matriculation") ||
+                          !form.watch("jobTitle") ||
                           !form.watch("phone")
                         }
                         onClick={() => setSection("credentials")}
@@ -256,9 +266,8 @@ export function AddEmployeeForm() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Email :</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} placeholder="Email"/>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -269,9 +278,8 @@ export function AddEmployeeForm() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Mot de passe :</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" {...field} placeholder="Mot de passe" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -282,9 +290,8 @@ export function AddEmployeeForm() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Confirmer le mot de passe :</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" {...field} placeholder="Confirmer le mot de passe" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -295,7 +302,6 @@ export function AddEmployeeForm() {
                       name="role"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground" >Rôle :</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -321,7 +327,6 @@ export function AddEmployeeForm() {
                       name="access"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground">Accès :</FormLabel>
                           <FormControl>
                             <AccessSelect
                               value={field.value}

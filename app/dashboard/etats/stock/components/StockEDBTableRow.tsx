@@ -1,8 +1,9 @@
+// components/stock/StockEDBTableRow.tsx
 import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { StockEDBStatus } from '@prisma/client';
 
 interface StockEDBRow {
   id: number;
@@ -14,11 +15,22 @@ interface StockEDBRow {
   category: {
     name: string;
   };
+  department: {
+    id: number;
+    name: string;
+  };
   employee?: {
     name: string;
+    id?: number;
   } | null;
   externalEmployeeName?: string | null;
-  createdAt: Date;
+  createdAt: Date | string;
+  status: StockEDBStatus;
+  convertedEdb?: {
+    description: {
+      items: Array<{ designation: string; quantity: number }>;
+    };
+  } | null;
 }
 
 type StockEDBTableRowProps = {
@@ -32,10 +44,23 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({
     onClick, 
     isSelected 
   }) => {
-    console.log("StockEDBTableRow received:", stockEdb); // Add this log
+    // Updated employee name handling
+    const getEmployeeName = () => {
+      if (stockEdb.employee?.name) return stockEdb.employee.name;
+      if (stockEdb.externalEmployeeName) return stockEdb.externalEmployeeName;
+      if (!stockEdb.employee && !stockEdb.externalEmployeeName) return 'N/A';
+      return 'N/A';
+    };
     
-    const employeeName = stockEdb.employee?.name || stockEdb.externalEmployeeName || 'N/A';
-    const totalItems = stockEdb.description.items.reduce((sum, item) => sum + item.quantity, 0);
+    // Handle both original and converted items
+    const getItems = () => {
+      if (stockEdb.status === 'CONVERTED' && stockEdb.convertedEdb?.description?.items) {
+        return stockEdb.convertedEdb.description.items;
+      }
+      return stockEdb.description.items;
+    };
+
+    const totalItems = getItems().reduce((sum, item) => sum + item.quantity, 0);
   
     return (
       <TableRow 
@@ -43,7 +68,7 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({
         className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}
       >
         <TableCell>{stockEdb.edbId}</TableCell>
-        <TableCell className="hidden sm:table-cell">{employeeName}</TableCell>
+        <TableCell className="hidden sm:table-cell">{getEmployeeName()}</TableCell>
         <TableCell className="hidden sm:table-cell">{stockEdb.category.name}</TableCell>
         <TableCell className="hidden sm:table-cell">{totalItems} article(s)</TableCell>
         <TableCell className="hidden sm:table-cell text-right">

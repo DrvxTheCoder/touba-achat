@@ -214,7 +214,7 @@ export async function approveODM(
   } 
   else if (userRole === 'ADMIN' && odm.status === 'SUBMITTED') {
     newStatus = 'AWAITING_RH_PROCESSING';
-    eventType = ODMEventType.COMPLETED;
+    eventType = ODMEventType.AWAITING_RH_PROCESSING;
   }
   else if (userRole === 'DIRECTEUR_GENERAL' && odm.status === 'SUBMITTED'){
     newStatus = 'AWAITING_RH_PROCESSING';
@@ -310,7 +310,7 @@ export async function processODMByRH(
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
     data: {
-      status: 'COMPLETED',
+      status: 'AWAITING_FINANCE_APPROVAL',
       totalCost: processingData.totalCost,
       rhProcessorId: userId,
       missionCostPerDay: processingData.missionCostPerDay,
@@ -322,11 +322,11 @@ export async function processODMByRH(
   await logODMEvent(
     odmId,
     userId,
-    ODMEventType.COMPLETED,
+    ODMEventType.AWAITING_FINANCE_APPROVAL,
     { totalCost: processingData.totalCost }
   );
 
-  await sendODMNotification(updatedODM, ODMEventType.COMPLETED, userId);
+  await sendODMNotification(updatedODM, ODMEventType.AWAITING_FINANCE_APPROVAL, userId);
 
   return updatedODM;
 }
@@ -355,6 +355,115 @@ export async function editODMProcessing(
     userId,
     ODMEventType.UPDATED,
     { totalCost: processingData.totalCost }
+  );
+
+  return updatedODM;
+}
+
+// odm/utils/odm-util.ts
+
+// Add these functions after the existing ones:
+export async function approveODMByFinance(
+  odmId: number,
+  userId: number,
+): Promise<OrdreDeMission> {
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'AWAITING_FINANCE_APPROVAL') {
+    throw new Error('ODM non éligible pour approbation financière');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: { 
+      status: 'COMPLETED',
+      updatedAt: new Date()
+    },
+    include: { 
+      department: true,
+      auditLogs: true,
+      creator: true,
+      userCreator: true
+    }
+  });
+
+  await logODMEvent(
+    odmId, 
+    userId,
+    ODMEventType.COMPLETED,
+    { 
+      oldStatus: odm.status,
+      newStatus: 'COMPLETED',
+      totalAmount: odm.totalCost
+    }
+  );
+
+  await sendODMNotification(updatedODM, ODMEventType.COMPLETED, userId);
+
+  return updatedODM;
+}
+
+export async function rejectODMByFinance(
+  odmId: number,
+  userId: number,
+  reason: string
+): Promise<OrdreDeMission> {
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'AWAITING_FINANCE_APPROVAL') {
+    throw new Error('ODM non éligible pour rejet financier');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: { 
+      status: 'REJECTED',
+      rejectionReason: reason,
+      updatedAt: new Date()
+    },
+    include: { 
+      department: true,
+      auditLogs: true, 
+      creator: true,
+      userCreator: true
+    }
+  });
+
+  await logODMEvent(
+    odmId,
+    userId,
+    ODMEventType.REJECTED,
+    { 
+      reason,
+      oldStatus: odm.status,
+      newStatus: 'REJECTED',
+      totalAmount: odm.totalCost
+    }
+  );
+
+  await sendODMNotification(
+    updatedODM, 
+    ODMEventType.REJECTED, 
+    userId,
+    { 
+      reason,
+      rejectedBy: 'FINANCE',
+      totalAmount: odm.totalCost
+    }
   );
 
   return updatedODM;

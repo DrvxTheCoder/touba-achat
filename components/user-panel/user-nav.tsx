@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles";
+import { translateRole } from "@/app/utils/translate-roles";
 
 export function UserNav() {
   const { data: session } = useSession();
@@ -66,6 +67,12 @@ export function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+          <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+          <p className="text-xs leading-none text-muted-foreground">Role :  {translateRole(session?.user?.role.toString())}</p>
+          </div>
+          </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {hasReadAccess && (

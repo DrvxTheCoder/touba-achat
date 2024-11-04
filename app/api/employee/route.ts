@@ -141,6 +141,7 @@ export async function PUT(request: NextRequest) {
         name: updateData.name,
         email: updateData.email,
         matriculation: updateData.matriculation,
+        jobTitle: updateData.jobTitle,
         phoneNumber: updateData.phoneNumber,
         currentDepartmentId: updateData.department, // Assuming department is the department ID
         status: updateData.status, // Update the status if needed

@@ -55,15 +55,14 @@ export function CollapseMenuButton({
     <Collapsible
       open={isCollapsed}
       onOpenChange={setIsCollapsed}
-      className="w-full"
+      className="w-full cursor-pointer"
     >
       <CollapsibleTrigger
         className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1"
         asChild
       >
-        <Button
-          variant={active ? "secondary" : "ghost"}
-          className="w-full justify-start h-10"
+        <div
+          className={`flex text-sm items-center rounded-lg px-3 py-2 my-1 transition-all hover:bg-muted/50 ${active ? "bg-muted/80 text-primary": "text-muted-foreground"}`}
         >
           <div className="w-full items-center flex justify-between">
             <div className="flex items-center">
@@ -91,21 +90,19 @@ export function CollapseMenuButton({
             >
               <ChevronDown
                 size={18}
-                className="transition-transform duration-200"
+                className="text-muted-foreground transition-transform duration-200"
               />
             </div>
           </div>
-        </Button>
+        </div>
       </CollapsibleTrigger>
       <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
         {submenus.map(({ href, label, active }, index) => (
-          <Button
-            key={index}
-            variant={active ? "secondary" : "ghost"}
-            className="w-full justify-start h-10 mb-1"
-            asChild
-          >
-            <Link href={href}>
+
+            <Link key={index}
+            className={`flex flex-row text-sm items-center rounded-lg px-3 py-2 my-1 transition-all hover:bg-muted/50 ${active ? "bg-muted/80 text-primary": "text-muted-foreground"}`}
+            href={href}
+            >
               <span className="mr-4 ml-2">
                 <Dot size={18} />
               </span>
@@ -120,7 +117,7 @@ export function CollapseMenuButton({
                 {label}
               </p>
             </Link>
-          </Button>
+
         ))}
       </CollapsibleContent>
     </Collapsible>

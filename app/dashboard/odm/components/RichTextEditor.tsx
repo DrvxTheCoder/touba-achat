@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 export interface RichTextContent {
-  type: 'doc';
+  type?: 'doc';
   content: Array<{
     type: string;
     content?: Array<{
@@ -29,6 +29,7 @@ export interface RichTextContent {
     attrs?: Record<string, any>;
   }>;
 }
+
 
 export interface RichTextEditorProps {
   value: RichTextContent;
@@ -88,7 +89,14 @@ const RichTextEditor = ({
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      onChange(editor.getJSON() as RichTextContent);
+      const content = editor.getJSON() as RichTextContent;
+      const isEmpty = editor.isEmpty;
+    
+      if (!isEmpty && content.type === 'doc') {
+        onChange(content);
+      } else {
+        onChange({ type: 'doc', content: [] }); // or another empty placeholder
+      }
     },
   });
 

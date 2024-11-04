@@ -22,29 +22,28 @@ export function Sidebar() {
       )}
     >
       <SidebarToggle isOpen={sidebar?.isOpen} setIsOpen={sidebar?.setIsOpen} />
-      <div className="relative h-full flex flex-col px-3 py-4 overflow-y-auto shadow-md dark:shadow-zinc-800">
-        <Button
+      <div className="relative h-full flex flex-col px-3 py-4 overflow-y-auto border-r ">
+        <div
           className={cn(
-            "transition-transform ease-in-out duration-300 mb-1",
+            "flex flex-row items-center px-3 transition-transform ease-in-out duration-300 mb-1 bg-opacity-0",
             sidebar?.isOpen === false ? "translate-x-1" : "translate-x-0"
           )}
-          variant="link"
-          asChild
+
         >
-          <Link href="/acceuil" className="flex items-center gap-2">
-          <CustomLogoSVG width="2rem" height="2rem" />
-            {/* <h1
+          <Link href="/acceuil" className="flex items-center gap-1 ">
+          <CustomLogoSVG width="2rem" height="2rem" color="#0A8537" />
+            <h1
               className={cn(
-                "text-lg whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300",
+                "text-lg font-bold whitespace-nowrap hover:no-underline transition-[transform,opacity,display] ease-in-out duration-300",
                 sidebar?.isOpen === false
                   ? "-translate-x-96 opacity-0 hidden"
                   : "translate-x-0 opacity-100"
               )}
             >
               ToubaApp™
-            </h1> */}
+            </h1>
           </Link>
-        </Button>
+        </div>
         <Menu isOpen={sidebar?.isOpen} />
       </div>
     </aside>

@@ -2,42 +2,98 @@
 "use client"
 
 import React from 'react';
-import Sidebar from '@/components/Sidebar';
-import Header from '@/components/Header';
-import { Toaster } from "@/components/ui/sonner"
 import useRequireAuth from '../hooks/use-require-auth';
-import dynamic from 'next/dynamic';
-import { Role } from '@prisma/client';
 import NextProgress from '@/components/next-progress';
+import UserPanelLayout from "@/components/user-panel/user-panel-layout";
+import { ContentLayout } from "@/components/user-panel/content-layout";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Session } from 'next-auth';
 
-const DynamicBreadcrumbs = dynamic(() => import('@/components/DynamicBreadcrumbs'), { ssr: false });
+// Define allowed roles type
+type AllowedRole = 
+  | "ADMIN"
+  | "DIRECTEUR"
+  | "RESPONSABLE"
+  | "DIRECTEUR_GENERAL"
+  | "MAGASINIER"
+  | "AUDIT"
+  | "IT_ADMIN"
+  | "RH";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { session, loading } = useRequireAuth([Role.ADMIN, Role.DIRECTEUR, Role.RESPONSABLE, Role.DIRECTEUR_GENERAL, Role.MAGASINIER, Role.AUDIT, Role.IT_ADMIN, Role.RH ]);
+const UnauthorizedContent = () => (
+  <ContentLayout title="Non-autorisé">
+    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+      <div className="flex items-center">
+        <h1 className="text-lg font-semibold md:text-2xl">Non-autorisé</h1>
+      </div>
+      <div className="flex items-center justify-center rounded-lg h-[42rem] border border-dashed">
+        <div className="flex flex-col items-center gap-1 text-center">
+          <h3 className="text-2xl font-bold tracking-tight">
+            Accès interdit
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Vous n&apos;avez pas le droit d&apos;acceder à ce contenu.
+          </p>
+          <Button className="mt-4" variant="outline" asChild>
+            <Link href="/acceuil">Retourner à l&apos;accueil</Link>
+          </Button>
+        </div>
+      </div>
+    </main>
+  </ContentLayout>
+);
 
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { session, loading } = useRequireAuth();
+  
   if (loading) {
-    return <div>Chargement...</div>;
+    return (
+      <UserPanelLayout>
+        <ContentLayout title="Chargement...">
+          <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="text-muted-foreground">Chargement...</p>
+            </div>
+          </div>
+        </ContentLayout>
+      </UserPanelLayout>
+    );
   }
 
-  if (!session) {
-    return null;
+  const allowedRoles: AllowedRole[] = [
+    "ADMIN",
+    "DIRECTEUR",
+    "RESPONSABLE",
+    "DIRECTEUR_GENERAL",
+    "MAGASINIER",
+    "AUDIT",
+    "IT_ADMIN",
+    "RH"
+  ];
+
+  // Type guard to check if role is allowed
+  const isAllowedRole = (role: string): role is AllowedRole => {
+    return allowedRoles.includes(role as AllowedRole);
+  };
+
+  if (!session?.user?.role || !isAllowedRole(session.user.role)) {
+    return (
+      <UserPanelLayout>
+        <UnauthorizedContent />
+      </UserPanelLayout>
+    );
   }
 
   return (
-    <>
+    <UserPanelLayout>
       <NextProgress />
-      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <Sidebar />
-        <div className="flex flex-col">
-          <Header />
-          <DynamicBreadcrumbs />
-          {children}
-        </div>
-      </div>
-    </>
+      {children}
+    </UserPanelLayout>
   );
 }

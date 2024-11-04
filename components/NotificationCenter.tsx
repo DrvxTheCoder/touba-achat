@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ScrollArea } from "./ui/scroll-area";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const extractDocumentId = (message: string): { type: 'edb' | 'odm' | null, id: string | null } => {
     // Match EDB-XXXXXXXXXX or ODM-XXXXXXXXX pattern
@@ -58,7 +59,7 @@ export const NotificationCenter = () => {
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="mr-5 mt-2 p-0 w-fit min-w-[25rem] max-w-[30rem]">
+            <PopoverContent className="mr-5 mt-2 p-0 w-80 md:w-fit min-w-[20rem] max-w-[30rem]">
                 <div className="w-full flex flex-row justify-between p-2 border-b">
                     <h5 className="text-sm text-muted-foreground font-semibold">Notifications</h5>
                     {notifications.some(n => !n.isRead) && (
@@ -72,16 +73,18 @@ export const NotificationCenter = () => {
                 </div>
                 {notifications.length > 0 ? (
                     <ScrollArea className="h-60 max-h-72">
-                        {notifications.map((notification) => {
-                            const { type, id } = extractDocumentId(notification.message);
-                            return (
+                    {notifications.map((notification) => {
+                        const { type, id } = extractDocumentId(notification.message);
+                        const href = type === 'edb' ? `/dashboard/etats/${id}` : `/dashboard/odm/${id}`;
+                        
+                        return (
+                            <Link href={href} key={notification.id}>
                                 <div
-                                    key={notification.id}
                                     className={`flex items-center p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 border-b transition-colors`}
-                                    onClick={() => handleNotificationClick(notification)}
+                                    onClick={() => markAsRead(notification.id)}
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs text-secondary-foreground dark:text-gray-100 truncate">
+                                        <p className="text-xs text-secondary-foreground dark:text-gray-100">
                                             {notification.message}
                                         </p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -89,9 +92,10 @@ export const NotificationCenter = () => {
                                         </p>
                                     </div>
                                 </div>
-                            );
-                        })}
-                    </ScrollArea>
+                            </Link>
+                        );
+                    })}
+                </ScrollArea>
                 ) : (
                     <div className="p-4 text-center text-muted-foreground text-sm">
                         Aucune nouvelle notification.

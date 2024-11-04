@@ -86,16 +86,46 @@ export async function GET(req: Request) {
     if (session.user.role === 'RESPONSABLE') {
       where.userCreatorId = parseInt(session.user.id);
     } 
-    else if (session.user.role === 'DIRECTEUR') {
+    if (session.user.role === 'DIRECTEUR') {
       const user = await prisma.user.findUnique({
         where: { id: parseInt(session.user.id) },
         include: { employee: { include: { currentDepartment: true } } }
       });
+        // Check if the director is from Direction Administrative et Financière
+        switch (user?.employee?.currentDepartment.name) {
+          case 'Direction Administrative et Financière':
+            // Finance director access
+            where.OR = [
+              { status: 'AWAITING_FINANCE_APPROVAL' },
+              { status: 'COMPLETED' },
+              { status: 'REJECTED' },
+              { departmentId: user.employee.currentDepartmentId }
+            ];
+            break;
+            
+          case 'Direction Ressources Humaines':
+            // RH director sees all ODMs
+            break;
+            
+          default:
+            // Other directors see only their department's ODMs
+            where.departmentId = user?.employee?.currentDepartmentId;
+            break;
+        }
+        
+      // if (user?.employee?.currentDepartment?.name === 'Direction Administrative et Financière') {
+      //   where.OR = [
+      //     { status: 'AWAITING_FINANCE_APPROVAL' },
+      //     { status: 'COMPLETED' },
+      //     { status: 'REJECTED' },
+      //     { departmentId: user.employee.currentDepartmentId }
+      //   ];
+      // }
       
-      // Check if the director is from not Ressources Humaines and apply filter
-      if (user?.employee?.currentDepartment?.name !== 'Direction Ressources Humaines') {
-        where.departmentId = user?.employee?.currentDepartmentId;
-      } 
+      // // Check if the director is from not Ressources Humaines and apply filter
+      // if (user?.employee?.currentDepartment?.name !== 'Direction Ressources Humaines') {
+      //   where.departmentId = user?.employee?.currentDepartmentId;
+      // } 
     }
     // For DIRECTEUR_GENERAL, RH, and ADMIN, no additional filtering is needed
 
@@ -105,6 +135,7 @@ export async function GET(req: Request) {
         creator: true,
         userCreator: true,
         department: true,
+        auditLogs: true,
       },
       take: limit,
       skip: (page - 1) * limit,

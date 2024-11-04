@@ -7,6 +7,8 @@ import { useAllowedRoles } from "@/app/hooks/use-allowed-roles";
 import { SpinnerCircularFixed } from "spinners-react";
 import { EmployeeDataTable } from "./components/employee-table";
 import { getEmployees, EmployeeResponse } from "./components/data";
+import { ContentLayout } from "@/components/user-panel/content-layout";
+import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 
 export default function Employes() {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
@@ -43,7 +45,9 @@ export default function Employes() {
 
   return(
     <>
-      <title>Employés - Touba App™</title>
+    <title>Employés - Touba App™</title>
+    <ContentLayout title="Employés">
+      <DynamicBreadcrumbs />
       <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
         <div>
           <div className="flex items-center justify-between space-y-2">
@@ -89,6 +93,7 @@ export default function Employes() {
           </div>
         )}
       </main>
+    </ContentLayout>
     </>
   );
 }

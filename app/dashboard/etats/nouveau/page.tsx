@@ -18,6 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils"
 import { getEmployees, Employee } from '../../employes/components/data'; 
 import StockEdbDialog from '../components/StockEDBForm';
+import { ContentLayout } from '@/components/user-panel/content-layout';
+import DynamicBreadcrumbs from '@/components/DynamicBreadcrumbs';
 
 const edbSchema = z.object({
   // title: z.string().min(1, "Ce champ est requis"),
@@ -191,209 +193,213 @@ const CreateEDBPage = () => {
   return (
     <>
       <title>États de Besoins - Touba App™</title>
-      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
-      <div className="flex items-center space-x-2 justify-end">
-      {/* <StockEdbDialog 
-        categories={categories} 
-        departments={departments}
-        onSubmit={handleStockEdbSubmit}
-      /> */}
-      </div>
-
-        <div className="flex items-center justify-center">
-        <Card className='w-[22rem] lg:w-[50rem] mt-2'>
-          <CardHeader className='border-b'>
-            <CardTitle>Créer un État de Besoin</CardTitle>
-          </CardHeader>
-          <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
-            <Form {...form}>
-
-            {/* <FormField
-                  control={form.control}
-                  name="userId"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Utilisateur</FormLabel>
-                      <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={open}
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value
-                                ? employees.find((employee) => employee.id === field.value)?.name
-                                : "Sélectionner un utilisateur"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0">
-                          <Command>
-                            <CommandInput 
-                              placeholder="Rechercher un utilisateur..." 
-                              onValueChange={setSearchTerm}
-                            />
-                            <CommandEmpty>Aucun utilisateur trouvé.</CommandEmpty>
-                            <CommandGroup>
-                              {employees.map((employee) => (
-                                <CommandItem
-                                className="cursor-pointer"
-                                  key={employee.id}
-                                  value={employee.name}
-                                  onSelect={() => {
-                                    form.setValue("userId", employee.id);
-                                    setOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      employee.id === field.value ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {employee.name}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
-              
-                {/* <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Titre</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                /> */}
-                
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Catégorie</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez une catégorie" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id.toString()}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormItem>
-                  <FormLabel>Items</FormLabel>
-                  <ScrollArea className="h-[200px] w-full border rounded-md p-4">
-                    {form.watch('items').map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 mb-2 p-1">
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.designation`}
-                          render={({ field }) => (
-                            <FormItem className="flex-grow">
-                              <FormControl>
-                                <Input {...field} placeholder="Désignation" />
-                              </FormControl>
-                              <FormMessage className="text-xs" />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.quantity`}
-                          render={({ field }) => (
-                            <FormItem className="w-24">
-                              <FormControl>
-                                <Input {...field} placeholder="QTE" type="number" />
-                              </FormControl>
-                              <FormMessage className="text-xs" />
-                            </FormItem>
-                          )}
-                        />
-                        {form.watch('items').length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              const currentItems = form.getValues('items');
-                              form.setValue('items', currentItems.filter((_, i) => i !== index));
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const currentItems = form.getValues('items');
-                        form.setValue('items', [...currentItems, { designation: '', quantity: '' }]);
-                      }}
-                      className="mt-2"
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> Ajouter
-                    </Button>
-                  </ScrollArea>
-                </FormItem>
-                
-                <FormField
-                  control={form.control}
-                  name="reference"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Références (optionnel)</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
-                
-                <CardFooter className="flex justify-end gap-2 pt-4 px-0">
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Chargement...' : 'Émettre'}
-                  </Button>
-                </CardFooter>
-            </Form>
-            </form>
-          </CardContent>
-        </Card>
+      <ContentLayout title='États de Besoins - Nouveau'>
+        <DynamicBreadcrumbs />
+        <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
+        <div className="flex items-center space-x-2 justify-end">
+        {/* <StockEdbDialog 
+          categories={categories} 
+          departments={departments}
+          onSubmit={handleStockEdbSubmit}
+        /> */}
         </div>
 
-      </main>
+          <div className="flex items-center justify-center">
+          <Card className='w-[22rem] lg:w-[50rem] mt-2'>
+            <CardHeader className='border-b'>
+              <CardTitle>Créer un État de Besoin</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-2">
+              <Form {...form}>
+
+              {/* <FormField
+                    control={form.control}
+                    name="userId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Utilisateur</FormLabel>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={open}
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value
+                                  ? employees.find((employee) => employee.id === field.value)?.name
+                                  : "Sélectionner un utilisateur"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Rechercher un utilisateur..." 
+                                onValueChange={setSearchTerm}
+                              />
+                              <CommandEmpty>Aucun utilisateur trouvé.</CommandEmpty>
+                              <CommandGroup>
+                                {employees.map((employee) => (
+                                  <CommandItem
+                                  className="cursor-pointer"
+                                    key={employee.id}
+                                    value={employee.name}
+                                    onSelect={() => {
+                                      form.setValue("userId", employee.id);
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        employee.id === field.value ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {employee.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  /> */}
+                
+                  {/* <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Titre</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  /> */}
+                  
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catégorie</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionnez une catégorie" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id.toString()}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormItem>
+                    <FormLabel>Items</FormLabel>
+                    <ScrollArea className="h-[200px] w-full border rounded-md p-4">
+                      {form.watch('items').map((item, index) => (
+                        <div key={index} className="flex items-center gap-2 mb-2 p-1">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.designation`}
+                            render={({ field }) => (
+                              <FormItem className="flex-grow">
+                                <FormControl>
+                                  <Input {...field} placeholder="Désignation" />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.quantity`}
+                            render={({ field }) => (
+                              <FormItem className="w-24">
+                                <FormControl>
+                                  <Input {...field} placeholder="QTE" type="number" />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                              </FormItem>
+                            )}
+                          />
+                          {form.watch('items').length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const currentItems = form.getValues('items');
+                                form.setValue('items', currentItems.filter((_, i) => i !== index));
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const currentItems = form.getValues('items');
+                          form.setValue('items', [...currentItems, { designation: '', quantity: '' }]);
+                        }}
+                        className="mt-2"
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> Ajouter
+                      </Button>
+                    </ScrollArea>
+                  </FormItem>
+                  
+                  <FormField
+                    control={form.control}
+                    name="reference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Références (optionnel)</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <CardFooter className="flex justify-end gap-2 pt-4 px-0">
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? 'Chargement...' : 'Émettre'}
+                    </Button>
+                  </CardFooter>
+              </Form>
+              </form>
+            </CardContent>
+          </Card>
+          </div>
+
+        </main>
+      </ContentLayout>
+
     </>
   );
 };

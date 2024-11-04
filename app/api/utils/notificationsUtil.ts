@@ -131,7 +131,7 @@ export async function determineRecipients(
   recipients.add(entity.creatorId);
   // recipients.add(actorId);
 
-  if (entityType === 'ODM' && newStatus === 'AWAITING_RH_PROCESSING') {
+  if (entityType === 'ODM' && (newStatus === 'AWAITING_RH_PROCESSING' || newStatus === 'COMPLETED' || newStatus === 'AWAITING_FINANCE_APPROVAL')) {
     // Separate query to find HR director
     const hrDirector = await prisma.user.findFirst({
       where: {
@@ -151,6 +151,29 @@ export async function determineRecipients(
       recipients.add(hrDirector.id);
     } else {
       console.warn('No HR Director found for ODM notification');
+    }
+  }
+
+  if (entityType === 'ODM' && newStatus === 'AWAITING_FINANCE_APPROVAL') {
+    // Separate query to find HR director
+    const FinanceDirector = await prisma.user.findFirst({
+      where: {
+        role: 'DIRECTEUR',
+        employee: {
+          currentDepartment: {
+            name: 'Direction Administrative et Financière'
+          }
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (FinanceDirector) {
+      recipients.add(FinanceDirector.id);
+    } else {
+      console.warn('No Finance Director found for ODM notification');
     }
   }
   const edbStatusesAfterDirecteurApproval = [
@@ -217,16 +240,8 @@ export async function determineRecipients(
             recipients.add(user.id);
           }
           break;
-          // Check for Director in RH department by name
-          relevantUsers.forEach(user => {
-            if (
-              user.role === 'DIRECTEUR' && 
-              user.employee?.currentDepartment?.name === 'Direction Ressources Humaines'
-            ) {
-              recipients.add(user.id);
-            }
-          });
-          break;
+        case 'REJECTED':
+        case 'COMPLETED':
         case 'RH_PROCESSING':
           if (user.role === 'RH') {
             recipients.add(user.id);

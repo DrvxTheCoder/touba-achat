@@ -1,160 +1,228 @@
 "use client"
-//etats-de-besoin/page.tsx
+
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { ContentLayout } from "@/components/user-panel/content-layout";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
-import { EDBTimelineDialog } from "@/components/EDBTimelineDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { EDBTableRow } from "./components/EDBTableRow";
-import { EDBDetailsCard } from "./components/EDBDetailsCard";
 import { SpinnerCircular } from "spinners-react";
-import { EDB } from "./data/types";
+import { StockEDBTableRow } from "@/app/dashboard/etats/stock/components/StockEDBTableRow";
+import { UserStockEDBDetails } from "./components/UserStockEDBDetails";
+import { CategoryType } from "@prisma/client";
+import { toast } from "sonner";
+import UserStockEdbForm from "./components/UserStockEDBForm";
+import { ContentLayout } from "@/components/user-panel/content-layout";
+import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
+import { StockEDB } from "@/app/dashboard/etats/stock/types/stock-edb";
 
+// Define proper types
 
-export default function EtatsDeBesoinPage() {
-  const [edbs, setEdbs] = useState<EDB[]>([]);
-  const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
+type Category = {
+  id: number;
+  name: string;
+  type: CategoryType;
+};
+
+const LoadingContent = () => (
+  <ContentLayout title="Chargement...">
+    <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">Chargement...</p>
+      </div>
+    </div>
+  </ContentLayout>
+);
+
+export default function UserStockEDBPage() {
+  const { data: session, status } = useSession();
+  const [stockEdbs, setStockEdbs] = useState<StockEDB[]>([]);
+  const [selectedEDB, setSelectedEDB] = useState<StockEDB | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize] = useState(5);
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    const fetchEDBs = async () => {
-      setIsLoading(true);
+    const fetchCategories = async () => {
       try {
-        const response = await fetch(`/api/edb/user?page=${page}&pageSize=${pageSize}&search=${searchTerm}&status=${statusFilter}`);
-        if (!response.ok) {
-          throw new Error('Erreur réseau lors de la récupération des EDBs');
+        const response = await fetch('/api/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
         }
-        const data = await response.json();
-        setEdbs(data.data);
-        setTotal(data.total);
       } catch (error) {
-        console.error("Erreur lors de la récupération des EDPs:", error);
-        // You can add a user notification here
-      } finally {
-        setIsLoading(false);
+        console.error('Error fetching categories:', error);
       }
     };
 
-    fetchEDBs();
-  }, [page, pageSize, searchTerm, statusFilter]);
+    fetchCategories();
+  }, []);
 
-  const handleRowClick = (edb: EDB) => {
-    setSelectedEDB(edb);
+  const fetchStockEDBs = async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        search: searchTerm,
+      });
+  
+      const response = await fetch(`/api/edb/stock/user?${queryParams}`);
+      if (!response.ok) throw new Error('Erreur réseau');
+      
+      const { data, total: totalItems } = await response.json();
+      setStockEdbs(data || []);
+      setTotal(totalItems || 0);
+    } catch (error) {
+      console.error("Erreur:", error);
+      setStockEdbs([]);
+      setTotal(0);
+      toast.error("Erreur", {
+        description: "Une erreur est survenue lors de la récupération des données."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchStockEDBs();
+    }
+  }, [page, pageSize, searchTerm, session?.user?.id]);
+
+  const handleStockEdbSubmit = async (data: any) => {
+    try {
+      const response = await fetch('/api/edb/stock/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create stock EDB');
+      }
+
+      const result = await response.json();
+      toast.success("Demande stock créée", {
+        description: `La demande ${result.edbId} a été créée avec succès.`,
+      });
+
+      // Refresh the list
+      await fetchStockEDBs();
+      
+    } catch (error) {
+      console.error('Error creating stock EDB:', error);
+      toast.error("Erreur", {
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors de la création de la demande stock.",
+      });
+    }
+  };
+
+  if (status === "loading") {
+    return <LoadingContent />;
+  }
+
+  if (!session) {
+    return (
+      <ContentLayout title="Non-autorisé">
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <p>Veuillez vous connecter pour accéder à cette page.</p>
+        </div>
+      </ContentLayout>
+    );
+  }
+
   return (
-    <ContentLayout title="Etats de Besoins">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/acceuil">Accueil</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Etats de Besoins</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-      <title>États de Besoins - Touba App™</title>
+    <ContentLayout title="Mes Demandes Stock">
+      <DynamicBreadcrumbs />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
+      <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins (Stock)</h2>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg md:text-3xl font-bold tracking-tight">Mes états de besoins</h2>
-          <Link href="/etats-de-besoin/nouveau">
-            <Button>
-              Nouveau <PlusCircle className="ml-2 h-4 w-4"/>
-            </Button>
-          </Link>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Input 
-            placeholder="Recherche..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-10 w-sm lg:max-w-sm"
+          <div className="flex items-center space-x-2">
+            <Input 
+              placeholder="Rechercher un article..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-10 w-sm lg:max-w-sm"
+            />
+          </div>
+          <UserStockEdbForm 
+            categories={categories}
+            onSubmit={handleStockEdbSubmit}
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10">
-                <ListFilter className="mr-2 h-4 w-4" />
-                Filtrer par statut
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onSelect={() => setStatusFilter("")}>Tous</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setStatusFilter("DRAFT")}>Brouillon</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setStatusFilter("SUBMITTED")}>Soumis</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setStatusFilter("APPROVED_RESPONSABLE,APPROVED_DIRECTEUR,APPROVED_DG")}>Approuvé</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setStatusFilter("REJECTED")}>Rejeté</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
-        <div className="grid flex-1 items-start gap-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-3 mb-10">
-          <div className="grid auto-rows-max items-start gap-4 lg:col-span-2">
+
+        <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
+          <div className="lg:col-span-2">
             <Card>
               <CardContent className="pt-5">
                 <Table>
                   <TableHeader className="bg-muted">
-                    <TableRow className="rounded-lg border-0">
-                      <TableHead className="rounded-l-lg">ID</TableHead>
-                      {/* <TableHead className="hidden sm:table-cell">Titre</TableHead> */}
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead className="hidden sm:table-cell">Employé</TableHead>
                       <TableHead className="hidden sm:table-cell">Catégorie</TableHead>
-                      <TableHead className="rounded-r-lg md:rounded-none text-right md:text-left">Statut</TableHead>
-                      <TableHead className="hidden sm:table-cell text-right rounded-r-lg">Montant (XOF)</TableHead>
+                      <TableHead className="hidden sm:table-cell">Quantité</TableHead>
+                      <TableHead className="hidden sm:table-cell text-right">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                        <div className="flex justify-center items-center h-24">
-                          {/* <RefreshCwIcon className="h-6 w-6 animate-spin" /> */}
-                          <SpinnerCircular size={40} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
-                        </div>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          <div className="flex justify-center items-center h-24">
+                            <SpinnerCircular size={40} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ) : edbs.length === 0 ? (
+                    ) : stockEdbs.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center">Aucun état de besoin trouvé.</TableCell>
+                        <TableCell colSpan={5} className="text-center">
+                          Aucun article en stock trouvé.
+                        </TableCell>
                       </TableRow>
                     ) : (
-                      edbs.map((edb) => (
-                        <EDBTableRow key={edb.id} edb={edb} onClick={() => setSelectedEDB(edb)} isSelected={selectedEDB?.id === edb.id} />
-                      ))
+                      stockEdbs.map((stockEdb) => {
+                        console.log("Mapping stockEdb:", stockEdb); // Add this log
+                        return (
+                          <StockEDBTableRow
+                            key={stockEdb.id}
+                            stockEdb={stockEdb}
+                            onClick={() => setSelectedEDB(stockEdb)}
+                            isSelected={selectedEDB?.id === stockEdb.id}
+                          />
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
               </CardContent>
-              <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
+              <CardFooter className="flex items-end justify-end border-t bg-muted/50 p-4">
                 <div className="text-xs text-muted-foreground">
-                  Mis à jour: <time dateTime={new Date().toISOString()}>{new Date().toLocaleDateString('fr-FR')}</time>
+                  {/* Mis à jour: {format(new Date(), "dd/MM/yyyy", { locale: fr })} */}
                 </div>
-                <Pagination className="ml-auto mr-0 w-auto">
+                <Pagination className="flex items-end justify-end">
                   <PaginationContent>
                     <PaginationItem>
                       <Button
                         size="icon"
                         variant="outline"
                         className="h-6 w-6"
-                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={page === 1}
                       >
                         <ChevronLeft className="h-3.5 w-3.5" />
-                        <span className="sr-only">Précédent</span>
                       </Button>
                     </PaginationItem>
                     <PaginationItem>
@@ -162,11 +230,10 @@ export default function EtatsDeBesoinPage() {
                         size="icon"
                         variant="outline"
                         className="h-6 w-6"
-                        onClick={() => setPage((prev) => Math.min(Math.ceil(total / pageSize), prev + 1))}
-                        disabled={page === Math.ceil(total / pageSize)}
+                        onClick={() => setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))}
+                        disabled={page >= Math.ceil(total / pageSize)}
                       >
                         <ChevronRight className="h-3.5 w-3.5" />
-                        <span className="sr-only">Suivant</span>
                       </Button>
                     </PaginationItem>
                   </PaginationContent>
@@ -174,20 +241,17 @@ export default function EtatsDeBesoinPage() {
               </CardFooter>
             </Card>
           </div>
+
           <div>
-            {selectedEDB ? 
-            (<EDBDetailsCard 
-              edb={{
-                ...selectedEDB,
-                auditLogs: selectedEDB.auditLogs // Make sure this data is fetched and available
-              }} 
-            />) : (
+            {selectedEDB ? (
+              <UserStockEDBDetails stockEdb={selectedEDB} />
+            ) : (
               <Card>
                 <CardContent className="p-6 text-sm text-center text-muted-foreground">
-                  Sélectionnez un EDB pour en afficher les détails
+                  Sélectionnez un article pour en afficher les détails
                 </CardContent>
               </Card>
-            )} 
+            )}
           </div>
         </div>
       </main>

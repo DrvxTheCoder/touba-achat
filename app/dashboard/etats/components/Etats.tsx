@@ -20,7 +20,9 @@ import {
   ArrowBigUpDash,
   CheckIcon,
   UserCheck,
-  TruckIcon
+  TruckIcon,
+  Store,
+  StoreIcon
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -170,6 +172,89 @@ function canRoleSelectSupplier(role: Role): role is SupplierSelectingRole {
   return ['ADMIN', 'RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL'].includes(role);
 }
 
+type ActionPermissions = {
+  canAttachDocuments: boolean;
+  canMarkDelivered: boolean;
+  canMarkComplete: boolean;
+  canFinalApprove: boolean;
+  canReject: boolean;
+};
+
+type UserPermissions = {
+  canHandleStock: boolean;
+  canManageDocuments: boolean;
+  canApprove: boolean;
+  canEscalate: boolean;
+  canFinalApprove: boolean;
+  isAdmin: boolean;
+  isMagasinier: boolean;
+  isDirecteur: boolean;
+  canTakeAction: ActionPermissions;
+};
+
+const useUserPermissions = (session: any, selectedEDB: EDB | null): UserPermissions => {
+  return useMemo(() => {
+    const defaultActionPermissions: ActionPermissions = {
+      canAttachDocuments: false,
+      canMarkDelivered: false,
+      canMarkComplete: false,
+      canFinalApprove: false,
+      canReject: false
+    };
+
+    if (!session?.user) {
+      return {
+        canHandleStock: false,
+        canManageDocuments: false,
+        canApprove: false,
+        canEscalate: false,
+        canFinalApprove: false,
+        isAdmin: false,
+        isMagasinier: false,
+        isDirecteur: false,
+        canTakeAction: defaultActionPermissions
+      };
+    }
+
+    const { role, access = [] } = session.user;
+
+    const actionPermissions: ActionPermissions = selectedEDB ? {
+      canAttachDocuments: !["SUBMITTED", "APPROVED_RESPONSABLE", "SUPPLIER_CHOSEN", "MAGASINIER_ATTACHED", "COMPLETED", "FINAL_APPROVAL"].includes(selectedEDB.status),
+      canMarkDelivered: selectedEDB.status === "SUPPLIER_CHOSEN",
+      canMarkComplete: selectedEDB.status === "FINAL_APPROVAL",
+      canFinalApprove: ["DELIVERED", "FINAL_APPROVAL"].includes(selectedEDB.status) && !["COMPLETED", "FINAL_APPROVAL"].includes(selectedEDB.status),
+      canReject: !["APPROVED_DG", "COMPLETED", "FINAL_APPROVAL"].includes(selectedEDB.status)
+    } : defaultActionPermissions;
+
+    return {
+      canHandleStock: 
+        role === Role.MAGASINIER || 
+        access.includes(Access.ATTACH_DOCUMENTS),
+      
+      canManageDocuments: 
+        role === Role.MAGASINIER || 
+        access.includes(Access.ATTACH_DOCUMENTS),
+      
+      canApprove: 
+        [Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.RESPONSABLE].includes(role) ||
+        access.includes(Access.APPROVE_EDB),
+      
+      canEscalate: 
+        role === Role.DIRECTEUR ||
+        access.includes(Access.APPROVE_EDB),
+
+      canFinalApprove:
+        role === Role.DIRECTEUR_GENERAL ||
+        access.includes(Access.FINAL_APPROVAL),
+      
+      isAdmin: role === Role.ADMIN,
+      isMagasinier: role === Role.MAGASINIER,
+      isDirecteur: role === Role.DIRECTEUR,
+      canTakeAction: actionPermissions
+    };
+  }, [session?.user, selectedEDB]);
+};
+
 
 
 
@@ -195,12 +280,9 @@ export default function Etats() {
   const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
   const [isChoosingSupplier, setIsChoosingSupplier] = useState(false);
 
-  const isMagasinier = session?.user?.role === Role.MAGASINIER;
-  // const isMagasinier = session?.user?.role === Role.MAGASINIER || (session?.user?.access?.includes(Access.ATTACH_DOCUMENTS) ?? false);
-  const canAttach = session?.user?.access?.includes(Access.ATTACH_DOCUMENTS);
-  const isDirecteur = session?.user?.role === Role.DIRECTEUR;
+  const permissions = useUserPermissions(session, selectedEDB);
   const isEscalated = selectedEDB?.status === 'ESCALATED';
-  const canEscalate = selectedEDB?.status === 'APPROVED_RESPONSABLE'
+  const canEscalate = selectedEDB?.status === 'APPROVED_RESPONSABLE' || selectedEDB?.status === 'SUBMITTED'
   const hasAttachments = selectedEDB?.attachments && selectedEDB.attachments.length > 0;
 
   const isITCategory = selectedEDB && ['Matériel informatique', 'Logiciels et licences'].includes(selectedEDB.category);
@@ -264,14 +346,29 @@ export default function Etats() {
       .flatMap(key => statusMapping[key]);
   }, [selectedFilters]);
 
-  const { canValidate, canReject } = useMemo(() => {
-    if (!selectedEDB || !session?.user?.role) return { canValidate: false, canReject: false };
+  const { canValidate, canReject, canAttachDocuments, canChooseSupplier, canApproveIT, canGiveFinalApproval } = useMemo(() => {
+    if (!selectedEDB || !session?.user?.role) {
+      return {
+        canValidate: false,
+        canReject: false,
+        canAttachDocuments: false,
+        canChooseSupplier: false,
+        canApproveIT: false,
+        canGiveFinalApproval: false
+      };
+    }
+  
+    const userContext = {
+      role: session.user.role as Role,
+      access: session.user.access as Access[] | undefined
+    };
+  
     return canPerformAction(
-      selectedEDB.status as EDBStatus, 
-      session.user.role as UserRole, 
+      selectedEDB.status as EDBStatus,
+      userContext,
       selectedEDB.category
     );
-  }, [selectedEDB, session?.user?.role]);
+  }, [selectedEDB, session?.user?.role, session?.user?.access]);
 
   const { paginatedData, isLoading, error, refetch } = useEDBs(
     currentPage, 
@@ -530,14 +627,40 @@ export default function Etats() {
   }, [isAttachDocumentDialogOpen]);
 
   const handleOpenAttachDialog = useCallback(() => {
-    if (selectedEDB && isMagasinier && !hasAttachments) {
-      setIsAttachDocumentDialogOpen(true);
-    } else {
-      toast.error("Action non autorisée",{
+    if (!selectedEDB) {
+      toast.error("Action non autorisée", {
+        description: "Aucun EDB sélectionné." 
+      });
+      return;
+    }
+  
+    // Check if user has permission to handle documents through either role or access rights
+    if (!(permissions.canHandleStock || permissions.isAdmin)) {
+      toast.error("Action non autorisée", {
+        description: "Vous n'avez pas les droits nécessaires pour effectuer cette action." 
+      });
+      return;
+    }
+  
+    // Check if attachments already exist
+    if (hasAttachments) {
+      toast.error("Action non autorisée", {
         description: "Des documents sont déjà attachés à cet EDB." 
       });
+      return;
     }
-  }, [selectedEDB, isMagasinier, hasAttachments]);
+  
+    // Check if the current status allows document attachment
+    if (!permissions.canTakeAction.canAttachDocuments) {
+      toast.error("Action non autorisée", {
+        description: "Le statut actuel de l'EDB ne permet pas d'attacher des documents." 
+      });
+      return;
+    }
+  
+    // If all checks pass, open the dialog
+    setIsAttachDocumentDialogOpen(true);
+  }, [selectedEDB, permissions, hasAttachments]);
   
   const handleUploadSuccess = useCallback(async (attachments: AttachmentMetadata[]) => {
     if (!selectedEDB) return;
@@ -604,8 +727,10 @@ export default function Etats() {
                   {session?.user.role === 'ADMIN' && (
                     <CategoriesDialog />
                   )} 
-                  <Link href="/dashboard/etats/nouveau"><Button variant="outline">Nouveau <PlusCircle className="ml-2 h-4 w-4"/></Button></Link>
-                  {isMagasinier && (<Link href="/dashboard/etats/stock"><Button variant="outline">EDB Simple <OpenInNewWindowIcon className="ml-2 h-4 w-4"/></Button></Link>)}
+                  
+                  <Link href="/etats-de-besoin"><Button variant="outline"><text className="hidden md:block mr-2">Mes EDBs (Stock)</text> <StoreIcon className="h-4 w-4"/></Button></Link>
+                  <Link href="/dashboard/etats/nouveau"><Button variant="outline"><text className="hidden md:block mr-2">Nouveau (Standard)</text> <PlusCircle className="h-4 w-4"/></Button></Link>
+                  {(permissions.canHandleStock || permissions.isAdmin) && (<Link href="/dashboard/etats/stock"><Button variant="outline">{"EDB (Stock)"} <Store className="ml-2 h-4 w-4"/></Button></Link>)}
                 </div>
             </div>
         </div>
@@ -660,7 +785,7 @@ export default function Etats() {
               <Card>
                 <CardContent className="pt-5">
                   <Table>
-                  <TableHeader className="bg-muted">
+                  <TableHeader className="bg-muted mb-1">
                       <TableRow className="rounded-lg border-0">
                       <TableHead className="rounded-l-lg">
                           ID
@@ -824,59 +949,57 @@ export default function Etats() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {/* <DropdownMenuItem>Modifier</DropdownMenuItem> */}
-                        
-                        {isMagasinier && (
-                          <>
-                            <DropdownMenuItem 
-                              onSelect={handleOpenAttachDialog}
-                              disabled={["SUBMITTED","APPROVED_RESPONSABLE","SUPPLIER_CHOSEN","MAGASINIER_ATTACHED","COMPLETED","FINAL_APPROVAL"].includes(selectedEDB.status)}
-                            >
-                              Joindre document(s)
-                              <Paperclip className="ml-2 h-4 w-4" />
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onSelect={handleMarkAsDelivered}
-                              disabled={selectedEDB.status !== "SUPPLIER_CHOSEN"}
-                            >
-                              Marquer comme livré
-                              <TruckIcon className="ml-2 h-4 w-4" />
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onSelect={handleMarkAsComplete}
-                              disabled={selectedEDB.status !== "FINAL_APPROVAL"}
-                            >
-                              Marquer comme pourvu
-                              <FileCheck2 className="ml-2 h-4 w-4" />
-                            </DropdownMenuItem>
-                            </>
-                          )}
-                        {/* <DropdownMenuItem disabled>Bon de Commande
-                        <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-                        </DropdownMenuItem> */}
-                        
-                        {!isMagasinier && (
-                          <>
+                      {/* Stock management options */}
+                      {(permissions.canHandleStock || permissions.isAdmin) && (
+                        <>
+                          <DropdownMenuItem 
+                            onSelect={handleOpenAttachDialog}
+                            disabled={!permissions.canTakeAction.canAttachDocuments}
+                          >
+                            Joindre document(s)
+                            <Paperclip className="ml-2 h-4 w-4" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onSelect={handleMarkAsDelivered}
+                            disabled={!permissions.canTakeAction.canMarkDelivered}
+                          >
+                            Marquer comme livré
+                            <TruckIcon className="ml-2 h-4 w-4" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onSelect={handleMarkAsComplete}
+                            disabled={!permissions.canTakeAction.canMarkComplete}
+                          >
+                            Marquer comme pourvu
+                            <FileCheck2 className="ml-2 h-4 w-4" />
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      {/* Approval options */}
+                      {(permissions.canApprove || permissions.isAdmin) && (
+                        <>
                           <DropdownMenuSeparator />
-                          {["DELIVERED","FINAL_APPROVAL"].includes(selectedEDB.status) && (
+                          {permissions.canTakeAction.canFinalApprove && (
                             <DropdownMenuItem 
                               className="text-primary"
                               onClick={handleFinalApproval}
-                              disabled={["COMPLETED","FINAL_APPROVAL"].includes(selectedEDB.status)}
+                              disabled={!permissions.canTakeAction.canFinalApprove}
                             >
                               Valider
                               <DropdownMenuShortcut><UserCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                             </DropdownMenuItem>
                           )}
-                            <DropdownMenuItem 
-                              className="text-primary"
-                              onClick={handleValidate}
-                              disabled={!canValidate}
-                            >
-                              Approuver
-                              <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-                            </DropdownMenuItem>
-                            {isDirecteur && (
+                          <DropdownMenuItem 
+                            className="text-primary"
+                            onClick={handleValidate}
+                            disabled={!canValidate}
+                          >
+                            Approuver
+                            <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                          </DropdownMenuItem>
+                          
+                          {(permissions.isDirecteur || permissions.isAdmin) && (
                             <DropdownMenuItem 
                               className="text-sky-500"
                               onClick={handleEscalate}
@@ -885,21 +1008,19 @@ export default function Etats() {
                               Escalader
                               <DropdownMenuShortcut><ArrowBigUpDash className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                             </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={handleReject}
-                              disabled={["APPROVED_DG","COMPLETED","FINAL_APPROVAL"].includes(selectedEDB.status)}
-                            >
-                              Rejeter
-                              <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-                            </DropdownMenuItem>
-                          </>
-                        )}
-
-
-
-                      </DropdownMenuContent>
+                          )}
+                          
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={handleReject}
+                            disabled={!permissions.canTakeAction.canReject}
+                          >
+                            Rejeter
+                            <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
                     </DropdownMenu>
                     <Link href={`/dashboard/etats/${selectedEDB.edbId}`}><Button size="sm" variant="outline" className="h-8 gap-1"> <OpenInNewWindowIcon className="h-4 w-4" /></Button></Link>
                     <AttachDocumentDialog 

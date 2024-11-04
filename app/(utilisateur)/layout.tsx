@@ -24,8 +24,8 @@ export default function UtilisateurLayout({ children }: UtilisateurLayoutProps) 
 
   return (
     <>
-      <NextProgress />
-      <AdminPanelLayout>
+    <NextProgress />
+    <AdminPanelLayout>
       <Toaster />
       {children}
     </AdminPanelLayout>

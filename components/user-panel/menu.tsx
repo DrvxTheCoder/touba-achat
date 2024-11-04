@@ -5,7 +5,6 @@ import { CircleEllipsis, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { getMenuList } from "@/lib/menu-list";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CollapseMenuButton } from "@/components/user-panel/collapse-menu-button";
@@ -15,6 +14,8 @@ import {
   TooltipContent,
   TooltipProvider
 } from "@/components/ui/tooltip";
+import { getAdminMenuList, getUserMenuList } from "@/lib/menu-list";
+import { useAllowedRoles } from "@/app/hooks/use-allowed-roles";
 
 interface MenuProps {
   isOpen: boolean | undefined;
@@ -22,7 +23,8 @@ interface MenuProps {
 
 export function Menu({ isOpen }: MenuProps) {
   const pathname = usePathname();
-  const menuList = getMenuList(pathname);
+  const { hasReadAccess } = useAllowedRoles();
+  const menuList = hasReadAccess ? getAdminMenuList(pathname) : getUserMenuList(pathname);
 
   return (
       <nav className="mt-8 h-96 w-full">
@@ -56,18 +58,16 @@ export function Menu({ isOpen }: MenuProps) {
                       <TooltipProvider disableHoverableContent>
                         <Tooltip delayDuration={100}>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant={active ? "secondary" : "ghost"}
-                              className="w-full justify-start h-10 mb-1"
-                              asChild
+                            <Link
+                              className={`flex text-sm items-center rounded-lg px-3 py-2 my-1 transition-all hover:bg-muted/50 ${cn(isOpen === false ? "pl-4 justify-center" : "")} ${active ? "bg-muted/80 text-primary": "text-muted-foreground"}`}
+                              href={href}
                             >
-                              <Link href={href}>
                                 <span
-                                  className={cn(isOpen === false ? "" : "mr-4")}
+                                  className={cn(isOpen === false ? "" : "mr-3")}
                                 >
-                                  <Icon size={18} />
+                                  <Icon size={18} className="h-4 w-4" />
                                 </span>
-                                <p
+                                <text
                                   className={cn(
                                     "max-w-[200px] truncate",
                                     isOpen === false
@@ -76,9 +76,8 @@ export function Menu({ isOpen }: MenuProps) {
                                   )}
                                 >
                                   {label}
-                                </p>
+                                </text>
                               </Link>
-                            </Button>
                           </TooltipTrigger>
                           {isOpen === false && (
                             <TooltipContent side="right">

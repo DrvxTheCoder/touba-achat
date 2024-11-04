@@ -1,11 +1,12 @@
 // app/api/stock-edb/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createStockEDB } from './utils/utils';
+import { convertToStandardEDB, createStockEDB, getStockEDBById, updateStockEDBStatus } from './utils/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { z } from 'zod';
 import { getStockEDBs } from './utils/utils';
+import { Role } from '@prisma/client';
 
 const stockEdbSchema = z.object({
     description: z.object({
@@ -69,43 +70,127 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    try {
-      const session = await getServerSession(authOptions);
-      
-      if (!session?.user) {
-        return NextResponse.json(
-          { error: 'Non autorisé' },
-          { status: 401 }
-        );
-      }
-  
-      // Check for required role
-      if (!['ADMIN', 'MAGASINIER'].includes(session.user.role)) {
-        return NextResponse.json(
-          { error: 'Accès interdit' },
-          { status: 403 }
-        );
-      }
-  
-      const { searchParams } = new URL(req.url);
-      const page = parseInt(searchParams.get('page') || '1');
-      const pageSize = parseInt(searchParams.get('pageSize') || '5');
-      const search = searchParams.get('search') || '';
-      const categoryId = searchParams.get('category');
-  
-      const result = await getStockEDBs({
-        page,
-        pageSize,
-        search,
-        categoryId: categoryId ? parseInt(categoryId) : undefined,
-      });
-  
-      return NextResponse.json(result);
-    } catch (error) {
-      console.error('Error fetching stock EDbs:', error);
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
       return NextResponse.json(
-        { error: 'Erreur lors de la récupération des données' },
-        { status: 500 }
+        { error: 'Non autorisé' },
+        { status: 401 }
       );
     }
+
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '5');
+    const search = searchParams.get('search') || '';
+    const categoryId = searchParams.get('category');
+
+    const result = await getStockEDBs({
+      page,
+      pageSize,
+      search,
+      categoryId: categoryId ? parseInt(categoryId) : undefined,
+      userRole: session.user.role as Role,
+      userId: parseInt(session.user.id)
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error fetching stock EDbs:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la récupération des données' },
+      { status: 500 }
+    );
   }
+}
+
+
+
+// For updating status
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Non autorisé' },
+        { status: 401 }
+      );
+    }
+
+    if (session.user.role !== 'MAGASINIER') {
+      return NextResponse.json(
+        { error: 'Non autorisé' },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const { stockEdbId, status } = body;
+
+    if (!stockEdbId || !status) {
+      return NextResponse.json(
+        { error: 'Données manquantes' },
+        { status: 400 }
+      );
+    }
+
+    const updatedEdb = await updateStockEDBStatus(
+      parseInt(stockEdbId),
+      status,
+      parseInt(session.user.id)
+    );
+
+    return NextResponse.json(updatedEdb);
+  } catch (error) {
+    console.error('Error updating stock EDB:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour' },
+      { status: 500 }
+    );
+  }
+}
+
+// For converting to standard EDB
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Non autorisé' },
+        { status: 401 }
+      );
+    }
+
+    if (session.user.role !== 'MAGASINIER') {
+      return NextResponse.json(
+        { error: 'Non autorisé' },
+        { status: 403 }
+      );
+    }
+
+    const { stockEdbId } = await req.json();
+
+    if (!stockEdbId) {
+      return NextResponse.json(
+        { error: 'ID de l\'EDB manquant' },
+        { status: 400 }
+      );
+    }
+
+    const convertedEdb = await convertToStandardEDB(
+      parseInt(stockEdbId),
+      parseInt(session.user.id)
+    );
+
+    return NextResponse.json(convertedEdb);
+  } catch (error) {
+    console.error('Error converting stock EDB:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Erreur lors de la conversion' },
+      { status: 500 }
+    );
+  }
+}

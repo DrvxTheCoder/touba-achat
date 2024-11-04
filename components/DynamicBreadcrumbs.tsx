@@ -14,7 +14,9 @@ const pathMap: { [key: string]: string } = {
   parametres: 'Paramètres',
   nouveau: 'Nouveau',
   odm: 'Ordres de Missions',
-  stock: 'Articles en stock'
+  stock: 'Articles en stock',
+  acceuil: 'Accueil',
+  "etats-de-besoin":'Mes États de Besoins'
   // Add more mappings as needed
 };
 
@@ -46,12 +48,12 @@ export default function DynamicBreadcrumbs() {
     // Return a placeholder or null when not mounted
     return (
       <Breadcrumb className='p-4 px-6'>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/" className='text-xs'>Accueil</BreadcrumbLink>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className='text-xs'>Accueil</BreadcrumbLink>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
     );
   }
 
@@ -61,7 +63,7 @@ export default function DynamicBreadcrumbs() {
     <Breadcrumb className='p-4 px-6'>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/" className='text-xs'>Accueil</BreadcrumbLink>
+          <BreadcrumbLink href="/acceuil" className='text-xs'>Accueil</BreadcrumbLink>
         </BreadcrumbItem>
         {breadcrumbs.map((crumb, index) => (
           <React.Fragment key={crumb.href}>

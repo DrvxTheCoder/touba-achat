@@ -18,6 +18,8 @@ import { CategoryType } from "@prisma/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import StockEdbDialog from "../components/StockEDBForm";
+import { ContentLayout } from "@/components/user-panel/content-layout";
+import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 
 type Category = {
     id: number;
@@ -29,6 +31,38 @@ type Category = {
     id: number;
     name: string;
   }
+
+const UnauthorizedContent = ({ message }: { message: string }) => (
+  <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+    <div className="flex items-center">
+      <h1 className="text-lg font-semibold md:text-2xl">Non-autorisé</h1>
+    </div>
+    <div className="flex items-center justify-center rounded-lg h-[42rem] border border-dashed">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <h3 className="text-2xl font-bold tracking-tight">
+          Accès interdit
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {message}
+        </p>
+        <Button className="mt-4" variant="outline" asChild>
+          <Link href="/acceuil">Retourner à l&apos;accueil</Link>
+        </Button>
+      </div>
+    </div>
+  </main>
+);
+
+const LoadingContent = () => (
+  <ContentLayout title="Chargement...">
+    <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">Chargement...</p>
+      </div>
+    </div>
+  </ContentLayout>
+);
 
 export default function StockEDBPage() {
     const { data: session, status } = useSession();
@@ -145,46 +179,28 @@ export default function StockEDBPage() {
   };
 
   if (status === "loading") {
-    return (
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
-        <div className="flex justify-center items-center h-24">
-          <SpinnerCircular size={40} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
-        </div>
-      </main>
-    );
+      return <LoadingContent />;
   }
 
   if (!session) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-          <div className="flex flex-col items-center gap-1 text-center">
-            <h3 className="text-2xl font-bold tracking-tight">Accès non autorisé</h3>
-            <p className="text-sm text-muted-foreground">
-              Veuillez vous connecter pour accéder à cette page.
-            </p>
-          </div>
-        </div>
-      </main>
+      <ContentLayout title="Non-autorisé">
+        <UnauthorizedContent message="Veuillez vous connecter pour accéder à cette page." />
+      </ContentLayout>
     );
   }
 
   if (!hasAccess) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-          <div className="flex flex-col items-center gap-1 text-center">
-            <h3 className="text-2xl font-bold tracking-tight">Accès interdit</h3>
-            <p className="text-sm text-muted-foreground">
-              Vous n&apos;avez pas les permissions nécessaires pour accéder à ce contenu.
-            </p>
-          </div>
-        </div>
-      </main>
+      <ContentLayout title="Non-autorisé">
+        <UnauthorizedContent message="Vous n'avez pas les permissions nécessaires pour accéder à ce contenu." />
+      </ContentLayout>
     );
   }
 
   return (
+    <ContentLayout title="Articles en Stock">
+      <DynamicBreadcrumbs />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -272,7 +288,7 @@ export default function StockEDBPage() {
                 <div className="text-xs text-muted-foreground">
                   {/* Mis à jour: {format(new Date(), "dd/MM/yyyy", { locale: fr })} */}
                 </div>
-                <Pagination>
+                <Pagination className="flex items-end justify-end">
                   <PaginationContent>
                     <PaginationItem>
                       <Button
@@ -315,5 +331,7 @@ export default function StockEDBPage() {
           </div>
         </div>
       </main>
+    </ContentLayout>
+
   );
 }

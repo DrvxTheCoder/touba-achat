@@ -18,7 +18,9 @@ import {
   FileCheck2,
   BadgeCheck,
   ArrowBigUpDash,
-  Trash2
+  Trash2,
+  UserCheck,
+  TruckIcon
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -108,7 +110,7 @@ import { AttachDocumentDialog } from "./AttachDocumentDialog"
 import { MarkAsCompletedDialog } from "./MarkAsCompleteDialog"
 import { EDBTimelineDialog } from "@/components/EDBTimelineDialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Role } from "@prisma/client"
+import { Access, Role } from "@prisma/client"
 import { EDBTimeline } from "@/components/EDBTimeline"
 import { Router } from "next/router"
 import EDBSummaryPDFDialog from "./EDBSummaryDialog"
@@ -177,10 +179,94 @@ const statusMapping = {
     });
   }
 
+  type ActionPermissions = {
+    canAttachDocuments: boolean;
+    canMarkDelivered: boolean;
+    canMarkComplete: boolean;
+    canFinalApprove: boolean;
+    canReject: boolean;
+  };
+  
+  type UserPermissions = {
+    canHandleStock: boolean;
+    canManageDocuments: boolean;
+    canApprove: boolean;
+    canEscalate: boolean;
+    canFinalApprove: boolean;
+    isAdmin: boolean;
+    isMagasinier: boolean;
+    isDirecteur: boolean;
+    canTakeAction: ActionPermissions;
+  };
+  
+  const useUserPermissions = (session: any, edb: any): UserPermissions => {
+    return useMemo(() => {
+      const defaultActionPermissions: ActionPermissions = {
+        canAttachDocuments: false,
+        canMarkDelivered: false,
+        canMarkComplete: false,
+        canFinalApprove: false,
+        canReject: false
+      };
+  
+      if (!session?.user) {
+        return {
+          canHandleStock: false,
+          canManageDocuments: false,
+          canApprove: false,
+          canEscalate: false,
+          canFinalApprove: false,
+          isAdmin: false,
+          isMagasinier: false,
+          isDirecteur: false,
+          canTakeAction: defaultActionPermissions
+        };
+      }
+  
+      const { role, access = [] } = session.user;
+  
+      const actionPermissions: ActionPermissions = edb ? {
+        canAttachDocuments: !["SUBMITTED", "APPROVED_RESPONSABLE", "SUPPLIER_CHOSEN", "MAGASINIER_ATTACHED", "COMPLETED", "FINAL_APPROVAL"].includes(edb.status),
+        canMarkDelivered: edb.status === "SUPPLIER_CHOSEN",
+        canMarkComplete: edb.status === "FINAL_APPROVAL",
+        canFinalApprove: ["DELIVERED", "FINAL_APPROVAL"].includes(edb.status) && !["COMPLETED", "FINAL_APPROVAL"].includes(edb.status),
+        canReject: !["APPROVED_DG", "COMPLETED", "FINAL_APPROVAL"].includes(edb.status)
+      } : defaultActionPermissions;
+  
+      return {
+        canHandleStock: 
+          role === Role.MAGASINIER || 
+          access.includes(Access.ATTACH_DOCUMENTS),
+        
+        canManageDocuments: 
+          role === Role.MAGASINIER || 
+          access.includes(Access.ATTACH_DOCUMENTS),
+        
+        canApprove: 
+          [Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.RESPONSABLE].includes(role) ||
+          access.includes(Access.APPROVE_EDB),
+        
+        canEscalate: 
+          role === Role.DIRECTEUR ||
+          access.includes(Access.APPROVE_EDB),
+  
+        canFinalApprove:
+          role === Role.DIRECTEUR_GENERAL ||
+          access.includes(Access.FINAL_APPROVAL),
+        
+        isAdmin: role === Role.ADMIN,
+        isMagasinier: role === Role.MAGASINIER,
+        isDirecteur: role === Role.DIRECTEUR,
+        canTakeAction: actionPermissions
+      };
+    }, [session?.user, edb]);
+  };
+
   export function EtatsSingle({ edb }: { edb: any }) {  // Replace 'any' with a proper type for your EDB
 
     const [edbData, setEdbData] = useState(edb);
     const [isLoading, setIsLoading] = useState(false);
+    
 
     const fetchEDB = async () => {
       setIsLoading(true);
@@ -200,6 +286,7 @@ const statusMapping = {
     };
 
     const { data: session } = useSession();
+    const permissions = useUserPermissions(session, edb);
     const [currentPage, setCurrentPage] = useState(1);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -216,8 +303,6 @@ const statusMapping = {
     const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
     const [isChoosingSupplier, setIsChoosingSupplier] = useState(false);
   
-    const isMagasinier = session?.user?.role === Role.MAGASINIER;
-    const isDirecteur = session?.user?.role === Role.DIRECTEUR;
     const isEscalated = edb?.status === 'ESCALATED';
     const canEscalate = edb?.status === 'APPROVED_RESPONSABLE' || edb?.status === 'SUBMITTED'
     const hasAttachments = edb?.attachments && edb.attachments.length > 0;
@@ -227,9 +312,11 @@ const statusMapping = {
     const isSupplierChosen = !!edb?.finalSupplier;
 
     const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
+    const [isFinalApprovalDialogOpen, setIsFinalApprovalDialogOpen] = useState(false);
     const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
     const [isEscalationDialogOpen, setIsEscalationDialogOpen] = useState(false);
     const [isMarkAsCompleteDialogOpen, setIsMarkAsCompleteDialogOpen] = useState(false);
+    const [isMarkAsDeliveredDialogOpen, setIsMarkAsDeliveredDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
@@ -337,17 +424,38 @@ const statusMapping = {
         .flatMap(key => statusMapping[key]);
     }, [selectedFilters]);
   
-    const { canValidate, canReject } = useMemo(() => {
-      if (!edb || !session?.user?.role) return { canValidate: false, canReject: false };
+
+
+    const { canValidate, canReject, canAttachDocuments, canChooseSupplier, canApproveIT, canGiveFinalApproval } = useMemo(() => {
+      if (!edb || !session?.user?.role) {
+        return {
+          canValidate: false,
+          canReject: false,
+          canAttachDocuments: false,
+          canChooseSupplier: false,
+          canApproveIT: false,
+          canGiveFinalApproval: false
+        };
+      }
+    
+      const userContext = {
+        role: session.user.role as Role,
+        access: session.user.access as Access[] | undefined
+      };
+    
       return canPerformAction(
-        edb.status as EDBStatus, 
-        session.user.role as UserRole, 
+        edb.status as EDBStatus,
+        userContext,
         edb.category
       );
-    }, [edb, session?.user?.role]);
+    }, [edb, session?.user?.role, session?.user?.access]);
 
     const handleValidate = async () => {
         setIsValidationDialogOpen(true);
+      };
+
+      const handleFinalApproval = async () => {
+        setIsFinalApprovalDialogOpen(true);
       };
     
       const handleEscalate = async () => {
@@ -360,6 +468,10 @@ const statusMapping = {
 
       const handleMarkAsComplete = async () => {
         setIsMarkAsCompleteDialogOpen(true);
+      }
+
+      const handleMarkAsDelivered = async () => {
+        setIsMarkAsDeliveredDialogOpen(true);
       }
     
       const confirmValidation = async () => {
@@ -480,14 +592,37 @@ const statusMapping = {
       }, [isAttachDocumentDialogOpen]);
     
       const handleOpenAttachDialog = useCallback(() => {
-        if (edb && isMagasinier && !hasAttachments) {
-          setIsAttachDocumentDialogOpen(true);
-        } else {
-          toast.error("Action non autorisée",{
+        if (!edb) {
+          toast.error("Action non autorisée", {
+            description: "Aucun EDB sélectionné." 
+          });
+          return;
+        }
+      
+        if (!(permissions.canHandleStock || permissions.isAdmin)) {
+          toast.error("Action non autorisée", {
+            description: "Vous n'avez pas les droits nécessaires pour effectuer cette action." 
+          });
+          return;
+        }
+      
+        if (hasAttachments) {
+          toast.error("Action non autorisée", {
             description: "Des documents sont déjà attachés à cet EDB." 
           });
+          return;
         }
-      }, [edb, isMagasinier, hasAttachments]);
+      
+        if (!permissions.canTakeAction.canAttachDocuments) {
+          toast.error("Action non autorisée", {
+            description: "Le statut actuel de l'EDB ne permet pas d'attacher des documents." 
+          });
+          return;
+        }
+      
+        setIsAttachDocumentDialogOpen(true);
+      }, [edb, permissions, hasAttachments]);
+      
       const handleUploadSuccess = useCallback(async (attachments: AttachmentMetadata[]) => {
         if (!edb) return;
     
@@ -567,80 +702,86 @@ const statusMapping = {
         <EDBSummaryPDFDialog edb={edb} />
 
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="outline" className="h-8 w-8">
-                <MoreVertical className="h-3.5 w-3.5" />
-                <span className="sr-only">Plus</span>
-            </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-            {/* <DropdownMenuItem>Modifier</DropdownMenuItem> */}
-            
-            {isMagasinier && (
-                          <>
-                            <DropdownMenuItem 
-                              onSelect={handleOpenAttachDialog}
-                              disabled={hasAttachments}
-                            >
-                              Joindre document(s)
-                              <Paperclip className="ml-2 h-4 w-4" />
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onSelect={handleMarkAsComplete}
-                              disabled={edb.status !== "FINAL_APPROVAL"}
-                            >
-                              Marquer comme pourvu
-                              <FileCheck2 className="ml-2 h-4 w-4" />
-                            </DropdownMenuItem>
-                            </>
-                          )}
-            {/* <DropdownMenuItem disabled>Bon de Commande
-            <DropdownMenuShortcut><FileCheck2 className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-            </DropdownMenuItem> */}
-            <DropdownMenuSeparator />
-            {!isMagasinier && (
-            <>
-              <DropdownMenuItem 
-                  className="text-primary"
-                  onClick={handleValidate}
-                  disabled={!canValidate}
-              >
-                  Valider
-                  <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-              </DropdownMenuItem>
-              {isDirecteur && (
-              <DropdownMenuItem 
-                  className="text-sky-500"
-                  onClick={handleEscalate}
-                  disabled={!canEscalate}
-              >
-                  Escalader
-                  <DropdownMenuShortcut><ArrowBigUpDash className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-              </DropdownMenuItem>
-              )}
-              <DropdownMenuItem 
-                  className="text-destructive"
-                  onClick={handleReject}
-                  disabled={!canReject}
-              >
-                  Rejeter
-                  <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </>
-            )}
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="outline" className="h-8 w-8">
+                          <MoreVertical className="h-3.5 w-3.5" />
+                          <span className="sr-only">Plus</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                      {/* Stock management options */}
+                      {(permissions.canHandleStock || permissions.isAdmin) && (
+                        <>
+                          <DropdownMenuItem 
+                            onSelect={handleOpenAttachDialog}
+                            disabled={!permissions.canTakeAction.canAttachDocuments}
+                          >
+                            Joindre document(s)
+                            <Paperclip className="ml-2 h-4 w-4" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onSelect={handleMarkAsDelivered}
+                            disabled={!permissions.canTakeAction.canMarkDelivered}
+                          >
+                            Marquer comme livré
+                            <TruckIcon className="ml-2 h-4 w-4" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onSelect={handleMarkAsComplete}
+                            disabled={!permissions.canTakeAction.canMarkComplete}
+                          >
+                            Marquer comme pourvu
+                            <FileCheck2 className="ml-2 h-4 w-4" />
+                          </DropdownMenuItem>
+                        </>
+                      )}
 
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => setIsDeleteDialogOpen(true)}
-              disabled={!canDelete}
-            >
-              Supprimer
-              <DropdownMenuShortcut>
-                <Trash2 className="ml-4 h-4 w-4" />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                      {/* Approval options */}
+                      {(permissions.canApprove || permissions.isAdmin) && (
+                        <>
+                          <DropdownMenuSeparator />
+                          {permissions.canTakeAction.canFinalApprove && (
+                            <DropdownMenuItem 
+                              className="text-primary"
+                              onClick={handleFinalApproval}
+                              disabled={!permissions.canTakeAction.canFinalApprove}
+                            >
+                              Valider
+                              <DropdownMenuShortcut><UserCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem 
+                            className="text-primary"
+                            onClick={handleValidate}
+                            disabled={!canValidate}
+                          >
+                            Approuver
+                            <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                          </DropdownMenuItem>
+                          
+                          {(permissions.isDirecteur || permissions.isAdmin) && (
+                            <DropdownMenuItem 
+                              className="text-sky-500"
+                              onClick={handleEscalate}
+                              disabled={!canEscalate}
+                            >
+                              Escalader
+                              <DropdownMenuShortcut><ArrowBigUpDash className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                          )}
+                          
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={handleReject}
+                            disabled={!permissions.canTakeAction.canReject}
+                          >
+                            Rejeter
+                            <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                    </DropdownMenu>
             <MarkAsCompletedDialog
               isOpen={isMarkAsCompleteDialogOpen}
               onClose={() => setIsMarkAsCompleteDialogOpen(false)}

@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Package2, Check, ChevronsUpDown } from "lucide-react";
+import { Package2, Check, ChevronsUpDown, Trash2Icon, PlusCircleIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Access, CategoryType } from "@prisma/client";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -34,6 +34,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { getEmployees } from '../../employes/components/data';
 import { Icons } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipContent } from '@radix-ui/react-tooltip';
 
 interface Category {
   id: number;
@@ -224,7 +226,7 @@ export default function StockEdbDialog({
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Package2 className="w-4 h-4" />
-          Nouveau (en stock)
+          Nouveau
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
@@ -235,7 +237,7 @@ export default function StockEdbDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
           <FormField
               control={form.control}
               name="employeeType"
@@ -277,7 +279,7 @@ export default function StockEdbDialog({
           name="employeeId"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Employé</FormLabel>
+              {/* <FormLabel>Employé</FormLabel> */}
               <Popover 
                 open={employeePopoverOpen} 
                 onOpenChange={setEmployeePopoverOpen}
@@ -348,7 +350,7 @@ export default function StockEdbDialog({
                   name="externalEmployeeName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nom de l&apos;employé</FormLabel>
+                      {/* <FormLabel>Nom de l&apos;employé</FormLabel> */}
                       <FormControl>
                         <Input {...field} placeholder="Nom complet" />
                       </FormControl>
@@ -362,7 +364,7 @@ export default function StockEdbDialog({
                   name="departmentId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Département</FormLabel>
+                      {/* <FormLabel>Département</FormLabel> */}
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         value={field.value?.toString()}
@@ -394,7 +396,7 @@ export default function StockEdbDialog({
               name="categoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Catégorie</FormLabel>
+                  {/* <FormLabel>Catégorie</FormLabel> */}
                   <Select 
                     onValueChange={(value) => field.onChange(parseInt(value))} 
                     value={field.value?.toString()}
@@ -423,14 +425,26 @@ export default function StockEdbDialog({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <FormLabel>Articles</FormLabel>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addItem}
-                >
-                  Ajouter un article
-                </Button>
+                <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addItem}
+                    className='h-7 p-1'
+                  >
+                    <PlusCircleIcon className='h-4'/>
+                  </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                  <p className='flex flex-row justify-between gap-1 text-sm bg-secondary-foreground my-1 rounded-sm border px-2 p-1'>Ajouter un article</p>
+                  </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+
               </div>
               <ScrollArea className="h-[200px] w-full border rounded-md p-1 gap-1 overflow-hidden">
               {items.map((_, index) => (
@@ -531,7 +545,7 @@ export default function StockEdbDialog({
                       size="sm"
                       onClick={() => removeItem(index)}
                     >
-                      ✕
+                      <Trash2Icon className='h-4' />
                     </Button>
                   )}
                 </div>
@@ -546,10 +560,9 @@ export default function StockEdbDialog({
               name="description.comment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Commentaire (optionnel)</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Commentaire ou précisions supplémentaires" 
+                      placeholder="Commentaire ou précisions supplémentaires (optionnel)" 
                       {...field} 
                     />
                   </FormControl>

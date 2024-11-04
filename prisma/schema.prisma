@@ -142,9 +142,24 @@ enum ODMEventType {
   UPDATED
 }
 
+enum ODMPersonCategory {
+  DIRECTOR      // Directeur - 25k CFA/jour
+  TEAM_MANAGER  // Chef d'équipe - 20k CFA/jour
+  FIELD_AGENT   // Agent de terrain - 15k CFA/jour
+  FREELANCER    // Freelance - 10k CFA/jour
+}
+
 enum EDBType {
   STANDARD    // Regular EDBs that need validation
   STOCK       // Items directly from stock (auto-completed)
+}
+
+enum StockEDBStatus {
+  DRAFT       // Initial state when created
+  SUBMITTED   // When user submits
+  ORDERED     // When magasinier marks as ordered
+  DELIVERED   // When magasinier marks as delivered
+  CONVERTED   // When converted to standard EDB
 }
 
 model User {
@@ -167,9 +182,12 @@ model User {
   finalApprovedEdbs     EtatDeBesoin[]  @relation("FinalApprover")
   uploadedAttachments   Attachment[]    @relation("Uploader")
   chosenSuppliers       FinalSupplier[] @relation("Chooser")
-  edbAuditLogs  EtatDeBesoinAuditLog[]
-  OrdreDeMission OrdreDeMission[] @relation("RHProcessor")
-  odmAuditLogs      OrdreDeMissionAuditLog[]
+  edbAuditLogs          EtatDeBesoinAuditLog[]
+  OrdreDeMission        OrdreDeMission[] @relation("RHProcessor")
+  odmAuditLogs          OrdreDeMissionAuditLog[]
+  orderedStockEdbs      StockEtatDeBesoin[] @relation("StockOrderer")
+  deliveredStockEdbs    StockEtatDeBesoin[] @relation("StockDeliverer")
+  convertedStockEdbs    StockEtatDeBesoin[] @relation("StockConverter")
 }
 
 model Employee {
@@ -177,6 +195,7 @@ model Employee {
   name                String
   email               String                      @unique
   matriculation       String                      @unique
+  jobTitle            String                      @default("Employé")
   phoneNumber         String?
   user                User                        @relation(fields: [userId], references: [id])
   userId              Int                         @unique
@@ -245,6 +264,7 @@ model EtatDeBesoin {
   finalApprovedBy       Int?
   finalApprover         User?          @relation("FinalApprover", fields: [finalApprovedBy], references: [id])
   rejectionReason       String?
+  convertedFromStock    StockEtatDeBesoin? @relation("ConvertedEDB")
   auditLogs     EtatDeBesoinAuditLog[]
 }
 
@@ -260,17 +280,30 @@ model EtatDeBesoinAuditLog {
 }
 
 model StockEtatDeBesoin {
-  id                    Int            @id @default(autoincrement())
-  edbId                 String         @unique
-  description          Json           // Will contain items and comment
-  createdAt            DateTime       @default(now())
+  id                    Int             @id @default(autoincrement())
+  edbId                 String          @unique
+  description          Json            
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  status               StockEDBStatus  @default(SUBMITTED)
   employeeId           Int?         
-  employee             Employee?      @relation("StockCreator", fields: [employeeId], references: [id])
+  employee             Employee?       @relation("StockCreator", fields: [employeeId], references: [id])
   externalEmployeeName  String?        
   departmentId         Int
-  department           Department     @relation(fields: [departmentId], references: [id])
+  department           Department      @relation(fields: [departmentId], references: [id])
   categoryId           Int
-  category             Category       @relation(fields: [categoryId], references: [id])
+  category             Category        @relation(fields: [categoryId], references: [id])
+  convertedEdbId       Int?            @unique  // Add @unique here
+  convertedEdb         EtatDeBesoin?   @relation("ConvertedEDB", fields: [convertedEdbId], references: [id])
+  orderedAt            DateTime?      
+  orderedById          Int?           
+  orderedBy            User?           @relation("StockOrderer", fields: [orderedById], references: [id])
+  deliveredAt          DateTime?      
+  deliveredById        Int?           
+  deliveredBy          User?           @relation("StockDeliverer", fields: [deliveredById], references: [id])
+  convertedAt          DateTime?      
+  convertedById        Int?           
+  convertedBy          User?           @relation("StockConverter", fields: [convertedById], references: [id])
 }
 
 model Attachment {

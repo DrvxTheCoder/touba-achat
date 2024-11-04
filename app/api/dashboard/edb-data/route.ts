@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   let edbsQuery = {};
 
-  if (role === Role.RESPONSABLE || role === Role.DIRECTEUR) {
+  if (role === Role.RH || role === Role.RESPONSABLE || role === Role.DIRECTEUR) {
     if (!departmentId) {
       return NextResponse.json({ error: 'Département non trouvé pour l\'utilisateur' }, { status: 400 });
     }
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
       createdAt: {
         gte: monday,
       },
-      ...(role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
+      ...(role === Role.RH || role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
     },
     _count: {
       id: true,
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
           gte: date,
           lt: new Date(date.getTime() + 24 * 60 * 60 * 1000), // Next day
         },
-        ...(role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
+        ...(role === Role.RH || role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
       },
       include: {
         finalSupplier: true,

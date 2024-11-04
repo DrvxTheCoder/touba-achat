@@ -93,7 +93,7 @@ async function main() {
     },
     {
       name: 'Keba Gnabaly',
-      email: 'keba.gnabal@touba-oil.com',
+      email: 'keba.gnabaly@touba-oil.com',
       role: Role.MAGASINIER,
       access: [Access.ATTACH_DOCUMENTS],
       departmentName: 'Direction Opération Gaz',

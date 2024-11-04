@@ -34,6 +34,7 @@ const employeeUpdateSchema = z.object({
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
   matriculation: z.string().min(2, { message: "La matricule doit comporter au moins 2 caractères." })
     .max(10, { message: "La matricule ne doit pas dépasser 10 caractères." }),
+  jobTitle: z.string().min(1, { message: "La fonction est requise." }),
   phoneNumber: z.string().min(9, { message: "Le téléphone doit comporter au moins 10 caractères." })
     .max(15, { message: "Le téléphone ne doit pas dépasser 15 caractères." }),
   department: z.number(),
@@ -73,6 +74,7 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
       ...employee,
       phoneNumber: employee.phoneNumber || "",
       department: employee.currentDepartmentId,
+      jobTitle: employee.jobTitle,
       userId: employee.userId,
       access: employee.access || []
     },
@@ -144,9 +146,10 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm text-muted-foreground">Nom :</FormLabel>
+                      
                       <FormControl>
                         <Input {...field} type="text"
+                          placeholder="Nom complet"
                           onKeyDown={(e) => {
                             if (e.key === ' ') {
                               e.stopPropagation();
@@ -163,7 +166,6 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                   name="department"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm text-muted-foreground" >Direction :</FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(Number(value))} 
                         value={field.value?.toString()}
@@ -190,9 +192,27 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                   name="matriculation"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm text-muted-foreground" >Matricule :</FormLabel>
                       <FormControl>
                         <Input {...field}
+                        placeholder="Matricule"
+                          onKeyDown={(e) => {
+                            if (e.key === ' ') {
+                              e.stopPropagation();
+                            }
+                          }} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                                <FormField
+                  control={form.control}
+                  name="jobTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input {...field}
+                        placeholder="Fonction/Titre"
                           onKeyDown={(e) => {
                             if (e.key === ' ') {
                               e.stopPropagation();
@@ -208,7 +228,6 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                   name="userId"
                   render={({ field }) => (
                     <FormItem className="hidden">
-                      <FormLabel className="text-sm text-muted-foreground" >Username :</FormLabel>
                       <FormControl>
                         <Input {...field}
                           onKeyDown={(e) => {
@@ -226,9 +245,9 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm text-muted-foreground" >Téléphone :</FormLabel>
                       <FormControl>
                         <Input {...field}
+                          placeholder="Téléphone"
                           onKeyDown={(e) => {
                             if (e.key === ' ') {
                               e.stopPropagation();
@@ -259,9 +278,9 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm text-muted-foreground" >Email :</FormLabel>
                       <FormControl>
                         <Input {...field}
+                          placeholder="Email"
                           onKeyDown={(e) => {
                             if (e.key === ' ') {
                               e.stopPropagation();
@@ -277,7 +296,6 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                       name="access"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm text-muted-foreground">Accès :</FormLabel>
                           <FormControl>
                             <AccessSelect
                               value={field.value}
@@ -293,7 +311,6 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm text-muted-foreground" >Statut :</FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(value)} 
                         value={field.value?.toString()}

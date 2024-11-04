@@ -1,3 +1,4 @@
+// lib/menu-list.ts
 import {
   Tag,
   Users,
@@ -5,9 +6,12 @@ import {
   Bookmark,
   SquarePen,
   LayoutGrid,
-  LucideIcon,
   Package2,
-  Home
+  Home,
+  LucideIcon,
+  Package,
+  Luggage,
+  PenBoxIcon,
 } from "lucide-react";
 
 type Submenu = {
@@ -20,59 +24,78 @@ type Menu = {
   href: string;
   label: string;
   active: boolean;
-  icon: LucideIcon
+  icon: LucideIcon;
   submenus: Submenu[];
 };
 
 type Group = {
-  groupLabel: string;
+  groupLabel?: string;
   menus: Menu[];
 };
 
-export function getMenuList(pathname: string): Group[] {
+export function getAdminMenuList(pathname: string): Group[] {
   return [
     {
-      groupLabel: "",
       menus: [
+        {
+          href: "/dashboard",
+          label: "Dashboard",
+          active: pathname === "/dashboard",
+          icon: LayoutGrid,
+          submenus: []
+        },
         {
           href: "/acceuil",
           label: "Accueil",
           active: pathname.includes("/acceuil"),
           icon: Home,
           submenus: []
-        }
-      ]
-    },
-    {
-      groupLabel: "États de Besoins",
-      menus: [
+        },
         {
-          href: "/etats-de-besoin",
-          label: "Liste",
-          active: pathname === "/etats-de-besoin",
-          icon: Package2,
+          href: "/dashboard/etats",
+          label: "États de Besoins",
+          active: ["/dashboard/etats", "/etats-de-besoin", "/dashboard/etats/stock", "/dashboard/etats/EDB-"].includes(pathname),
+          icon: Package,
           submenus: []
         },
         {
-          href: "/etats-de-besoin/nouveau",
-          label: "Nouveau",
-          active: pathname === "/etats-de-besoin/nouveau",
-          icon: SquarePen,
+          href: "/dashboard/odm",
+          label: "Ordres de Mission",
+          active: pathname.includes("/dashboard/odm"),
+          icon: Luggage,
+          submenus: []
+        },
+        {
+          href: "/dashboard/employes",
+          label: "Employés / Utilisateur",
+          active: pathname.includes("/dashboard/employes"),
+          icon: Users,
+          submenus: []
+        },
+      ]
+    },
+  ];
+}
+
+export function getUserMenuList(pathname: string): Group[] {
+  return [
+    {
+      menus: [
+        {
+          href: "/acceuil",
+          label: "Accueil",
+          active: pathname === "/acceuil",
+          icon: Home,
+          submenus: []
+        },
+        {
+          href: "/etats-de-besoin",
+          label: "États de Besoins",
+          active: pathname.includes("/etats-de-besoin"),
+          icon: Package,
           submenus: []
         }
       ]
     },
-    // {
-    //   groupLabel: "Paramètres",
-    //   menus: [
-    //     {
-    //       href: "/account",
-    //       label: "Mon compte",
-    //       active: pathname.includes("/account"),
-    //       icon: Settings,
-    //       submenus: []
-    //     }
-    //   ]
-    // }
   ];
 }
