@@ -13,6 +13,7 @@ import React from 'react';
 import './globals.css';
 import { NotificationProvider } from '@/components/NotificationProvider';
 import { Toaster } from 'sonner';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Touba Service Achat',
@@ -28,6 +29,7 @@ export default async function RootLayout({
 
   return (
     <html lang="fr" suppressHydrationWarning>
+      <Script async src="https://analytics.touba-app.com/script.js" data-website-id="5f206544-fb16-4f3b-9416-ddb4dcc131ab"/>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <link rel="manifest" href="/manifest.json" />
