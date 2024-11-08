@@ -128,7 +128,7 @@ export default function TeamSwitcher({ className, onDepartmentChange }: TeamSwit
             role="combobox"
             aria-expanded={open}
             aria-label="Choisir une direction"
-            className={cn("w-[200px] justify-between", className)}
+            className={cn("w-16 md:w-[200px] justify-between", className)}
           >
             <Avatar className="mr-2 h-5 w-5 flex-shrink-0">
               <AvatarImage

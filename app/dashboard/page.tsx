@@ -35,7 +35,7 @@ export default function Dashboard() {
   return (
     <ContentLayout title="Dashboard">
       <DynamicBreadcrumbs />
-      <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+      <main className="flex flex-1 flex-col gap-4 p-1 lg:gap-6 lg:p-6">
         <div className="flex items-center justify-center rounded-lg h-[42rem] border border-dashed">
           <div className="flex flex-col items-center gap-4 text-center">
             <LayoutGrid className="h-16 w-16 text-muted-foreground" />
@@ -43,7 +43,7 @@ export default function Dashboard() {
               Dashboard
             </h3>
             <p className="text-sm text-muted-foreground">
-              Le tableau de bord sera bientot disponible, nous travaillons sur des mise à jour.
+              Le tableau de bord sera bientot disponible, nous travaillons sur des mises à jour.
             </p>
             <Button className="mt-2" variant="default" asChild>
               <Link href="/acceuil">Retour à l&apos;accueil</Link>

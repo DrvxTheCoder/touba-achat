@@ -27,7 +27,7 @@ import { Employee } from "../data"
 import { toast } from "sonner"
 import { result } from "lodash"
 import { AccessSelect } from "@/components/forms/AccessSelect"
-import { Access } from "@prisma/client"
+import { Access, Role } from "@prisma/client"
 
 const employeeUpdateSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit comporter au moins 2 caractères." }),
@@ -39,6 +39,7 @@ const employeeUpdateSchema = z.object({
     .max(15, { message: "Le téléphone ne doit pas dépasser 15 caractères." }),
   department: z.number(),
   access: z.array(z.nativeEnum(Access)),
+  role: z.string({ message: "Veuillez sélectionner un rôle." }).min(1, { message: "Veuillez sélectionner un rôle." }),
   status: z.string({ message: "Veuillez choisir le statut de l\'employé." }),
   userId: z.number(),
 })
@@ -291,6 +292,33 @@ export function UpdateEmployeeForm({ employee, onUpdate }: UpdateEmployeeFormPro
                     </FormItem>
                   )}
                 />
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select onValueChange={(value) => field.onChange((value))} 
+                            value={field.value?.toString()}
+                            >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner un rôle" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="ADMIN">Administrateur</SelectItem>
+                              <SelectItem value="USER">Utilisateur</SelectItem>
+                              <SelectItem value="RESPONSABLE">Responsable</SelectItem>
+                              <SelectItem value="DIRECTEUR">Directeur / Directrice</SelectItem>
+                              <SelectItem value="DIRECTEUR_GENERAL">Directeur Général</SelectItem>
+                              <SelectItem value="MAGASINIER">Magasinier</SelectItem>
+                              <SelectItem value="RH">Ressources Humaines</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                 <FormField
                       control={form.control}
                       name="access"

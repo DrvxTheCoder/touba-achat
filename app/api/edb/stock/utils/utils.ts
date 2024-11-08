@@ -2,11 +2,53 @@
 
 import { prisma } from '@/lib/prisma';
 import generateEDBId from '../../utils/edb-id-generator';
-import { EDBEventType, Prisma, Role, StockEDBStatus } from '@prisma/client';
-import { createEDBForUser, logEDBEvent } from '../../utils/edbAuditLogUtil';
+import { EDBEventType, Prisma, Role, StockEDBStatus, StockEtatDeBesoin } from '@prisma/client';
+import { createEDBForUser, logEDBEvent, sendEDBNotification } from '../../utils/edbAuditLogUtil';
+import { determineRecipients } from '@/app/api/utils/notificationsUtil';
+import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
+import { NotificationPayload, sendNotification } from '@/app/actions/sendNotification';
 
 
-const UNRESTRICTED_ROLES = ['MAGASINIER', 'ADMIN', 'AUDIT'] as const;
+const UNRESTRICTED_ROLES = ['MAGASINIER', 'ADMIN', 'AUDIT', 'DIRECTEUR_GENERAL'] as const;
+
+async function getUserName(userId: number): Promise<string> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true }
+  });
+  return user?.name || 'Utilisateur inconnu';
+}
+
+export async function sendStockNotification(
+  stockEdb: StockEtatDeBesoin,
+  action: EDBEventType,
+  userId: number,
+  additionalData?: Record<string, any>
+): Promise<void> {
+  const recipients = await determineRecipients(stockEdb, stockEdb.status, userId, 'STOCK');
+  const userName = await getUserName(userId);
+  const { subject, body } = generateNotificationMessage({
+    id: stockEdb.edbId,
+    status: stockEdb.status,
+    actionInitiator: userName,
+    entityType: 'STOCK'
+  });
+
+  const notificationPayload: NotificationPayload = {
+    entityId: stockEdb.edbId,
+    entityType: 'STOCK',
+    newStatus: stockEdb.status,
+    actorId: userId,
+    actionInitiator: userName,
+    additionalData: { 
+      updatedBy: userId, 
+      departmentId: stockEdb.departmentId,
+      ...additionalData
+    }
+  };
+
+  await sendNotification(notificationPayload);
+}
 
 
 export async function createStockEDB(
@@ -26,14 +68,14 @@ export async function createStockEDB(
   if (data.employeeType === 'registered' && data.employeeId) {
     const employee = await prisma.employee.findUnique({
       where: { id: data.employeeId },
-      include: { currentDepartment: true }
+      include: { currentDepartment: true, user:true }
     });
 
     if (!employee) {
       throw new Error('Employé introuvable');
     }
 
-    return await prisma.stockEtatDeBesoin.create({
+    const newStockEDB = await prisma.stockEtatDeBesoin.create({
       data: {
         edbId: generateEDBId(),
         description: data.description as Prisma.JsonObject,
@@ -47,6 +89,8 @@ export async function createStockEDB(
         employee: true
       }
     });
+
+    await sendStockNotification(newStockEDB, EDBEventType.SUBMITTED, employee.user.id);
   } 
   // For external employees
   else {
@@ -356,7 +400,7 @@ export async function convertToStandardEDB(
     );
 
     // Update stock EDB status
-    await prisma.stockEtatDeBesoin.update({
+    const updatedStockEDB = await prisma.stockEtatDeBesoin.update({
       where: { id: stockEdbId },
       data: {
         status: 'CONVERTED',
@@ -365,6 +409,9 @@ export async function convertToStandardEDB(
         convertedEdb: { connect: { id: standardEdb.id } }
       }
     });
+
+    await sendStockNotification(updatedStockEDB, EDBEventType.CONVERTED, magasinierId);
+
 
     // Return the complete EDB with audit logs
     return await prisma.etatDeBesoin.findUnique({

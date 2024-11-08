@@ -171,10 +171,10 @@ export default function UserStockEDBPage() {
                   <TableHeader className="bg-muted">
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead className="hidden sm:table-cell">Employé</TableHead>
+                      <TableHead className="sm:table-cell">Employé</TableHead>
                       <TableHead className="hidden sm:table-cell">Catégorie</TableHead>
                       <TableHead className="hidden sm:table-cell">Quantité</TableHead>
-                      <TableHead className="hidden sm:table-cell text-right">Date</TableHead>
+                      <TableHead className="sm:table-cell text-right">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

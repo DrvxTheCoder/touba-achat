@@ -21,7 +21,7 @@ async function main() {
     'Direction Administrative et Financière',
     'Direction Ressources Humaines',
     'Direction Générale',
-    'Direction Opération Gaz',
+    'Direction Opérations Gaz',
     'Direction Commerciale Marketing',
   ];
 
@@ -82,6 +82,7 @@ async function main() {
       access: [Access.APPROVE_EDB, Access.FINAL_APPROVAL],
       departmentName: 'Administration IT',
       matriculation: 'ADM001',
+      jobTitle: 'Administrateur Plateforme',
     },
     {
       name: 'Djiby Seye',
@@ -90,22 +91,43 @@ async function main() {
       access: [Access.APPROVE_EDB, Access.FINAL_APPROVAL],
       departmentName: 'Direction Générale',
       matriculation: '25241',
+      jobTitle: 'Directeur Général',
     },
     {
       name: 'Keba Gnabaly',
       email: 'keba.gnabaly@touba-oil.com',
       role: Role.MAGASINIER,
       access: [Access.ATTACH_DOCUMENTS],
-      departmentName: 'Direction Opération Gaz',
+      departmentName: 'Direction Opérations Gaz',
       matriculation: '24040',
+      jobTitle: 'Responsable Service Achat',
     },
     {
-      name: 'Bescaye Diop',
-      email: 'bescaye.diop@touba-oil.com',
+      name: 'Mame Diarra Bousso Dieng',
+      email: 'mdiarra.dieng@touba-oil.com',
+      role: Role.MAGASINIER,
+      access: [Access.ATTACH_DOCUMENTS],
+      departmentName: 'Direction Opérations Gaz',
+      matriculation: '26349',
+      jobTitle: 'Responsable Service Achat',
+    },
+    {
+      name: 'Rokhaya Thiam',
+      email: 'service.achat@touba-oil.com',
+      role: Role.MAGASINIER,
+      access: [Access.ATTACH_DOCUMENTS],
+      departmentName: 'Direction Opérations Gaz',
+      matriculation: '26296',
+      jobTitle: 'Responsable Service Achat',
+    },
+    {
+      name: 'Beskaye Diop',
+      email: 'beskaye.diop@touba-oil.com',
       role: Role.RESPONSABLE,
       access: [Access.APPROVE_EDB],
       departmentName: 'Direction Administrative et Financière',
       matriculation: '26263',
+      jobTitle: 'Responsable Comptabilité',
     },
     {
       name: 'Alboury Ndao',
@@ -114,6 +136,16 @@ async function main() {
       access: [Access.APPROVE_EDB],
       departmentName: 'Direction Administrative et Financière',
       matriculation: '25672',
+      jobTitle: 'Responsable Informatique',
+    },
+    {
+      name: 'Mamadou Diouf',
+      email: 'mamadou.diouf@touba-oil.com',
+      role: Role.RESPONSABLE,
+      access: [Access.APPROVE_EDB],
+      departmentName: 'Direction Commerciale Marketing',
+      matriculation: '26300',
+      jobTitle: 'Responsable Commercial',
     },
     {
       name: 'Ibra Diop',
@@ -122,6 +154,7 @@ async function main() {
       access: [Access.APPROVE_EDB],
       departmentName: 'Direction Ressources Humaines',
       matriculation: '26294',
+      jobTitle: 'Directeur Ressources Humaines',
     },
     {
       name: 'Bineta Dieng',
@@ -130,6 +163,7 @@ async function main() {
       access: [Access.APPROVE_EDB, Access.RH_PROCESS],
       departmentName: 'Direction Ressources Humaines',
       matriculation: '26309',
+      jobTitle: 'Chargée Ressources Humaines',
     },
     {
       name: 'Safietou Ndour',
@@ -138,6 +172,25 @@ async function main() {
       access: [Access.APPROVE_EDB],
       departmentName: 'Direction Administrative et Financière',
       matriculation: '26290',
+      jobTitle: 'Directrice Administrative et Financière',
+    },
+    {
+      name: 'Caty Coulibaly',
+      email: 'mme.coulibaly@touba-oil.com',
+      role: Role.DIRECTEUR,
+      access: [Access.APPROVE_EDB],
+      departmentName: 'Direction Commerciale Marketing',
+      matriculation: '25122',
+      jobTitle: 'Directrice Commerciale Marketing',
+    },
+    {
+      name: 'Daouda Badji',
+      email: 'daouda.badji@touba-oil.com',
+      role: Role.DIRECTEUR,
+      access: [Access.APPROVE_EDB],
+      departmentName: 'Direction Opérations Gaz',
+      matriculation: '25239',
+      jobTitle: 'Directeur Opérations Gaz',
     },
     {
       name: 'Aminata Gaye',
@@ -146,6 +199,7 @@ async function main() {
       access: [],
       departmentName: 'Direction Générale',
       matriculation: '26346',
+      jobTitle: 'Responsable Juridique et Contentieux, Assistante DG',
     },
     {
       name: 'Paul Flan',
@@ -154,7 +208,18 @@ async function main() {
       access: [Access.IT_APPROVAL],
       departmentName: 'Direction Administrative et Financière',
       matriculation: '26344',
+      jobTitle: 'Assistant Informatique',
     },
+    {
+      name: 'Arame Niang',
+      email: 'arame.niang@touba-oil.com',
+      role: Role.USER,
+      access: [Access.CHOOSE_SUPPLIER],
+      departmentName: 'Direction Commerciale Marketing',
+      matriculation: '26284',
+      jobTitle: 'Agent Commerciale',
+    },
+
   ];
 
   for (const userData of usersData) {
@@ -186,9 +251,10 @@ async function main() {
         name: userData.name,
         email: userData.email,
         matriculation: userData.matriculation,
-        phoneNumber: '+221123456789', // Placeholder phone number
+        phoneNumber: '+221-123456789', // Placeholder phone number
         userId: user.id,
         currentDepartmentId: department.id,
+        jobTitle: userData.jobTitle,
       },
     });
 

@@ -63,7 +63,7 @@ export function PieChartCard() {
     const year = currentDate.getFullYear()
 
   return (
-    <Card className="rounded-2xl">
+    <Card className="rounded-2x">
       <CardHeader className="items-center pb-0">
         <CardTitle>Mon Activité</CardTitle>
         <CardDescription className="capitalize">{`${month} ${year}`}</CardDescription>

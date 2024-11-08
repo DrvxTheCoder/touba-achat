@@ -1,10 +1,10 @@
-import { EDBStatus, ODMStatus, NotificationType } from '@prisma/client';
+import { EDBStatus, ODMStatus, NotificationType, EDBEventType, StockEDBStatus } from '@prisma/client';
 
 type EntityContext = {
   id: string;
-  status: EDBStatus | ODMStatus;
+  status: EDBStatus | ODMStatus | StockEDBStatus;
   actionInitiator: string;
-  entityType: 'EDB' | 'ODM';
+  entityType: 'EDB' | 'ODM' | 'STOCK';
 };
 
 const translateStatus = (status: string): string => {
@@ -36,8 +36,10 @@ export function generateNotificationMessage(
 ): { subject: string; body: string } {
   if (context.entityType === 'EDB') {
     return generateEDBNotificationMessage(context);
-  } else {
+  } else if (context.entityType === 'ODM') {
     return generateODMNotificationMessage(context);
+  } else {
+    return generateStockEDBMessage(context);
   }
 }
 
@@ -57,7 +59,7 @@ function generateEDBNotificationMessage(
       body = `L'état de besoin (${id}) a été approuvé par le service (${actionInitiator}) et nécessite l'approbation de la direction.`;
       break;
     case 'APPROVED_DIRECTEUR':
-      body = `L'état de besoin (${id}) a été approuvé par la direction ${actionInitiator} et passe à l'étape suivante: Traitement par le service d'achat.`;
+      body = `L'état de besoin (${id}) a été approuvé par la direction (${actionInitiator}) et passe à l'étape suivante: Traitement par le service d'achat.`;
       break;
     case 'ESCALATED':
       subject = `EDB (${id}) escaladé à la Direction Générale`;
@@ -144,4 +146,30 @@ function generateODMNotificationMessage(
   }
 
   return { subject, body };
+}
+
+function generateStockEDBMessage(
+  context: EntityContext
+): { subject: string, body: string} {
+  const { id, status, actionInitiator } = context;
+  let subject = `Mise à jour de l'EDB (${id}) - (Stock)`;
+  let body = '';
+
+  switch (status){
+    case 'SUBMITTED':
+      subject = `Nouvel EDB (${id}) créé - (Stock)`;
+      body = `Un nouvel état de besoin (${id}) - (stock) a été créé par ${actionInitiator}.`;
+      break;
+    case 'DELIVERED':
+      subject = `Articles de l'EDB livrés`;
+      body = `L'état de besoin (${id}) - (stock) a été marqué comme livré par le Service d'Achat - ${actionInitiator}.`;
+      break;
+    case 'CONVERTED':
+      subject = `Conversion de l'EDB`;
+      body = `L'état de besoin (${id}) - (stock) a été converti en état de besoin standard par le Service d'Achat et suivra désormais le processus de validation. - ${actionInitiator}`;
+      break;
+
+  }
+
+  return { subject, body}
 }

@@ -16,8 +16,9 @@ import { Toaster } from 'sonner';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Touba Service Achat',
-  description: 'L\'application Web Officiel du Service d\'Achat Touba Oil',
+  title: 'ToubaApp™',
+  description: 'L\'application Web Officiel de Touba Oil SAU',
+  
 };
 
 export default async function RootLayout({

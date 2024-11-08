@@ -65,7 +65,7 @@ import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 import DashboardMetrics from "./components/DashboardCards";
 import { PieChartCard } from "./components/Piechart";
 import { AreaChartCard } from "./components/AreaChart";
-import { QuickViewTabs } from "./components/FormTabs";
+import { QuickViewTabs } from "./components/QuickViewTableTabs";
 
 
 export default function Dashboard() {
@@ -109,7 +109,7 @@ export default function Dashboard() {
     <ContentLayout title="Accueil">
     <DynamicBreadcrumbs />
 
-    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <main className="flex flex-1 flex-col gap-4 p-4 pb-16 md:gap-8 md:p-8">
     <DashboardMetrics />
     <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">   
       {/* <Card className="col-span-2 rounded-2xl">
@@ -169,8 +169,14 @@ export default function Dashboard() {
           </CardContent>
       </Card> */}
       <QuickViewTabs />
-      <PieChartCard />
-      <AreaChartCard />
+      <div className="col-span-2 md:col-span-1">
+        <PieChartCard />
+      </div>
+      <div className="col-span-2 md:col-span-1">
+        <AreaChartCard />
+      </div>
+
+      
 
     </div>
   </main>

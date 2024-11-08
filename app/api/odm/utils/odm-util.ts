@@ -1,5 +1,5 @@
 // odm/utils/odm-util.ts
-import { PrismaClient, ODMEventType, OrdreDeMission, Prisma, ODMStatus, NotificationType } from '@prisma/client';
+import { PrismaClient, ODMEventType, OrdreDeMission, Prisma, ODMStatus, NotificationType, Access } from '@prisma/client';
 import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
 import {  getODMEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
@@ -95,7 +95,7 @@ export async function createODM(
 
   // Determine initial status based on the user's role
   let initialStatus: ODMStatus = 'SUBMITTED';
-  if (user.role === 'DIRECTEUR' || user.role === 'DIRECTEUR_GENERAL') {
+  if (user.role === 'DIRECTEUR' || user.role === 'DIRECTEUR_GENERAL' || user.access.includes('APPROVE_ODM' as Access)) {
     initialStatus = 'AWAITING_RH_PROCESSING';
   }
 

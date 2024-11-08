@@ -149,6 +149,7 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
             <div className="flex flex-row gap-2 items-center">
               <Input
                 id="missionCostPerDay"
+                required
                 type="number"
                 value={missionCostPerDay}
                 onChange={(e) => setMissionCostPerDay(Number(e.target.value))}
@@ -170,6 +171,7 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
                     <text className="min-w-[150px]">{person.name}</text>
                     <Select
                       value={person.category}
+                      required
                       onValueChange={(value: ODMPersonCategory) => 
                         handlePersonCategoryChange(index, value)
                       }
@@ -212,6 +214,7 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
                 <Select
                   value={item.type}
                   onValueChange={(value) => handleExpenseTypeChange(value, index)}
+                  required
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Type de dépense" />
@@ -226,6 +229,7 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
                   <Input
                     placeholder="Précisez le type"
                     value={item.customType || ''}
+                    required
                     onChange={(e) => {
                       const newItems = [...expenseItems];
                       newItems[index].customType = e.target.value;
@@ -236,6 +240,7 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
                 <Input
                   type="number"
                   placeholder="Montant"
+                  required
                   value={item.amount}
                   onChange={(e) => {
                     const newItems = [...expenseItems];

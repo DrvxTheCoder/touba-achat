@@ -67,11 +67,11 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({
         onClick={() => onClick(stockEdb)} 
         className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}
       >
-        <TableCell>{stockEdb.edbId}</TableCell>
-        <TableCell className="hidden sm:table-cell">{getEmployeeName()}</TableCell>
-        <TableCell className="hidden sm:table-cell">{stockEdb.category.name}</TableCell>
-        <TableCell className="hidden sm:table-cell">{totalItems} article(s)</TableCell>
-        <TableCell className="hidden sm:table-cell text-right">
+        <TableCell className="text-xs md:text-base">{stockEdb.edbId}</TableCell>
+        <TableCell className="text-xs md:text-base sm:table-cell">{getEmployeeName()}</TableCell>
+        <TableCell className="text-xs md:text-base hidden sm:table-cell">{stockEdb.category.name}</TableCell>
+        <TableCell className="text-xs md:text-base hidden sm:table-cell">{totalItems} article(s)</TableCell>
+        <TableCell className="text-xs md:text-base sm:table-cell text-right">
           {format(new Date(stockEdb.createdAt), "dd/MM/yyyy", { locale: fr })}
         </TableCell>
       </TableRow>

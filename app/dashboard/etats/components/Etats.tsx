@@ -22,7 +22,8 @@ import {
   UserCheck,
   TruckIcon,
   Store,
-  StoreIcon
+  StoreIcon,
+  WarehouseIcon
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -719,18 +720,24 @@ export default function Etats() {
   return (
     <>
       <title>États de Besoins - Touba App™</title>
-      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
+      <main className="flex flex-1 flex-col gap-4 px-4 pb-12 md:gap-4 md:px-6">
         <div>
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins</h2>
+                <h2 className="text-base md:text-3xl font-bold tracking-tight">États de Besoins (Standard)</h2>
                 <div className="flex items-center space-x-2">
                   {session?.user.role === 'ADMIN' && (
                     <CategoriesDialog />
                   )} 
                   
-                  <Link href="/etats-de-besoin"><Button variant="outline"><text className="hidden md:block mr-2">Mes EDBs (Stock)</text> <StoreIcon className="h-4 w-4"/></Button></Link>
                   <Link href="/dashboard/etats/nouveau"><Button variant="outline"><text className="hidden md:block mr-2">Nouveau (Standard)</text> <PlusCircle className="h-4 w-4"/></Button></Link>
-                  {(permissions.canHandleStock || permissions.isAdmin) && (<Link href="/dashboard/etats/stock"><Button variant="outline">{"EDB (Stock)"} <Store className="ml-2 h-4 w-4"/></Button></Link>)}
+                  {(permissions.canHandleStock || permissions.isAdmin) && (
+                    <Link href="/dashboard/etats/stock">
+                      <Button variant="outline">
+                        <text className="hidden md:block mr-2">{"EDB (Stock)"}</text> 
+                        <WarehouseIcon className="h-4 w-4"/>
+                      </Button>
+                    </Link>
+                  )}
                 </div>
             </div>
         </div>

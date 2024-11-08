@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import StockEdbDialog from "../components/StockEDBForm";
 import { ContentLayout } from "@/components/user-panel/content-layout";
 import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
+import ResponsiveStockEdbDialog from "../components/ResponsiveStockEDBForm";
 
 type Category = {
     id: number;
@@ -79,7 +80,7 @@ export default function StockEDBPage() {
     const [departments, setDepartments] = useState<Department[]>([]);
 
   // Check if user has required role
-  const hasAccess = session?.user?.role && ['ADMIN', 'MAGASINIER'].includes(session.user.role);
+  const hasAccess = session?.user?.role && ['ADMIN', 'MAGASINIER', 'DIRECTEUR_GENERAL'].includes(session.user.role);
 
   useEffect(() => {
     if (!hasAccess) return;
@@ -201,7 +202,8 @@ export default function StockEDBPage() {
   return (
     <ContentLayout title="Articles en Stock">
       <DynamicBreadcrumbs />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 pb-20 md:px-8">
+        <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins (Stock)</h2>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Input 
@@ -213,8 +215,8 @@ export default function StockEDBPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-10">
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  Catégories
+                  <ListFilter className="h-4 w-4" />
+                  <text className="hidden md:block mr-2">Catégories</text>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -232,7 +234,7 @@ export default function StockEDBPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <StockEdbDialog 
+          <ResponsiveStockEdbDialog 
             categories={categories}
             departments={departments}
             onSubmit={handleStockEdbSubmit}
@@ -244,13 +246,13 @@ export default function StockEDBPage() {
             <Card>
               <CardContent className="pt-5">
                 <Table>
-                  <TableHeader className="bg-muted">
+                  <TableHeader className="bg-muted rounded-lg">
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead className="hidden sm:table-cell">Employé</TableHead>
+                      <TableHead className="sm:table-cell">Employé</TableHead>
                       <TableHead className="hidden sm:table-cell">Catégorie</TableHead>
                       <TableHead className="hidden sm:table-cell">Quantité</TableHead>
-                      <TableHead className="hidden sm:table-cell text-right">Date</TableHead>
+                      <TableHead className="sm:table-cell text-right rounded-l-md">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

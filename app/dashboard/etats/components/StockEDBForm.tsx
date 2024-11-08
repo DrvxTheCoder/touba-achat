@@ -226,7 +226,7 @@ export default function StockEdbDialog({
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Package2 className="w-4 h-4" />
-          Nouveau
+          <text className="hidden md:block">Nouveau</text>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">

@@ -25,6 +25,7 @@ import { ActionConfirmationDialog } from "./ConfirmationDialog";
 import { StockEDB } from '../types/stock-edb';
 import { Badge } from '@/components/ui/badge';
 import { EDBEventType, EDBStatus } from '@/app/(utilisateur)/etats-de-besoin/data/types';
+import Link from 'next/link';
 
 interface StockEDBDetailsProps {
   stockEdb: {
@@ -261,7 +262,7 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
       {isConverted && stockEdb.convertedEdb && (
         <CardFooter className="border-t bg-muted/50 px-6 py-3">
           <div className="text-xs text-muted-foreground flex items-center justify-between w-full">
-            <span>#{stockEdb.convertedEdb.edbId} {"(Standard)"}</span>
+            <span className="hover:underline"><Link href={`/dashboard/etats/${stockEdb.convertedEdb.edbId}`}>#{stockEdb.convertedEdb.edbId} {"(Standard)"}</Link></span>
             <StatusBadge status={stockEdb.convertedEdb.status} />
           </div>
         </CardFooter>

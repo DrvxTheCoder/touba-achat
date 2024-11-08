@@ -1,4 +1,4 @@
-import { PrismaClient, EDBStatus, ODMStatus, NotificationType, Role, EDBEventType, ODMEventType, Access } from '@prisma/client';
+import { PrismaClient, EDBStatus, ODMStatus, NotificationType, Role, EDBEventType, ODMEventType, Access, StockEDBStatus } from '@prisma/client';
 import { generateNotificationMessage } from './notificationMessage';
 
 const prisma = new PrismaClient();
@@ -40,7 +40,7 @@ export function getODMEventTypeFromStatus(status: ODMStatus): ODMEventType {
   }
 }
 
-export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus, entityType: 'EDB' | 'ODM'): NotificationType {
+export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus | StockEDBStatus, entityType: 'EDB' | 'ODM' | 'STOCK'): NotificationType {
   if (entityType === 'EDB') {
     switch (status) {
       case 'SUBMITTED':
@@ -57,6 +57,18 @@ export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus, ent
         return NotificationType.EDB_APPROVED_DG;
       case 'REJECTED':
         return NotificationType.EDB_REJECTED;
+      default:
+        return NotificationType.EDB_UPDATED;
+    }
+  }
+  else if (entityType === 'STOCK'){
+    switch (status) {
+      case 'SUBMITTED':
+        return NotificationType.EDB_CREATED;
+      case 'DELIVERED':
+        return NotificationType.EDB_DELIVERED;
+      case 'CONVERTED':
+        return NotificationType.EDB_CONVERTED
       default:
         return NotificationType.EDB_UPDATED;
     }
@@ -82,9 +94,9 @@ export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus, ent
 
 export async function determineRecipients(
   entity: any,
-  newStatus: EDBStatus | ODMStatus,
+  newStatus: EDBStatus | ODMStatus | StockEDBStatus,
   actorId: number,
-  entityType: 'EDB' | 'ODM'
+  entityType: 'EDB' | 'ODM' | 'STOCK'
 ): Promise<number[]> {
   const recipients = new Set<number>();
 
@@ -201,7 +213,7 @@ export async function determineRecipients(
       switch (newStatus) {
         case 'SUBMITTED':
           if (user.employee?.currentDepartmentId === entity.departmentId && 
-              (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR')) {
+              (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR' || user.role === 'DIRECTEUR_GENERAL')) {
             recipients.add(user.id);
           }
           break;
@@ -233,6 +245,19 @@ export async function determineRecipients(
           }
           break;
       }
+    } else if (entityType === 'STOCK') {
+      switch (newStatus){
+        case 'SUBMITTED':
+        case 'DELIVERED':
+          if (user.role === 'MAGASINIER') {
+            recipients.add(user.id);
+          }
+        case 'CONVERTED':
+          if (user.employee?.currentDepartmentId === entity.departmentId && 
+            (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR' || user.role === 'DIRECTEUR_GENERAL')) {
+          recipients.add(user.id);
+        }
+      }
     } else {
       switch (newStatus) {
         case 'SUBMITTED':
@@ -256,8 +281,8 @@ export async function determineRecipients(
 
 export async function createNotification(
   entityId: string,
-  entityType: 'EDB' | 'ODM',
-  newStatus: EDBStatus | ODMStatus,
+  entityType: 'EDB' | 'ODM' | 'STOCK',
+  newStatus: EDBStatus | ODMStatus | StockEDBStatus,
   actorId: number,
   actionInitiator: string
 ) {
@@ -268,6 +293,12 @@ export async function createNotification(
     entity = await prisma.etatDeBesoin.findUnique({ 
       where: { edbId: entityId },
       select: { id: true, creatorId: true, departmentId: true }
+    });
+    numericEntityId = entity?.id;
+  } else if (entityType === 'STOCK'){
+    entity = await prisma.stockEtatDeBesoin.findUnique({ 
+      where: { edbId: entityId },
+      select: { id: true, employeeId: true, departmentId: true }
     });
     numericEntityId = entity?.id;
   } else {

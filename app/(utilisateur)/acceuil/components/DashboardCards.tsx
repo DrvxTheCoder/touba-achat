@@ -247,7 +247,7 @@ const DashboardMetrics = () => {
           <MetricCard
             title="Total EDBs (Stock)"
             value={metrics.stockEdbs.total}
-            description={`${metrics.stockEdbs.percentageChange}% sur le mois dernier`}
+            description={`${Math.ceil(metrics.stockEdbs.percentageChange)}% sur le mois dernier`}
             icon={<Store className="h-8 w-8 text-muted-foreground" />}
             action={<Link href={'/etats-de-besoin'}><Button variant={"outline"} className="h-8"> Gerer </Button></Link>}
           />
@@ -260,7 +260,7 @@ const DashboardMetrics = () => {
           <MetricCard
             title="ODMs Actifs"
             value={metrics.activeOdms.total}
-            description={`${metrics.activeOdms.percentageChange}% sur le mois dernier`}
+            description={`${Math.ceil(metrics.activeOdms.percentageChange)}% sur le mois dernier`}
             icon={<LuggageIcon className="h-8 w-8 text-muted-foreground" />}
             action={<Link href={'/dashboard/odm'}><Button variant={"outline"} className="h-8"> Gerer </Button></Link>}
           />

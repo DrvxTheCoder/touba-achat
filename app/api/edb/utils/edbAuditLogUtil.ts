@@ -1,5 +1,5 @@
 // edb/utils/edbAuditLogUtil.ts
-import { PrismaClient, EDBEventType, EtatDeBesoin, Prisma, EDBStatus, AttachmentType, NotificationType, Access } from '@prisma/client';
+import { PrismaClient, EDBEventType, EtatDeBesoin, Prisma, EDBStatus, AttachmentType, NotificationType, Access, StockEtatDeBesoin } from '@prisma/client';
 import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
 import {  getNotificationTypeFromStatus, determineRecipients, getEventTypeFromStatus } from '@/app/api/utils/notificationsUtil';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
@@ -41,18 +41,18 @@ export async function sendEDBNotification(
   userId: number,
   additionalData?: Record<string, any>
 ): Promise<void> {
-  const recipients = await determineRecipients(edb, edb.status, userId, 'EDB');
+  const recipients = await determineRecipients(edb, edb.status, userId, 'STOCK');
   const userName = await getUserName(userId);
   const { subject, body } = generateNotificationMessage({
     id: edb.edbId,
     status: edb.status,
     actionInitiator: userName,
-    entityType: 'EDB'
+    entityType: 'STOCK'
   });
 
   const notificationPayload: NotificationPayload = {
     entityId: edb.edbId,
-    entityType: 'EDB',
+    entityType: 'STOCK',
     newStatus: edb.status,
     actorId: userId,
     actionInitiator: userName,

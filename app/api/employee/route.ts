@@ -156,6 +156,7 @@ export async function PUT(request: NextRequest) {
       data: {
         name: updateData.name,
         email: updateData.email,
+        role: updateData.role,
         status: updateData.status, // Update the status if needed
         access: updateData.access
         // Add any other fields that can be updated

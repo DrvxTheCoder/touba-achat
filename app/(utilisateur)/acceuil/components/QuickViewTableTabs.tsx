@@ -72,8 +72,8 @@ export function QuickViewTabs() {
       <TabsContent value="edb">
       <Card className="rounded-2xl">
           <CardHeader className="flex flex-row items-center">
-              <CardDescription>
-              Vos états de besoins les plus recent.
+              <CardDescription className="text-xs md:text-sm">
+              Vos états de besoins (standard) les plus récents.
               </CardDescription>
           <Button asChild size="sm" className="ml-auto gap-1" variant="outline">
               <Link href="/etats-de-besoin">
