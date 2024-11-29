@@ -570,7 +570,7 @@ export async function finalApproveEDB(
 export async function rejectEDB(
   edbId: number,
   userId: number,
-  reason: string
+  reason?: string
 ): Promise<EtatDeBesoin> {
   const updatedEDB = await prisma.etatDeBesoin.update({
     where: { id: edbId },

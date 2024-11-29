@@ -139,7 +139,7 @@ function generateODMNotificationMessage(
       break;
     case 'REJECTED':
       subject = `ODM (${id}) rejeté`;
-      body = `L'ODM (${id}) a été rejeté par ${actionInitiator}.`;
+      body = `L'ordre de mission (${id}) a été rejeté par ${actionInitiator}.`;
       break;
     default:
       body = `Une mise à jour a été effectuée sur l'ODM (${id}) par ${actionInitiator}. Nouveau statut : ${status}`;

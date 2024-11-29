@@ -100,36 +100,36 @@ export async function sendNotification(payload: NotificationPayload) {
     }
 
     // Send email notifications
-    for (const recipient of notification.recipients) {
-      try {
-        const emailHtml = await render(
-          ToubaOilNotificationEmail({
-            recipientName: recipient.user.name,
-            recipientEmail: recipient.user.email,
-            actionType: newStatus,
-            actionInitiator: actionInitiator,
-            entityType: entityType,
-            entityId: entityId,
-            actionLink: `${baseUrl}/dashboard/${getPageNameFromEntityType(entityType)}/${entityId}`,
-            notificationDetails: body
-          })
-        )
+    // for (const recipient of notification.recipients) {
+    //   try {
+    //     const emailHtml = await render(
+    //       ToubaOilNotificationEmail({
+    //         recipientName: recipient.user.name,
+    //         recipientEmail: recipient.user.email,
+    //         actionType: newStatus,
+    //         actionInitiator: actionInitiator,
+    //         entityType: entityType,
+    //         entityId: entityId,
+    //         actionLink: `${baseUrl}/dashboard/${getPageNameFromEntityType(entityType)}/${entityId}`,
+    //         notificationDetails: body
+    //       })
+    //     )
 
-        const emailResult = await sendEmail(recipient.user.email, subject, emailHtml)
+    //     const emailResult = await sendEmail(recipient.user.email, subject, emailHtml)
 
-        if (emailResult.success) {
-          console.log(`Email sent successfully to ${recipient.user.email}`);
-          await prisma.notificationRecipient.update({
-            where: { id: recipient.id },
-            data: { emailSent: true }
-          })
-        } else {
-          console.error(`Failed to send email to ${recipient.user.email}:`, emailResult.error);
-        }
-      } catch (emailError) {
-        console.error(`Error processing email for ${recipient.user.email}:`, emailError);
-      }
-    }
+    //     if (emailResult.success) {
+    //       console.log(`Email sent successfully to ${recipient.user.email}`);
+    //       await prisma.notificationRecipient.update({
+    //         where: { id: recipient.id },
+    //         data: { emailSent: true }
+    //       })
+    //     } else {
+    //       console.error(`Failed to send email to ${recipient.user.email}:`, emailResult.error);
+    //     }
+    //   } catch (emailError) {
+    //     console.error(`Error processing email for ${recipient.user.email}:`, emailError);
+    //   }
+    // }
 
     // Send email notification to test email
       // const testRecipientEmail = 'flanpaul19@gmail.com'; // Your test email address

@@ -7,6 +7,17 @@ import generateODMId from './odm-id-generator';
 
 const prisma = new PrismaClient();
 
+interface ProcessingData {
+  missionCostPerDay: number;
+  expenseItems: { type: string; amount: number; description?: string }[];
+  totalCost: number;
+  accompanyingPersons?: {
+    name: string;
+    category: string;
+    costPerDay: number;
+  }[];
+}
+
 async function getUserName(userId: number): Promise<string> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -334,27 +345,30 @@ export async function processODMByRH(
 export async function editODMProcessing(
   odmId: number,
   userId: number,
-  processingData: {
-    missionCostPerDay: number,
-    expenseItems: { type: string; amount: number; description?: string }[];
-    totalCost: number;
-  }
+  processingData: ProcessingData
 ): Promise<OrdreDeMission> {
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
     data: {
-      missionCostPerDay : processingData.missionCostPerDay, 
+      missionCostPerDay: processingData.missionCostPerDay, 
       totalCost: processingData.totalCost,
-      expenseItems: processingData.expenseItems as any // Prisma will handle JSON conversion
+      expenseItems: processingData.expenseItems as any,
+      accompanyingPersons: processingData.accompanyingPersons as any
     },
-    include: { department: true }
+    include: { 
+      department: true,
+      auditLogs: true
+    }
   });
 
   await logODMEvent(
     odmId,
     userId,
     ODMEventType.UPDATED,
-    { totalCost: processingData.totalCost }
+    { 
+      totalCost: processingData.totalCost,
+      accompanyingPersons: processingData.accompanyingPersons // Log the changes
+    }
   );
 
   return updatedODM;

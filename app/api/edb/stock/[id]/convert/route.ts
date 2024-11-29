@@ -18,7 +18,7 @@ export async function POST(
       );
     }
 
-    if (session.user.role !== 'MAGASINIER') {
+    if (!['MAGASINIER','ADMIN'].includes(session.user.role)) {
       return NextResponse.json(
         { error: 'Non autorisé' },
         { status: 403 }

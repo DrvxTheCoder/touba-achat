@@ -224,8 +224,7 @@ const DashboardMetrics = () => {
             title="EDBs Convertis"
             value={metrics.standardEdbs.total}
             description="EDBs (stock) convertis"
-            icon={<RefreshCcw className="h-8 w-8 text-muted-foreground" />}
-            
+            icon={<RefreshCcw className="h-8 w-8 text-muted-foreground" />} 
           />
           <CardActionButton 
             title="Creer un EDB (Stock)"
@@ -249,7 +248,7 @@ const DashboardMetrics = () => {
             value={metrics.stockEdbs.total}
             description={`${Math.ceil(metrics.stockEdbs.percentageChange)}% sur le mois dernier`}
             icon={<Store className="h-8 w-8 text-muted-foreground" />}
-            action={<Link href={'/etats-de-besoin'}><Button variant={"outline"} className="h-8"> Gerer </Button></Link>}
+            action={<Link href={'/dashboard/etats/stock'}><Button variant={"outline"} className="h-8"> Gerer </Button></Link>}
           />
           <MetricCard
             title="Total EDBs (Standard)"

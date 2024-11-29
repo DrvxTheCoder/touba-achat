@@ -12,6 +12,7 @@ import useDebounce from '@/hooks/use-debounce';
 import { SpinnerCircular } from 'spinners-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from 'xlsx';
+import { translateStatus } from '@/app/utils/translate-status';
 
 
 interface ODM {
@@ -71,7 +72,8 @@ export const ODMDataTable: React.FC = () => {
     const exportData = odms.map(odm => ({
         'ID': odm.odmId,
         'Titre': odm.title,
-        'Statut': odm.status,
+        'Auteur': odm.creator.name,
+        'Statut': translateStatus(odm.status),
         'Période': `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`,
         'Frais': odm.totalCost ? `${odm.totalCost.toLocaleString('fr-FR')} XOF` : 'N/A'
     }));
