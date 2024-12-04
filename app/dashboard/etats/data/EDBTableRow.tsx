@@ -17,6 +17,7 @@ interface EDBTableRowProps {
 export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSelected }) => {
   const displayId = edb.edbId || edb.id;
   const displayEmail = edb.employee?.email || edb.email || 'N/A';
+  const displayName = edb.employee?.name || edb.creator?.name || 'N/A';
   const displayAmount = (edb.finalSupplier?.amount || 0).toLocaleString('fr-FR');
 
   return (
@@ -27,7 +28,7 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
       <TableCell>
         <div className="text-xs md:font-medium"># {displayId}</div>
         <div className="hidden text-xs text-muted-foreground md:inline">
-          {displayEmail}
+          {displayName}
         </div>
       </TableCell>
       <TableCell className="hidden sm:table-cell">{edb.category}</TableCell>

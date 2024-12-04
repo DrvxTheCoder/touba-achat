@@ -126,7 +126,18 @@ export const ODMEditProcessingDialog: React.FC<ODMEditProcessingDialogProps> = (
         index === personIndex ? {
           ...person,
           category: newCategory,
-          costPerDay: ODM_DAILY_RATES[newCategory]
+          costPerDay: person.costPerDay || ODM_DAILY_RATES[newCategory] // Keep existing cost if present
+        } : person
+      )
+    );
+  };
+
+  const handleCostPerDayChange = (personIndex: number, newCostPerDay: number) => {
+    setAccompanyingPersons(prevPersons =>
+      prevPersons.map((person, index) =>
+        index === personIndex ? {
+          ...person,
+          costPerDay: newCostPerDay
         } : person
       )
     );
@@ -220,33 +231,33 @@ export const ODMEditProcessingDialog: React.FC<ODMEditProcessingDialogProps> = (
                   <div key={index} className="flex flex-col gap-2 p-1">
                     <text className="w-fit">{person.name}</text>
                     <div className="flex flex-row items-center gap-2">
-                    <Select
-                      value={person.category}
-                      onValueChange={(value: ODMPersonCategory) => 
-                        handlePersonCategoryChange(index, value)
-                      }
-                    >
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(ODM_CATEGORY_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            <text className="text-sm"> 
-                              {label}
-                            </text>
-                            {/* <span className="ml-2 text-muted-foreground">
-                              ({ODM_DAILY_RATES[value as ODMPersonCategory].toLocaleString('fr-FR')} F/jour)
-                            </span> */}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <text className="text-xs text-muted-foreground">
-                      = {(days * person.costPerDay).toLocaleString('fr-FR')} F CFA ({ODM_DAILY_RATES[person.category as ODMPersonCategory].toLocaleString('fr-FR')} F/jour)
-                    </text>
+                      <Select
+                        value={person.category}
+                        onValueChange={(value: ODMPersonCategory) => 
+                          handlePersonCategoryChange(index, value)
+                        }
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(ODM_CATEGORY_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              <text className="text-sm">{label}</text>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        value={person.costPerDay}
+                        onChange={(e) => handleCostPerDayChange(index, Number(e.target.value))}
+                        className="w-32"
+                      />
+                      <text className="text-xs text-muted-foreground">
+                        x {days} = {(days * person.costPerDay).toLocaleString('fr-FR')} F CFA
+                      </text>
                     </div>
-
                   </div>
                 ))}
               </ScrollArea>

@@ -30,11 +30,14 @@ import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { SpinnerCircular } from "spinners-react"
 import { EDBTableRow } from "../../etats-de-besoin/components/EDBTableRow"
+import { StockEDBTableRow, StockEDB } from "../../etats-de-besoin/components/StockEDBTableRow"
+
 
 export function QuickViewTabs() {
     const { data: session } = useSession();
     const [edbs, setEdbs] = useState<EDB[]>([]);
-    const [stockEdbs, setStockEdbs] = useState<EDB[]>([]);
+    const [stockEdbs, setStockEdbs] = useState<StockEDB[]>([]);
+    const [selectedStockEDB, setSelectedStockEDB] = useState<StockEDB | null>(null);
     const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -83,10 +86,17 @@ export function QuickViewTabs() {
               États de besoins (stock)
               </CardDescription>
           <Button asChild size="sm" className="ml-auto gap-1" variant="outline">
-              <Link href="/dashboard/etats-de-besoin">
+            {(session?.user.role === 'MAGASINIER' || session?.user.role === 'ADMIN') ? (
+                <Link href="/dashboard/etats/stock">
+                  Voir tout
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+            ) : (
+              <Link href="/etats-de-besoin">
               Voir tout
               <ArrowUpRight className="h-4 w-4" />
-              </Link>
+            </Link>
+            ) }
           </Button>
           </CardHeader>
           <CardContent>
@@ -103,12 +113,12 @@ export function QuickViewTabs() {
                 Statut
                 </TableHead>
                 <TableHead className="hidden sm:table-cell text-right rounded-r-lg">
-                Montant (XOF)
+                Articles
                 </TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-            {isLoading ? (
+                {isLoading ? (
                 <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
                     <div className="flex justify-center items-center h-24">
@@ -117,15 +127,20 @@ export function QuickViewTabs() {
                     </TableCell>
                 </TableRow>
                 ) : stockEdbs.length === 0 ? (
-                <TableRow>
-                    <TableCell colSpan={6} className="text-center">Aucun état de besoin trouvé.</TableCell>
-                </TableRow>
+                  <TableRow>
+                  <TableCell colSpan={6} className="text-center">Aucun état de besoin trouvé.</TableCell>
+              </TableRow>
                 ) : (
-                stockEdbs.map((edb) => (
-                    <EDBTableRow key={edb.id} edb={edb} onClick={() => setSelectedEDB(edb)} isSelected={selectedEDB?.id === edb.id} />
-                ))
+                  stockEdbs.map((edb) => (
+                    <StockEDBTableRow
+                      key={edb.id}
+                      edb={edb}
+                      onClick={() => setSelectedStockEDB(edb)}
+                      isSelected={selectedStockEDB?.id === edb.id}
+                    />
+                  ))
                 )}
-            </TableBody>
+              </TableBody>
             </Table>
           </CardContent>
       </Card>

@@ -214,7 +214,7 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
           <Text style={styles.title}>ORDRE DE MISSION</Text>
           <Text style={styles.text}>ID : {odm.odmId}</Text>
           <Text style={styles.text}>
-            Nous soussignés, <Text style={styles.boldText}>TOUBA OIL SAU</Text>, autorisons {odm.creator.name} - {odm.creator.jobTitle}, à se
+            Nous soussignés, <Text style={styles.boldText}>TOUBA OIL SAU</Text>, autorisons {odm.creator.name} {odm.creator.jobTitle}, à se
             rendre à {odm.location}, le {new Date(odm.startDate).toLocaleDateString('fr-FR')} pour la raison suivante: {odm.title}.
           </Text>
           {/* <Text style={styles.text}>Utilisateur: {odm.creator.name}</Text>

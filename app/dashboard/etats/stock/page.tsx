@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListFilter, Package2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SpinnerCircular } from "spinners-react";
@@ -21,6 +21,7 @@ import StockEdbDialog from "../components/StockEDBForm";
 import { ContentLayout } from "@/components/user-panel/content-layout";
 import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 import ResponsiveStockEdbDialog from "../components/ResponsiveStockEDBForm";
+import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
 
 type Category = {
     id: number;
@@ -203,7 +204,19 @@ export default function StockEDBPage() {
     <ContentLayout title="Articles en Stock">
       <DynamicBreadcrumbs />
       <main className="flex flex-1 flex-col gap-4 p-4 pb-20 md:px-8">
+      <div className="flex items-center justify-between space-y-2">
         <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins (Stock)</h2>
+        <div className="flex items-center space-x-2">
+        <Link href="/dashboard/etats"><Button variant="outline"><text className="hidden md:block mr-2">EDB (Standard)</text> <OpenInNewWindowIcon className="h-4 w-4"/></Button></Link>
+        <ResponsiveStockEdbDialog 
+            categories={categories}
+            departments={departments}
+            onSubmit={handleStockEdbSubmit}
+          />
+        </div>
+        
+      </div>
+        
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Input 
@@ -234,11 +247,6 @@ export default function StockEDBPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <ResponsiveStockEdbDialog 
-            categories={categories}
-            departments={departments}
-            onSubmit={handleStockEdbSubmit}
-          />
         </div>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">

@@ -728,16 +728,16 @@ export default function Etats() {
                   {session?.user.role === 'ADMIN' && (
                     <CategoriesDialog />
                   )} 
-                  
-                  <Link href="/dashboard/etats/nouveau"><Button variant="outline"><text className="hidden md:block mr-2">Nouveau (Standard)</text> <PlusCircle className="h-4 w-4"/></Button></Link>
                   {(permissions.canHandleStock || permissions.isAdmin) && (
                     <Link href="/dashboard/etats/stock">
                       <Button variant="outline">
                         <text className="hidden md:block mr-2">{"EDB (Stock)"}</text> 
-                        <WarehouseIcon className="h-4 w-4"/>
+                        <OpenInNewWindowIcon className="h-4 w-4"/>
                       </Button>
                     </Link>
                   )}
+                  <Link href="/dashboard/etats/nouveau"><Button variant="outline"><text className="hidden md:block mr-2">Nouveau (Standard)</text> <PlusCircle className="h-4 w-4"/></Button></Link>
+                  
                 </div>
             </div>
         </div>
