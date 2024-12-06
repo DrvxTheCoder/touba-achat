@@ -54,7 +54,7 @@ export function AccompanyingPersonsFieldArray({
                     );
                   }}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-48">
                     <SelectValue placeholder="Catégorie" />
                   </SelectTrigger>
                   <SelectContent>

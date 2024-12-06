@@ -3,7 +3,9 @@ export enum ODMPersonCategory {
     DIRECTOR = "DIRECTOR",
     TEAM_MANAGER = "TEAM_MANAGER",
     FIELD_AGENT = "FIELD_AGENT",
-    FREELANCER = "FREELANCER"
+    FREELANCER = "FREELANCER",
+    DRIVER = "DRIVER",
+    OTHER = "OTHER",
   }
   
   export const ODM_CATEGORY_LABELS: Record<ODMPersonCategory, string> = {
@@ -11,6 +13,8 @@ export enum ODMPersonCategory {
     [ODMPersonCategory.TEAM_MANAGER]: "Responsable",
     [ODMPersonCategory.FIELD_AGENT]: "Agent / Assistant",
     [ODMPersonCategory.FREELANCER]: "Prestataire",
+    [ODMPersonCategory.DRIVER]: "Chauffeur",
+    [ODMPersonCategory.OTHER]: "Collaborateur",
   };
   
   export const ODM_DAILY_RATES: Record<ODMPersonCategory, number> = {
@@ -18,6 +22,8 @@ export enum ODMPersonCategory {
     [ODMPersonCategory.TEAM_MANAGER]: 20000,
     [ODMPersonCategory.FIELD_AGENT]: 15000,
     [ODMPersonCategory.FREELANCER]: 10000,
+    [ODMPersonCategory.DRIVER]: 5000,
+    [ODMPersonCategory.OTHER]: 5000,
   };
   
   export interface AccompanyingPerson {

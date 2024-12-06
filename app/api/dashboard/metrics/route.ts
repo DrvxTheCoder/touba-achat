@@ -2,20 +2,27 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/auth-options';
 import prisma from '@/lib/prisma';
-import { Role, StockEDBStatus, EDBStatus, ODMStatus } from '@prisma/client';
+import { Role, StockEDBStatus, EDBStatus, ODMStatus, UserStatus, EmployeeStatus } from '@prisma/client';
 
 type DashboardMetrics = {
   stockEdbs: {
     total: number;
     percentageChange: number;
+    pendingCount?: number; // For MAGASINIER
   };
   standardEdbs: {
     total: number;
     percentageChange: number;
+    processedCount?: number; // For MAGASINIER
   };
   activeOdms: {
     total: number;
     percentageChange: number;
+  };
+  system?: {
+    activeUsers: number;
+    totalDepartments: number;
+    totalEdbs: number;
   };
 };
 
@@ -87,25 +94,25 @@ export async function GET() {
 
     // Get Standard EDbs metrics
     const [currentStandardEdbs, previousStandardEdbs] = await Promise.all([
-        prisma.etatDeBesoin.count({
-          where: {
-            ...standardEdbFilter,
-            createdAt: {
-              gte: firstDayThisMonth,
-              lt: firstDayNextMonth,
-            },
+      prisma.etatDeBesoin.count({
+        where: {
+          ...standardEdbFilter,
+          createdAt: {
+            gte: firstDayThisMonth,
+            lt: firstDayNextMonth,
           },
-        }),
-        prisma.etatDeBesoin.count({
-          where: {
-            ...standardEdbFilter,
-            createdAt: {
-              gte: firstDayLastMonth,
-              lt: firstDayThisMonth,
-            },
+        },
+      }),
+      prisma.etatDeBesoin.count({
+        where: {
+          ...standardEdbFilter,
+          createdAt: {
+            gte: firstDayLastMonth,
+            lt: firstDayThisMonth,
           },
-        }),
-      ]);
+        },
+      }),
+    ]);
 
     // Get active ODMs metrics
     const [currentActiveOdms, previousActiveOdms] = await Promise.all([
@@ -116,11 +123,6 @@ export async function GET() {
             gte: firstDayThisMonth,
             lt: firstDayNextMonth,
           },
-        //   NOT: {
-        //     status: {
-        //       in: [ODMStatus.COMPLETED, ODMStatus.REJECTED],
-        //     },
-        //   },
         },
       }),
       prisma.ordreDeMission.count({
@@ -139,7 +141,7 @@ export async function GET() {
       }),
     ]);
 
-    const metrics: DashboardMetrics = {
+    let metrics: DashboardMetrics = {
       stockEdbs: {
         total: currentStockEdbs,
         percentageChange: calculatePercentageChange(currentStockEdbs, previousStockEdbs),
@@ -153,6 +155,52 @@ export async function GET() {
         percentageChange: calculatePercentageChange(currentActiveOdms, previousActiveOdms),
       },
     };
+
+    // Add role-specific metrics
+    if (userRole === Role.ADMIN) {
+      const [activeUsers, totalDepartments, totalEdbs] = await Promise.all([
+        prisma.user.count({
+          where: {
+            status: UserStatus.ACTIVE,
+          },
+        }),
+        prisma.department.count(),
+        prisma.$transaction([
+          prisma.etatDeBesoin.count(),
+          prisma.stockEtatDeBesoin.count(),
+        ]).then(([standardCount, stockCount]) => standardCount + stockCount),
+      ]);
+
+      metrics.system = {
+        activeUsers,
+        totalDepartments,
+        totalEdbs,
+      };
+    }
+
+    if (userRole === Role.MAGASINIER) {
+      const [pendingStockEdbs, processedEdbs] = await Promise.all([
+        prisma.stockEtatDeBesoin.count({
+          where: {
+            status: StockEDBStatus.SUBMITTED,
+          },
+        }),
+        prisma.etatDeBesoin.count({
+          where: {
+            createdAt: {
+              gte: firstDayThisMonth,
+              lt: firstDayNextMonth,
+            },
+            status: {
+              in: [EDBStatus.COMPLETED],
+            },
+          },
+        }),
+      ]);
+
+      metrics.stockEdbs.pendingCount = pendingStockEdbs;
+      metrics.standardEdbs.processedCount = processedEdbs;
+    }
 
     return NextResponse.json(metrics);
     

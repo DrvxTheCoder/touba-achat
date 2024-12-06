@@ -23,7 +23,8 @@ import {
   TruckIcon,
   Store,
   StoreIcon,
-  WarehouseIcon
+  WarehouseIcon,
+  Trash2
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -119,6 +120,9 @@ import { FinalApprovalDialog } from "./FinalApprovalDialog"
 import { EDBCards } from "./EDBCards"
 import { MarkAsCompletedDialog } from "./MarkAsCompleteDialog"
 import { MarkAsDeliveredDialog } from "./MarkAsDeliveredDialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Icons } from "@/components/icons"
+import { useRouter } from "next/navigation"
 
 const ITEMS_PER_PAGE = 5;
 const statusMapping = {
@@ -262,6 +266,7 @@ const useUserPermissions = (session: any, selectedEDB: EDB | null): UserPermissi
 export default function Etats() {
 
   const { data: session } = useSession();
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -385,6 +390,8 @@ export default function Etats() {
   const [isEscalationDialogOpen, setIsEscalationDialogOpen] = useState(false);
   const [isMarkAsCompleteDialogOpen, setIsMarkAsCompleteDialogOpen] = useState(false);
   const [isMarkAsDeliveredDialogOpen, setIsMarkAsDeliveredDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -398,6 +405,36 @@ export default function Etats() {
       });
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedEDB) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/edb/${selectedEDB.id}/delete`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la suppression');
+      }
+      
+      toast.success("EDB Supprimé", {
+        description: `L'EDB #${selectedEDB.edbId} a été supprimé avec succès.`,
+      });
+      
+      // Redirect to the ODMs list
+      router.push('/dashboard/etats');
+    } catch (error: any) {
+      console.error('Error deleting EDB:', error);
+      toast.error("Erreur", {
+        description: error.message || "Une erreur est survenue lors de la suppression.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -728,16 +765,16 @@ export default function Etats() {
                   {session?.user.role === 'ADMIN' && (
                     <CategoriesDialog />
                   )} 
-                  
-                  <Link href="/dashboard/etats/nouveau"><Button variant="outline"><text className="hidden md:block mr-2">Nouveau (Standard)</text> <PlusCircle className="h-4 w-4"/></Button></Link>
                   {(permissions.canHandleStock || permissions.isAdmin) && (
                     <Link href="/dashboard/etats/stock">
                       <Button variant="outline">
                         <text className="hidden md:block mr-2">{"EDB (Stock)"}</text> 
-                        <WarehouseIcon className="h-4 w-4"/>
+                        <OpenInNewWindowIcon className="h-4 w-4"/>
                       </Button>
                     </Link>
                   )}
+                  <Link href="/dashboard/etats/nouveau"><Button variant="outline"><text className="hidden md:block mr-2">Nouveau (Standard)</text> <PlusCircle className="h-4 w-4"/></Button></Link>
+                  
                 </div>
             </div>
         </div>
@@ -1016,7 +1053,18 @@ export default function Etats() {
                               <DropdownMenuShortcut><ArrowBigUpDash className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                             </DropdownMenuItem>
                           )}
-                          
+                          {permissions.isAdmin && (
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setIsDeleteDialogOpen(true)}
+                            >
+                              Supprimer
+                              <DropdownMenuShortcut>
+                                <Trash2 className="ml-4 h-4 w-4" />
+                              </DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                          )}
+    
                           <DropdownMenuItem 
                             className="text-destructive"
                             onClick={handleReject}
@@ -1122,7 +1170,7 @@ export default function Etats() {
 
                     </ul>
                     <span className="font-semibold">Références Techniques</span>
-                    <span className="text-muted-foreground">Non-renseigné</span>
+                    <span className="text-muted-foreground">{selectedEDB.references}</span>
                     <Separator className="my-2" />
                     <ul className="grid gap-3">
                       <li className="flex items-center justify-between font-semibold">
@@ -1220,6 +1268,33 @@ export default function Etats() {
               isLoading={isChoosingSupplier}
               isChosen={selectedEDB?.attachments[currentPdfIndex ?? -1]?.filePath === chosenFilePath}
             />
+
+          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir supprimer l&apos;EDB #{selectedEDB?.edbId} ? Cette action est irréversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDelete();
+                        }}
+                        disabled={isDeleting}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        {isDeleting && (
+                          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
           </div>
         </div>
       </main>

@@ -69,10 +69,8 @@ export const ODMTableRow: React.FC<ODMTableRowProps> = ({ odm }) => {
         {odm.totalCost ? `${odm.totalCost} XOF` : 'N/A'}
       </TableCell>
       <TableCell className="lg:hidden">
-        <Link href={`/odm/${odm.odmId}`}>
-          <Button size="icon" variant="outline">
+        <Link href={`/dashboard/odm/${odm.odmId}`}>
             <OpenInNewWindowIcon className="w-4 h-4" />
-          </Button>
         </Link>
       </TableCell>
     </TableRow>

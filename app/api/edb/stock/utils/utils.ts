@@ -355,7 +355,7 @@ export async function convertToStandardEDB(
     include: { employee: true },
   });
 
-  if (!magasinier || magasinier.role !== 'MAGASINIER') {
+  if (!magasinier || !['MAGASINIER','ADMIN'].includes(magasinier.role)) {
     throw new Error('Non autorisé: Seuls les magasiniers peuvent convertir les EDBs');
   }
 
@@ -395,7 +395,7 @@ export async function convertToStandardEDB(
       {
         category: stockEdb.categoryId,
         items: transformedItems,
-        existingEdbId: stockEdb.edbId, // Use the existing EDB ID
+        // existingEdbId: stockEdb.edbId, // Use the existing EDB ID
       }
     );
 

@@ -118,6 +118,15 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
     setAccompanyingPersons(newPersons);
   };
 
+  const handleCostPerDayChange = (personIndex: number, newCostPerDay: number) => {
+    const newPersons = [...accompanyingPersons];
+    newPersons[personIndex] = {
+      ...newPersons[personIndex],
+      costPerDay: newCostPerDay
+    };
+    setAccompanyingPersons(newPersons);
+  };
+
   const addExpenseItem = () => {
     setExpenseItems([...expenseItems, { type: '', amount: 0 }]);
   };
@@ -171,7 +180,6 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
                     <text className="min-w-[150px]">{person.name}</text>
                     <Select
                       value={person.category}
-                      required
                       onValueChange={(value: ODMPersonCategory) => 
                         handlePersonCategoryChange(index, value)
                       }
@@ -182,15 +190,19 @@ export const ODMProcessingForm: React.FC<ODMProcessingFormProps> = ({
                       <SelectContent>
                         {Object.entries(ODM_CATEGORY_LABELS).map(([value, label]) => (
                           <SelectItem key={value} value={value}>
-                            <text className="text-sm"> 
-                              {label}
-                            </text>
+                            <text className="text-sm">{label}</text>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <Input
+                      type="number"
+                      value={person.costPerDay}
+                      onChange={(e) => handleCostPerDayChange(index, Number(e.target.value))}
+                      className="w-32"
+                    />
                     <text className="text-sm text-muted-foreground">
-                      = {(days * person.costPerDay).toLocaleString('fr-FR')} F CFA ({ODM_DAILY_RATES[person.category as ODMPersonCategory].toLocaleString('fr-FR')} F/jour)
+                      x {days} = {(days * person.costPerDay).toLocaleString('fr-FR')} F CFA
                     </text>
                   </div>
                 ))}

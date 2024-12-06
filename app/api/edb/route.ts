@@ -104,10 +104,9 @@ export async function GET(request: Request) {
       case 'ADMIN':
       case 'DIRECTEUR_GENERAL':
       case 'AUDIT':
-        // No additional filtering, they can see all EDAs
         break;
       default:
-        // For any other role, only show their own department's EDAs
+        // For any other role, only show their own department's EDBs
         const defaultEmployee = await prisma.employee.findUnique({
           where: { userId: parseInt(session.user.id) },
           select: { currentDepartmentId: true }
@@ -153,6 +152,7 @@ export async function GET(request: Request) {
       category: edb.category.name,
       status: edb.status,
       department: edb.department.name,
+      references: edb.references,
       amount: edb.orders.reduce((sum: number, order: { amount: number }) => sum + order.amount, 0),
       email: edb.userCreator.email,
       items: (edb.description as any).items.map((item: { designation: string, quantity: number }) => ({

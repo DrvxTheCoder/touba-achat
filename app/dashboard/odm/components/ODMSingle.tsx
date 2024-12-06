@@ -26,6 +26,7 @@ import { ODM_CATEGORY_LABELS } from '../utils/odm';
 import { Access } from '@prisma/client';
 import { ODMFinanceApprovalDialog } from './ODMFinanceApprovalDialog';
 import Link from 'next/link';
+import { ODMRejectionDialog } from './ODMRejectionDialog';
 
 type ODMSingleProps = {
   odm: any; // Replace with proper ODM type
@@ -140,12 +141,58 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
   const canApproveFinance = isFinanceDirector && odm.status === 'AWAITING_FINANCE_APPROVAL';
   const [isFinanceApprovalDialogOpen, setIsFinanceApprovalDialogOpen] = useState(false);
 
+  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+
+  const handleReject = () => {
+    setIsRejectionDialogOpen(true);
+  }
+
+  const handleConfirmRejection = async (reason: string) => {
+    if (!odm) return;
+    setIsRejecting(true);
+    try {
+      const rejectionResponse = await fetch(`/api/odm/${odm.id}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }), // Send an empty object as the body
+      });
+  
+      if (!rejectionResponse.ok) {
+        const errorData = await rejectionResponse.json();
+        throw new Error(errorData.error || 'Echec de validation');
+      }
+  
+      // Fetch the updated ODM data
+      const updatedOdmResponse = await fetch(`/api/odm/${odm.id}`);
+      if (!updatedOdmResponse.ok) {
+        throw new Error('Failed to fetch updated ODM data');
+      }
+      const updatedOdm = await updatedOdmResponse.json();
+      setOdm(updatedOdm);
+      
+      toast.info("ODM Rejeté", {
+        description: `L'ordre de mission (${odm.odmId}) a été rejeté avec succès.`,
+      });
+    } catch (error: any) {
+      console.error('Error validating ODM:', error);
+      toast.error("Erreur", {
+        description: error.message || "Une erreur est survenue lors de la validation de l'ODM.",
+      });
+    } finally {
+      setIsRejecting(false);
+      setIsRejectionDialogOpen(false);
+    }
+  }
+
 
   const handleValidate = () => {
     setIsValidationDialogOpen(true);
   };
 
-  const handleEditClick = () => {
+  const handleEditProcessingClick = () => {
     setIsEditDialogOpen(true);
   };
 
@@ -163,7 +210,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
   
       if (!approvalResponse.ok) {
         const errorData = await approvalResponse.json();
-        throw new Error(errorData.error || 'Failed to validate ODM');
+        throw new Error(errorData.error || 'Echec de validation');
       }
   
       // Fetch the updated ODM data
@@ -344,17 +391,28 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {/* <DropdownMenuItem>
+                        Modifier
+                      </DropdownMenuItem> */}
                       {canEdit && (
-                        <DropdownMenuItem onClick={handleEditClick}>
-                          Modifier le traitement
-                          <DropdownMenuShortcut><Edit className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleEditProcessingClick}>
+                            Modifier le traitement
+                        <DropdownMenuShortcut><Edit className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                      </DropdownMenuItem>
                       )}
                       {isAuthorized && (
+                        <>
+                        
                         <DropdownMenuItem onClick={handleValidate} disabled={!canValidate} className="text-primary">
                             Approuver
                         <DropdownMenuShortcut><BadgeCheck className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleReject} disabled={odm.status === 'REJECTED'} className="text-destructive">
+                            Rejeter
+                            <DropdownMenuShortcut><Ban className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                      </>
+
                       )}
                       {canValidateAsRHDirector && (
                         <DropdownMenuItem onClick={() => setIsDRHValidationDialogOpen(true)} className="text-primary">
@@ -380,11 +438,17 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button variant={"outline"} className="h-8 gap-1" onClick={() => router.refresh()}><RefreshCw className="h-4 w-4" /></Button>
+                  {/* <Link href={`/dashboard/odm/${odm.odmId}`} prefetch={false} replace={true}>
+                    <Button variant={"outline"} className="h-8 gap-1 "><RefreshCw className="h-4 w-4" /></Button>
+                  </Link> */}
+                  {/* <Button variant={"outline"} className="h-8 gap-1" onClick={() => router.replace(`/dashboard/odm/${odm.odmId}`)}><RefreshCw className="h-4 w-4" /></Button> */}
                 </div>
               </CardHeader>
               <CardContent className="p-5">
               <div className="grid gap-3">
+                {odm.status === 'REJECTED' && (
+                  <strong className="text-destructive">Raison de rejet: {odm.rejectionReason}</strong>
+                )}
                 <strong className="">Objet: {odm.title}</strong>
                 <text className="text-sm">Periode: {dateRange} {`- ${days} jour(s)`}</text>
                 <text className="text-sm">Type: {odm.missionType}</text>
@@ -397,11 +461,12 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                 <ScrollArea className="w-full rounded-md h-max max-h-48 p-3 border border-dashed text-muted-foreground">
                   <ul className="text-xs lg:text-sm space-y-2">
                     {/* Main mission cost */}
-                    <li className="flex justify-between">
-                      <span>{odm.creator?.user?.name || odm.creator?.name || 'N/A'} {`(${odm.missionCostPerDay.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })} x ${days}jrs)`}</span>
-                      <span>{missionCostTotal.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
-                    </li>
-
+                    {odm.missionCostPerDay !== 0 && (
+                      <li className="flex justify-between">
+                        <span>{odm.creator?.user?.name || odm.creator?.name || 'N/A'} {`(${odm.missionCostPerDay.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })} x ${days}jrs)`}</span>
+                        <span>{missionCostTotal.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
+                      </li>
+                    )}
                     {/* Accompanying persons costs */}
                     {odm.hasAccompanying && odm.accompanyingPersons?.map((person: any, index: number) => (
                       <li key={index} className="flex justify-between">
@@ -466,7 +531,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
 
                 <Separator className="my-2" />
                 <div className="grid gap-3">
-              <div className="font-semibold">Information Employé</div>
+              <div className="font-semibold">Émetteur :</div>
                 <dl className="grid gap-3 text-sm">
                   <div className="flex items-center justify-between">
                     <dt className="text-muted-foreground">Nom et Prénom</dt>
@@ -536,6 +601,13 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
         odmId={odm.odmId}
         isLoading={isValidating}
         totalAmount={odm.totalCost || 0}
+      />
+      <ODMRejectionDialog
+        isOpen={isRejectionDialogOpen}
+        isLoading={isRejecting}
+        onClose={() => setIsRejectionDialogOpen(false)}
+        onConfirm={handleConfirmRejection}
+        odmId={odm.odmId}
       />
       {/* Add this just before the closing tag of your component */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

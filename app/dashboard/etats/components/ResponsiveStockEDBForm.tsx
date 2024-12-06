@@ -34,7 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Package2, Check, ChevronsUpDown, Trash2Icon, PlusCircleIcon } from "lucide-react";
+import { Package2, Check, ChevronsUpDown, Trash2Icon, PlusCircleIcon, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Access, CategoryType } from "@prisma/client";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -579,8 +579,8 @@ export default function ResponsiveStockEdbDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" className="gap-2">
-            <Package2 className="w-4 h-4" />
             <span className="hidden md:block">Nouveau</span>
+            <PlusCircle className="w-4 h-4" />
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[525px]">

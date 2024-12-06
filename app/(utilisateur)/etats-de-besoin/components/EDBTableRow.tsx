@@ -39,7 +39,12 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onClick, isSelect
   const displayAmount = (edb.finalSupplier?.amount || 0).toLocaleString('fr-FR');
   return (
     <TableRow onClick={() => onClick(edb)} className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}>
-      <TableCell>{edb.edbId}</TableCell>
+      <TableCell>
+        <div className="text-xs md:font-medium"># {edb.edbId}</div>
+        <div className="hidden text-xs text-muted-foreground md:inline">
+          {edb.creator.name}
+        </div>
+      </TableCell>
       {/* <TableCell className="hidden sm:table-cell">{edb.title}</TableCell> */}
       <TableCell className="hidden sm:table-cell">{edb.category}</TableCell>
       <TableCell className="text-xs"><StatusBadge 

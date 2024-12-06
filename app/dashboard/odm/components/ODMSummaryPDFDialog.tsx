@@ -56,9 +56,12 @@ const ODMSummaryPDFDialog: React.FC<ODMSummaryPDFDialogProps> = ({ odm }) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { data: session, status } = useSession();
   const isRHUser = session?.user.role === "RH";
+  const [isRejected, setIsRejected] = useState(false);
 
   
-
+  if(odm.status === 'REJECTED'){
+    setIsRejected(true);
+  }
   const generatePDF = async () => {
     setIsGenerating(true);
     setError(null);
@@ -135,7 +138,7 @@ const ODMSummaryPDFDialog: React.FC<ODMSummaryPDFDialogProps> = ({ odm }) => {
           variant="outline" 
           className="h-8 gap-1"
           onClick={handleButtonClick}
-          disabled={isGenerating}
+          disabled={isRejected || isGenerating}
         >
           {isGenerating ? (
             <SpinnerCircularFixed size={16} thickness={180} speed={100} color="#36ad47" secondaryColor="rgba(0,0,0,0.1)" />

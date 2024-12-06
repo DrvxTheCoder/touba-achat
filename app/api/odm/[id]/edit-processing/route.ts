@@ -18,13 +18,30 @@ export async function PUT(
     }
 
     const id = parseInt(params.id);
-    const { missionCostPerDay, expenseItems, totalCost } = await req.json();
+    const { 
+      missionCostPerDay, 
+      expenseItems, 
+      totalCost,
+      accompanyingPersons // Add this
+    } = await req.json();
 
-    const updatedODM = await editODMProcessing(id, parseInt(session.user.id), { missionCostPerDay, expenseItems, totalCost });
+    const updatedODM = await editODMProcessing(
+      id, 
+      parseInt(session.user.id), 
+      { 
+        missionCostPerDay, 
+        expenseItems, 
+        totalCost,
+        accompanyingPersons // Include in the function call
+      }
+    );
 
     return NextResponse.json(updatedODM);
   } catch (error) {
     console.error('Erreur lors de la modification du traitement de l\'ODM:', error);
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Erreur interne du serveur' }, 
+      { status: 500 }
+    );
   }
 }

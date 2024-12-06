@@ -4,8 +4,16 @@ import { sendNotification, NotificationPayload } from '@/app/actions/sendNotific
 import {  getODMEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
 import generateODMId from './odm-id-generator';
+import { AccompanyingPerson } from '@/app/dashboard/odm/utils/odm';
 
 const prisma = new PrismaClient();
+
+interface ProcessingData {
+  missionCostPerDay: number;
+  expenseItems: { type: string; amount: number; description?: string }[];
+  totalCost: number;
+  accompanyingPersons: AccompanyingPerson[];
+}
 
 async function getUserName(userId: number): Promise<string> {
   const user = await prisma.user.findUnique({
@@ -301,11 +309,7 @@ export async function rejectODM(
 export async function processODMByRH(
   odmId: number,
   userId: number,
-  processingData: {
-    missionCostPerDay : number,
-    expenseItems: { type: string; amount: number; description?: string }[];
-    totalCost: number;
-  }
+  processingData: ProcessingData
 ): Promise<OrdreDeMission> {
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
@@ -313,18 +317,18 @@ export async function processODMByRH(
       status: 'AWAITING_FINANCE_APPROVAL',
       totalCost: processingData.totalCost,
       rhProcessorId: userId,
+      accompanyingPersons: processingData.accompanyingPersons as any,
       missionCostPerDay: processingData.missionCostPerDay,
-      expenseItems: processingData.expenseItems as any // Prisma will handle JSON conversion
+      expenseItems: processingData.expenseItems
     },
     include: { department: true }
   });
 
-  await logODMEvent(
-    odmId,
-    userId,
-    ODMEventType.AWAITING_FINANCE_APPROVAL,
-    { totalCost: processingData.totalCost }
-  );
+  // Rest of the function remains the same
+  await logODMEvent(odmId, userId, ODMEventType.AWAITING_FINANCE_APPROVAL, { 
+    totalCost: processingData.totalCost,
+    accompanyingPersons: processingData.accompanyingPersons 
+  });
 
   await sendODMNotification(updatedODM, ODMEventType.AWAITING_FINANCE_APPROVAL, userId);
 
@@ -334,27 +338,30 @@ export async function processODMByRH(
 export async function editODMProcessing(
   odmId: number,
   userId: number,
-  processingData: {
-    missionCostPerDay: number,
-    expenseItems: { type: string; amount: number; description?: string }[];
-    totalCost: number;
-  }
+  processingData: ProcessingData
 ): Promise<OrdreDeMission> {
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
     data: {
-      missionCostPerDay : processingData.missionCostPerDay, 
+      missionCostPerDay: processingData.missionCostPerDay,
       totalCost: processingData.totalCost,
-      expenseItems: processingData.expenseItems as any // Prisma will handle JSON conversion
+      expenseItems: processingData.expenseItems,
+      accompanyingPersons: processingData.accompanyingPersons as any
     },
-    include: { department: true }
+    include: { 
+      department: true,
+      auditLogs: true
+    }
   });
 
   await logODMEvent(
     odmId,
     userId,
     ODMEventType.UPDATED,
-    { totalCost: processingData.totalCost }
+    { 
+      totalCost: processingData.totalCost,
+      accompanyingPersons: processingData.accompanyingPersons // Log the changes
+    }
   );
 
   return updatedODM;

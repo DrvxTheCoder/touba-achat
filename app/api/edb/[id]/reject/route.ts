@@ -14,7 +14,7 @@ export async function POST(
 ) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ message: 'Non-autorisé' }, { status: 401 });
   }
 
   const { id } = params;
@@ -24,9 +24,9 @@ export async function POST(
     const body = await request.json();
     const { reason } = body;
 
-    if (!reason) {
-      return NextResponse.json({ message: 'Rejection reason is required' }, { status: 400 });
-    }
+    // if (!reason) {
+    //   return NextResponse.json({ message: 'Rejection reason is required' }, { status: 400 });
+    // }
 
     const edb = await prisma.etatDeBesoin.findUnique({
       where: { id: Number(id) },
@@ -65,6 +65,8 @@ async function checkUserCanReject(role: string, edb: any) {
     case 'IT_ADMIN':
       return ['AWAITING_IT_APPROVAL'].includes(edb.status) && 
              ['Logiciels et licences', 'Matériel informatique'].includes(edb.category.name);
+    case 'ADMIN':
+      return true;
     case 'DIRECTEUR_GENERAL':
       return true; // Can reject at any stage
     default:
