@@ -152,6 +152,7 @@ export async function GET(request: Request) {
       category: edb.category.name,
       status: edb.status,
       department: edb.department.name,
+      references: edb.references,
       amount: edb.orders.reduce((sum: number, order: { amount: number }) => sum + order.amount, 0),
       email: edb.userCreator.email,
       items: (edb.description as any).items.map((item: { designation: string, quantity: number }) => ({

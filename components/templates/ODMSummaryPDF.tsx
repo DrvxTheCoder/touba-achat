@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
+import { AccompanyingPerson } from '@/app/dashboard/odm/utils/odm';
 
 const pageURL = "https://touba.vercel.app";
 const parseRichTextContent = (content: any) => {
@@ -97,11 +98,6 @@ type ExpenseItem = {
   type: string;
   amount: number;
 };
-type AccompanyingPerson = {
-  name: string;
-  category: string;
-  costPerDay: number;
-};
 
 type TimelineEvent = {
   eventAt: string;
@@ -139,6 +135,32 @@ type ODMSummaryPDFProps = {
   isRHUser: boolean;
 };
 
+const translateCategory = (category: string): string => {
+  switch (category) {
+    case 'DIRECTOR': return 'Directeur';
+    case 'TEAM_MANAGER': return 'Responsable';
+    case 'FIELD_AGENT': return 'Agent / Assistant';
+    case 'FREELANCER': return 'Prestataire';
+    case 'DRIVER': return 'Chauffeur';
+    case 'OTHER': return 'Autres';
+    default: return category;
+  }
+};
+
+const formatNamesWithCategories = (persons: AccompanyingPerson[]): string => {
+  if (persons.length === 0) return '';
+  
+  const formattedPersons = persons.map(person => 
+    `${person.name} (${translateCategory(person.category)})`
+  );
+  
+  if (formattedPersons.length === 1) return formattedPersons[0];
+  if (formattedPersons.length === 2) 
+    return `${formattedPersons[0]} et ${formattedPersons[1]}`;
+  
+  return `${formattedPersons.slice(0, -1).join(', ')} et ${formattedPersons[formattedPersons.length - 1]}`;
+};
+
 
 
 const styles = StyleSheet.create({
@@ -170,6 +192,7 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
 
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
+
   const start = new Date(odm.startDate);
   const end = new Date(odm.endDate);
   const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
@@ -200,6 +223,9 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
     if (typeof department === 'string') return department;
     return department.name;
   };
+  
+  const formattedPersonsList = formatNamesWithCategories(odm.accompanyingPersons || []);
+
 
   return (
     <Document>
@@ -213,10 +239,17 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
         <View style={styles.section}>
           <Text style={styles.title}>ORDRE DE MISSION</Text>
           <Text style={styles.text}>ID : {odm.odmId}</Text>
-          <Text style={styles.text}>
-            Nous soussignés, <Text style={styles.boldText}>TOUBA OIL SAU</Text>, autorisons {odm.creator.name} {odm.creator.jobTitle}, à se
-            rendre à {odm.location}, le {new Date(odm.startDate).toLocaleDateString('fr-FR')} pour la raison suivante: {odm.title}.
-          </Text>
+          {odm.missionCostPerDay > 0 ? (
+            <Text style={styles.text}>
+              Nous soussignés, <Text style={styles.boldText}>TOUBA OIL SAU</Text>, autorisons {odm.creator.name} {odm.creator.jobTitle}, à se
+              rendre à {odm.location}, le {new Date(odm.startDate).toLocaleDateString('fr-FR')} pour la raison suivante: {odm.title}.
+            </Text>
+          ) : (
+            <Text style={styles.text}>
+              Nous soussignés, <Text style={styles.boldText}>TOUBA OIL SAU</Text>, autorisons {formattedPersonsList}, à se
+              rendre à {odm.location}, le {new Date(odm.startDate).toLocaleDateString('fr-FR')} pour la raison suivante: {odm.title}.
+            </Text>
+          )}
           {/* <Text style={styles.text}>Utilisateur: {odm.creator.name}</Text>
           <Text style={styles.text}>Date de création: {new Date(odm.createdAt).toLocaleDateString('fr-FR')}</Text>
           <Text style={styles.text}>Département: {getDepartmentName(odm.department)}</Text>
@@ -226,16 +259,16 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
           <View style={styles.sectionThree}>
           <Text style={styles.textbold}>Durée: {`${days} jour(s)`}</Text>
           <Text style={styles.textbold}>Matricule Véhicule: {odm.vehicule || "N/A"}</Text>
-          <Text style={styles.text}>
-            {odm.accompanyingPersons !== undefined && (
-              <>
+          
+            {odm.missionCostPerDay > 0 && odm.accompanyingPersons !== undefined && odm.accompanyingPersons.length > 0 && (
+              <Text style={styles.text}>
               <Text style={styles.textbold}>Collaborateur(s):</Text>
                 {odm.accompanyingPersons?.map((item, index) => (
-                  <Text key={index} style={styles.textbold}> {`${item.name}`},</Text>
+                  <Text key={index} style={styles.textbold}> {`${item.name} - ${translateCategory(item.category)}`},</Text>
               ))}
-              </>
+              </Text>
             )}
-          </Text>
+          
           </View>
 
 
@@ -254,9 +287,6 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
             </Text>
           </View>
 
-
-            
-
             
         </View>
         <View style={styles.section}>
@@ -268,18 +298,20 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
             </View>
 
             {/* Main mission cost */}
-            <View style={styles.tableRow}>
-              <View style={styles.tableCol}>
-                <Text style={styles.tableCell}>
-                  Frais de mission ({odm.creator.name}) - {`(${odm.missionCostPerDay} x ${days}jr)`}
-                </Text>
+            {odm.missionCostPerDay > 0 && (
+              <View style={styles.tableRow}>
+                <View style={styles.tableCol}>
+                  <Text style={styles.tableCell}>
+                    Frais de mission ({odm.creator.name}) - {`(${odm.missionCostPerDay} x ${days}jr)`}
+                  </Text>
+                </View>
+                <View style={styles.tableCol}>
+                  <Text style={styles.tableCell}>
+                    {mainMissionCost} XOF
+                  </Text>
+                </View>
               </View>
-              <View style={styles.tableCol}>
-                <Text style={styles.tableCell}>
-                  {mainMissionCost} XOF
-                </Text>
-              </View>
-            </View>
+            )}
 
             {/* Accompanying persons costs */}
             {odm.accompanyingPersons?.map((person, index) => (

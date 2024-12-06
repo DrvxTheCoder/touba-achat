@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     const { role } = session.user;
-    if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'RH'].includes(role)) {
+    if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'RH', 'ADMIN'].includes(role)) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 

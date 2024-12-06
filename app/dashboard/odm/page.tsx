@@ -75,12 +75,22 @@ export default function OrdresDeMissions() {
               <h2 className="text-lg md:text-3xl font-bold tracking-tight">Ordres de Missions</h2>
                 <div className="flex items-center space-x-2">
                   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild className="md:hidden block">
-                      <Button variant="outline">
-                        <text className="hidden lg:block">Nouveau</text> 
-                        <PlusCircle className="lg:ml-2 h-4 w-4"/>
-                      </Button>
-                    </DialogTrigger>
+                  {isRH ? (
+                        <DialogTrigger asChild>
+                          <Button variant="outline">
+                            <text className="hidden lg:block">Nouveau</text> 
+                            <PlusCircle className="lg:ml-2 h-4 w-4"/>
+                          </Button>
+                        </DialogTrigger> 
+                        ) : (
+                          <DialogTrigger asChild className="md:hidden block">
+                          <Button variant="outline">
+                            <text className="hidden lg:block">Nouveau</text> 
+                            <PlusCircle className="lg:ml-2 h-4 w-4"/>
+                          </Button>
+                        </DialogTrigger>
+                        )}
+
                     <DialogContent>
                       <DialogHeader>Nouveau</DialogHeader>
                       <ODMSimpleForm onSubmit={handleSubmit} isLoading={isODMFormLoading} />

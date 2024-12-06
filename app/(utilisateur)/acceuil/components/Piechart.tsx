@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { TrendingUp } from "lucide-react"
+import { TrendingUp, TrendingDown } from "lucide-react"
 import { Label, Pie, PieChart } from "recharts"
 
 import {
@@ -19,48 +19,64 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-export const description = "A donut chart with text"
+type ActivityData = {
+  type: string
+  count: number
+  fill: string
+}
 
-const chartData = [
-  { browser: "EDBs (stock)", visitors: 1, fill: "var(--color-chrome)" },
-  { browser: "EDBs (std)", visitors: 1, fill: "var(--color-safari)" },
-  { browser: "ODMs", visitors: 1, fill: "var(--color-firefox)" },
-]
+type ActivityMetrics = {
+  data: ActivityData[]
+  totalActions: number
+  percentageChange: number
+}
 
 const chartConfig = {
-  visitors: {
-    label: "Visitors",
-  },
-  chrome: {
-    label: "Chrome",
-    color: "hsl(var(--chart-1))",
-  },
-  safari: {
-    label: "Safari",
-    color: "hsl(var(--chart-2))",
-  },
-  firefox: {
-    label: "Firefox",
-    color: "hsl(var(--chart-3))",
-  },
-  edge: {
-    label: "Edge",
-    color: "hsl(var(--chart-4))",
-  },
-  other: {
-    label: "Other",
-    color: "hsl(var(--chart-5))",
+  count: {
+    label: "Actions",
   },
 } satisfies ChartConfig
 
-export function PieChartCard() {
-  const totalVisitors = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.visitors, 0)
+export function ActivityPieChart() {
+  const [metrics, setMetrics] = React.useState<ActivityMetrics | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const fetchActivityMetrics = async () => {
+      try {
+        const response = await fetch('/api/dashboard/activity')
+        if (!response.ok) throw new Error('Failed to fetch activity metrics')
+        const data = await response.json()
+        setMetrics(data)
+      } catch (error) {
+        console.error('Error fetching activity metrics:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchActivityMetrics()
   }, [])
 
-    const currentDate = new Date()
-    const month = currentDate.toLocaleString("fr", { month: "long" })
-    const year = currentDate.getFullYear()
+  const currentDate = new Date()
+  const month = currentDate.toLocaleString("fr", { month: "long" })
+  const year = currentDate.getFullYear()
+
+  if (isLoading) {
+    return (
+      <Card className="rounded-2xl">
+        <CardHeader className="items-center pb-0">
+          <CardTitle>Mon Activité</CardTitle>
+          <CardDescription className="capitalize">{`${month} ${year}`}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center min-h-[250px]">
+          <div className="animate-pulse w-32 h-32 rounded-full bg-muted" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!metrics?.data) return null
 
   return (
     <Card className="rounded-2xl">
@@ -75,13 +91,29 @@ export function PieChartCard() {
         >
           <PieChart>
             <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload
+                  return (
+                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                      <div className="flex flex-col">
+                        <span className="text-[0.70rem] uppercase text-muted-foreground">
+                          {data.type}
+                        </span>
+                        <span className="font-bold">
+                          {data.count} {data.count > 1 ? 'actions' : 'action'}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              }}
             />
             <Pie
-              data={chartData}
-              dataKey="visitors"
-              nameKey="browser"
+              data={metrics.data}
+              dataKey="count"
+              nameKey="type"
               innerRadius={60}
               strokeWidth={5}
             >
@@ -100,7 +132,7 @@ export function PieChartCard() {
                           y={viewBox.cy}
                           className="fill-foreground text-3xl font-bold"
                         >
-                          {totalVisitors.toLocaleString()}
+                          {metrics.totalActions}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
@@ -120,10 +152,15 @@ export function PieChartCard() {
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
-        +0% sur le mois dernier <TrendingUp className="h-4 w-4" />
+          {metrics.percentageChange > 0 ? '+' : ''}{metrics.percentageChange}% sur le mois dernier{' '}
+          {metrics.percentageChange >= 0 ? (
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          ) : (
+            <TrendingDown className="h-4 w-4 text-red-500" />
+          )}
         </div>
         <div className="text-xs leading-none text-muted-foreground">
-          Le cumul mensuel de vos actions sur la platforme
+          Le cumul mensuel de vos actions sur la plateforme
         </div>
       </CardFooter>
     </Card>

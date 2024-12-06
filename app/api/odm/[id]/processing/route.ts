@@ -16,9 +16,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     const id = parseInt(params.id);
-    const { missionCostPerDay, expenseItems, totalCost } = await req.json();
+    const { missionCostPerDay, expenseItems, totalCost, accompanyingPersons } = await req.json();
 
-    const updatedODM = await processODMByRH(id, parseInt(session.user.id), { missionCostPerDay, expenseItems, totalCost });
+    const updatedODM = await processODMByRH(id, parseInt(session.user.id), { 
+      missionCostPerDay, 
+      expenseItems, 
+      totalCost,
+      accompanyingPersons
+    });
 
     return NextResponse.json(updatedODM);
   } catch (error) {

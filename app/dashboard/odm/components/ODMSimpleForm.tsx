@@ -32,6 +32,8 @@ const MISSION_TYPES = [
   'Audit & Inspection',
   'Formation & Certification',
   'Informatique',
+  'Livraison (Gaz Butane)',
+  'Opération Gaz / Production',
   'Maintenance & Réparation',
   'Réunion & Conférence',
   'Supervision de Site',

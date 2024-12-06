@@ -391,9 +391,9 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      {/* <DropdownMenuItem>
                         Modifier
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> */}
                       {canEdit && (
                         <DropdownMenuItem onClick={handleEditProcessingClick}>
                             Modifier le traitement
@@ -441,7 +441,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                   {/* <Link href={`/dashboard/odm/${odm.odmId}`} prefetch={false} replace={true}>
                     <Button variant={"outline"} className="h-8 gap-1 "><RefreshCw className="h-4 w-4" /></Button>
                   </Link> */}
-                  <Button variant={"outline"} className="h-8 gap-1" onClick={() => router.replace(`/dashboard/odm/${odm.odmId}`)}><RefreshCw className="h-4 w-4" /></Button>
+                  {/* <Button variant={"outline"} className="h-8 gap-1" onClick={() => router.replace(`/dashboard/odm/${odm.odmId}`)}><RefreshCw className="h-4 w-4" /></Button> */}
                 </div>
               </CardHeader>
               <CardContent className="p-5">
@@ -461,11 +461,12 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                 <ScrollArea className="w-full rounded-md h-max max-h-48 p-3 border border-dashed text-muted-foreground">
                   <ul className="text-xs lg:text-sm space-y-2">
                     {/* Main mission cost */}
-                    <li className="flex justify-between">
-                      <span>{odm.creator?.user?.name || odm.creator?.name || 'N/A'} {`(${odm.missionCostPerDay.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })} x ${days}jrs)`}</span>
-                      <span>{missionCostTotal.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
-                    </li>
-
+                    {odm.missionCostPerDay !== 0 && (
+                      <li className="flex justify-between">
+                        <span>{odm.creator?.user?.name || odm.creator?.name || 'N/A'} {`(${odm.missionCostPerDay.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })} x ${days}jrs)`}</span>
+                        <span>{missionCostTotal.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
+                      </li>
+                    )}
                     {/* Accompanying persons costs */}
                     {odm.hasAccompanying && odm.accompanyingPersons?.map((person: any, index: number) => (
                       <li key={index} className="flex justify-between">
@@ -530,7 +531,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
 
                 <Separator className="my-2" />
                 <div className="grid gap-3">
-              <div className="font-semibold">Information Employé</div>
+              <div className="font-semibold">Émetteur :</div>
                 <dl className="grid gap-3 text-sm">
                   <div className="flex items-center justify-between">
                     <dt className="text-muted-foreground">Nom et Prénom</dt>

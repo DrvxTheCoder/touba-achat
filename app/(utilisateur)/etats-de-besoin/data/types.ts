@@ -41,6 +41,7 @@ export type EDBStatus =
       department: string;
       email: string;
     };
+    references: string;
     email: string;
     totalAmount: number;
     auditLogs: Array<{

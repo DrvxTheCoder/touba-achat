@@ -63,7 +63,7 @@ import { Notifications } from "./components/Notifications"
 import { SpinnerCircular } from "spinners-react";
 import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 import DashboardMetrics from "./components/DashboardCards";
-import { PieChartCard } from "./components/Piechart";
+import { ActivityPieChart } from "./components/Piechart";
 import { AreaChartCard } from "./components/AreaChart";
 import { QuickViewTabs } from "./components/QuickViewTableTabs";
 
@@ -170,7 +170,7 @@ export default function Dashboard() {
       </Card> */}
       <QuickViewTabs />
       <div className="col-span-2 md:col-span-1">
-        <PieChartCard />
+        <ActivityPieChart />
       </div>
       <div className="col-span-2 md:col-span-1">
         <AreaChartCard />
