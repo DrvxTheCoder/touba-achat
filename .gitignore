@@ -4,3 +4,4 @@ node_modules
 quickscripts
 prisma/resetDB.ts
 app/dashboard/mail
+.vscode
