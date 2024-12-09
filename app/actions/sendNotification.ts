@@ -84,20 +84,20 @@ export async function sendNotification(payload: NotificationPayload) {
     );
 
     // Emit socket event
-    const io: SocketIOServer = (global as any).io
-    if (io) {
-      notification.recipients.forEach(recipient => {
-        io.to(recipient.userId.toString()).emit('notification', {
-          id: notification.id,
-          message: notification.message,
-          type: notification.type,
-          entityId,
-          entityType,
-          createdAt: notification.createdAt,
-          ...additionalData
-        })
-      })
-    }
+    // const io: SocketIOServer = (global as any).io
+    // if (io) {
+    //   notification.recipients.forEach(recipient => {
+    //     io.to(recipient.userId.toString()).emit('notification', {
+    //       id: notification.id,
+    //       message: notification.message,
+    //       type: notification.type,
+    //       entityId,
+    //       entityType,
+    //       createdAt: notification.createdAt,
+    //       ...additionalData
+    //     })
+    //   })
+    // }
 
     // Send email notifications
     for (const recipient of notification.recipients) {

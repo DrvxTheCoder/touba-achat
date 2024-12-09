@@ -14,6 +14,8 @@ export const translateRole = (role: string | undefined): string => {
         return 'Magasinier';
       case 'RH':
         return 'Ressources Humaines';
+      case 'DAF':
+        return 'DAF';
       case 'AUDIT':
         return 'Auditeur';
       case 'IT_ADMIN':

@@ -18,6 +18,10 @@ type AllowedRole =
   | "DIRECTEUR_GENERAL"
   | "MAGASINIER"
   | "AUDIT"
+  | "DAF"
+  | "DOG"
+  | "DRH"
+  | "DCM"
   | "IT_ADMIN"
   | "RH";
 
@@ -74,7 +78,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     "MAGASINIER",
     "AUDIT",
     "IT_ADMIN",
-    "RH"
+    "RH",
+    "DAF",
+    "DCM",
+    "DOG",
+    "DRH"
   ];
 
   // Type guard to check if role is allowed

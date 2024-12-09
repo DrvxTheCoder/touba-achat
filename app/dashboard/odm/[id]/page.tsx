@@ -108,7 +108,11 @@ async function checkAccess(session: any) {
     "DIRECTEUR_GENERAL",
     "RESPONSABLE",
     "RH",
-    "AUDIT"
+    "AUDIT",
+    "DAF",
+    "DOG",
+    "DRH",
+    "DCM",
   ];
 
   return session?.user?.role && allowedReadRoles.includes(session.user.role);

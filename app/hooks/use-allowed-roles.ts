@@ -13,12 +13,17 @@ export const useAllowedRoles = () => {
     "MAGASINIER",
     "RH",
     "AUDIT",
-    "IT_ADMIN"
+    "IT_ADMIN",
+    "DAF",
+    "DOG",
+    "DCM",
+    "DRH",
   ];
   const allowedWriteRoles = [
     "ADMIN",
     "IT_ADMIN",
     "DIRECTEUR_GENERAL",
+    "DAF",
   ];
   const allowedFullAccessRoles = [
     "ADMIN",

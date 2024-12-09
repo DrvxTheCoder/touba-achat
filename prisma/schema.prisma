@@ -17,6 +17,10 @@ enum Role {
   RH
   AUDIT
   IT_ADMIN
+  DAF
+  DOG
+  DRH
+  DCM
 }
 
 enum Access {
@@ -64,6 +68,11 @@ enum NotificationType {
   ODM_UPDATED
   ODM_REJECTED
   EDB_REJECTED
+  BDC_CREATED
+  BDC_APPROVED_RESPONSABLE
+  BDC_APPROVED_DIRECTOR
+  BDC_PRINTED
+  BDC_REJECTED
 }
 
 enum AttachmentType {
@@ -106,6 +115,15 @@ enum ODMStatus {
   REJECTED
 }
 
+enum BDCStatus {
+  SUBMITTED
+  APPROVED_RESPONSABLE
+  APPROVED_DIRECTEUR
+  PRINTED
+  REJECTED
+  UPDATED
+}
+
 enum CategoryType {
   DEFAULT
   CUSTOM
@@ -142,6 +160,16 @@ enum ODMEventType {
   COMPLETED
   REJECTED
   UPDATED
+}
+
+enum BDCEventType {
+  SUBMITTED
+  APPROVED_RESPONSABLE
+  APPROVED_DIRECTEUR
+  REJECTED
+  COMPLETED
+  UPDATED
+  PRINTED
 }
 
 enum ODMPersonCategory {
@@ -190,6 +218,10 @@ model User {
   orderedStockEdbs      StockEtatDeBesoin[] @relation("StockOrderer")
   deliveredStockEdbs    StockEtatDeBesoin[] @relation("StockDeliverer")
   convertedStockEdbs    StockEtatDeBesoin[] @relation("StockConverter")
+  createdBdcs           BonDeCaisse[] @relation("BDCUserCreator")
+  approvedBdcs          BonDeCaisse[] @relation("BDCApprover")
+  printedBdcs           BonDeCaisse[] @relation("BDCPrinter")
+  bdcAuditLogs          BonDeCaisseAuditLog[]
 }
 
 model Employee {
@@ -208,6 +240,7 @@ model Employee {
   createdEdbs         EtatDeBesoin[]              @relation("EmployeeCreator")
   createdOdms         OrdreDeMission[]            @relation("EmployeeCreator")
   stockEdbs           StockEtatDeBesoin[]         @relation("StockCreator")
+  createdBdcs         BonDeCaisse[]               @relation("BDCCreator")
 }
 
 model Department {
@@ -218,6 +251,7 @@ model Department {
   odms             OrdreDeMission[]
   employeeHistory  EmployeeDepartmentHistory[]
   stockEdbs        StockEtatDeBesoin[]
+  bdcs             BonDeCaisse[]
   
 }
 
@@ -378,6 +412,46 @@ model OrdreDeMissionAuditLog {
   details           Json?         // For storing any additional event-specific details
 }
 
+model BonDeCaisse {
+  id              Int              @id @default(autoincrement())
+  bdcId           String           @unique // For generating formatted IDs like BDC-2024-001
+  title           String
+  description     Json             // Will store array of {item: string, amount: number}
+  employees       Json             // Will store array of {name: string, role: string}
+  comment         String?
+  totalAmount     Float
+  status          BDCStatus        @default(SUBMITTED)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  departmentId    Int
+  department      Department       @relation(fields: [departmentId], references: [id])
+  creatorId       Int
+  creator         Employee         @relation("BDCCreator", fields: [creatorId], references: [id])
+  userCreatorId   Int
+  userCreator     User            @relation("BDCUserCreator", fields: [userCreatorId], references: [id])
+  approverId      Int?
+  approver        User?           @relation("BDCApprover", fields: [approverId], references: [id])
+  printedById     Int?
+  printedBy       User?           @relation("BDCPrinter", fields: [printedById], references: [id])
+  printedAt       DateTime?
+  rejectionReason String?
+  notifications   Notification[]
+  auditLogs       BonDeCaisseAuditLog[]
+}
+
+model BonDeCaisseAuditLog {
+  id            Int           @id @default(autoincrement())
+  bonDeCaisseId Int
+  bonDeCaisse   BonDeCaisse  @relation(fields: [bonDeCaisseId], references: [id])
+  userId        Int
+  user          User         @relation(fields: [userId], references: [id])
+  eventType     BDCEventType
+  eventAt       DateTime     @default(now())
+  details       Json?        // For storing any additional event-specific details
+}
+
 
 model Category {
   id   Int            @id @default(autoincrement())
@@ -406,6 +480,8 @@ model Notification {
   ordreDeMissionId Int?
   ordreDeMission   OrdreDeMission?  @relation(fields: [ordreDeMissionId], references: [id])
   recipients       NotificationRecipient[]
+  bonDeCaisseId Int?
+  bonDeCaisse   BonDeCaisse? @relation(fields: [bonDeCaisseId], references: [id])
 }
 
 model NotificationRecipient {

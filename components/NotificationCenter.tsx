@@ -8,16 +8,20 @@ import { ScrollArea } from "./ui/scroll-area";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const extractDocumentId = (message: string): { type: 'edb' | 'odm' | null, id: string | null } => {
-    // Match EDB-XXXXXXXXXX or ODM-XXXXXXXXX pattern
+const extractDocumentId = (message: string): { type: 'edb' | 'odm' | 'bdc' | null, id: string | null } => {
+    // Match EDB-XXXXXXXXXX or ODM-XXXXXXXXX or BDC pattern
     const edbMatch = message.match(/EDB-[A-Z0-9]+/);
     const odmMatch = message.match(/ODM-[A-Z0-9]+/);
+    const bdcMatch = message.match(/BDC\d{4}\d{1}\d{1}-\d{3}/); // Matches our BDC ID format
 
     if (edbMatch) {
         return { type: 'edb', id: edbMatch[0] };
     }
     if (odmMatch) {
         return { type: 'odm', id: odmMatch[0] };
+    }
+    if (bdcMatch) {
+        return { type: 'bdc', id: bdcMatch[0] };
     }
     
     return { type: null, id: null };
@@ -30,13 +34,14 @@ export const NotificationCenter = () => {
     const handleNotificationClick = (notification: CustomNotification) => {
         const { type, id } = extractDocumentId(notification.message);
         
-        if (type && id) {
-            markAsRead(notification.id);
-            if (type === 'edb') {
-                router.push(`/dashboard/etats/${id}`);
-            } else if (type === 'odm') {
-                router.push(`/dashboard/odm/${id}`);
-            }
+        markAsRead(notification.id);
+        
+        if (type === 'edb') {
+            router.push(`/dashboard/etats/${id}`);
+        } else if (type === 'odm') {
+            router.push(`/dashboard/odm/${id}`);
+        } else if (type === 'bdc') {
+            router.push('/bdc'); // Route to main BDC page
         }
     };
 
@@ -75,7 +80,11 @@ export const NotificationCenter = () => {
                     <ScrollArea className="h-60 max-h-72">
                     {notifications.map((notification) => {
                         const { type, id } = extractDocumentId(notification.message);
-                        const href = type === 'edb' ? `/dashboard/etats/${id}` : `/dashboard/odm/${id}`;
+                        const href = type === 'edb' 
+                            ? `/dashboard/etats/${id}` 
+                            : type === 'odm' 
+                                ? `/dashboard/odm/${id}`
+                                : '/bdc'; // Default to BDC page
                         
                         return (
                             <Link href={href} key={notification.id}>

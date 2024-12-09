@@ -353,6 +353,8 @@ export async function createEDB(
     initialStatus = 'APPROVED_RESPONSABLE';
   } else if (user.role === 'DIRECTEUR') {
     initialStatus = 'APPROVED_DIRECTEUR';
+  }else if (user.role === 'DAF' || 'DOG' || 'DCM' || 'DRH') {
+    initialStatus = 'APPROVED_DIRECTEUR';
   } else if (user.role === 'DIRECTEUR_GENERAL') {
     initialStatus = 'APPROVED_DG';
   }

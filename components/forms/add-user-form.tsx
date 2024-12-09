@@ -313,6 +313,10 @@ export function AddEmployeeForm() {
                               <SelectItem value="USER">Utilisateur</SelectItem>
                               <SelectItem value="RESPONSABLE">Responsable</SelectItem>
                               <SelectItem value="DIRECTEUR">Directeur / Directrice</SelectItem>
+                              <SelectItem value="DAF">DAF</SelectItem>
+                              <SelectItem value="DRH">DRH</SelectItem>
+                              <SelectItem value="DOG">DOG</SelectItem>
+                              <SelectItem value="DCM">DCM</SelectItem>
                               <SelectItem value="DIRECTEUR_GENERAL">Directeur Général</SelectItem>
                               <SelectItem value="MAGASINIER">Magasinier</SelectItem>
                               <SelectItem value="RH">Ressources Humaines</SelectItem>

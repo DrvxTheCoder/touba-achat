@@ -12,6 +12,7 @@ import {
   Package,
   Luggage,
   PenBoxIcon,
+  HandCoins,
 } from "lucide-react";
 
 type Submenu = {
@@ -66,12 +67,20 @@ export function getAdminMenuList(pathname: string): Group[] {
           submenus: []
         },
         {
+          href: "/bdc",
+          label: "Bons de caisse",
+          active: pathname.includes("/bdc"),
+          icon: HandCoins,
+          submenus: []
+        },
+        {
           href: "/dashboard/employes",
           label: "Employés / Utilisateur",
           active: pathname.includes("/dashboard/employes"),
           icon: Users,
           submenus: []
         },
+        
       ]
     },
   ];
@@ -94,7 +103,14 @@ export function getUserMenuList(pathname: string): Group[] {
           active: pathname.includes("/etats-de-besoin"),
           icon: Package,
           submenus: []
-        }
+        },
+        {
+          href: "/bdc",
+          label: "Bons de caisse",
+          active: pathname.includes("/bdc"),
+          icon: HandCoins,
+          submenus: []
+        },
       ]
     },
   ];

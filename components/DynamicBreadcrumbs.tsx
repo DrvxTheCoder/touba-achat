@@ -16,7 +16,8 @@ const pathMap: { [key: string]: string } = {
   odm: 'Ordres de Missions',
   stock: 'Articles en stock',
   acceuil: 'Accueil',
-  "etats-de-besoin":'Mes États de Besoins'
+  "etats-de-besoin":'Mes États de Besoins',
+  bdc: 'Bon de caisse'
   // Add more mappings as needed
 };
 

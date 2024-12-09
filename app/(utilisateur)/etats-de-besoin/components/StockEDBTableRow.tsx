@@ -25,7 +25,7 @@ export type StockEDB = {
     name: string;
     type: 'DEFAULT' | 'CUSTOM';
   };
-  employee: {
+  employee?: {
     id: number;
     name: string;
     email: string;
@@ -96,7 +96,7 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({ edb, onClick
       <TableCell>
       <div className="text-xs md:font-medium"># {edb.edbId}</div>
       <div className="hidden text-xs text-muted-foreground md:inline">
-          {edb.employee.name}
+          {edb.employee?.name}
         </div>
       </TableCell>
       <TableCell className="hidden sm:table-cell">{edb.category.name}</TableCell>
