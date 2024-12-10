@@ -208,6 +208,11 @@ export async function validateEDB(edbId: number, userId: number, userRole: strin
         throw new Error('Non autorisé à approuver à cette étape');
       }
       break;
+    case 'DOG':
+    case 'DAF':
+    case 'DRH':
+    case 'DCM':
+    case 'ADMIN':
     case 'DIRECTEUR':
       if (edb.status === 'SUBMITTED' || edb.status === 'APPROVED_RESPONSABLE') {
         newStatus = 'APPROVED_DIRECTEUR';

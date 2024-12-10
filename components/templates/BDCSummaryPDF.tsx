@@ -101,7 +101,7 @@ const BDCSummaryPDF: React.FC<BDCSummaryPDFProps> = ({ bdc, timelineEvents }) =>
           {/* {qrCodeImage && <Image style={styles.qrCode} src={qrCodeImage} />} */}
         </View>
         <Image style={styles.watermark} src="/assets/img/touba-logo192x192.png" />
-        
+
         <View style={styles.section}>
           <Text style={styles.title}>BON DE CAISSE</Text>
           <Text style={styles.text}>ID: #{bdc.bdcId}</Text>
@@ -130,7 +130,7 @@ const BDCSummaryPDF: React.FC<BDCSummaryPDFProps> = ({ bdc, timelineEvents }) =>
             {bdc.description.map((item, index) => (
               <View style={styles.tableRow} key={index}>
                 <View style={styles.tableCol}><Text style={styles.tableCell}>{item.item}</Text></View>
-                <View style={styles.tableCol}><Text style={styles.tableCell}>{item.amount.toLocaleString()} XOF</Text></View>
+                <View style={styles.tableCol}><Text style={styles.tableCell}>{item.amount} XOF</Text></View>
               </View>
             ))}
           </View>
