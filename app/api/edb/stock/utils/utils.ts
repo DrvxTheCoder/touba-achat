@@ -313,9 +313,9 @@ export async function updateStockEDBStatus(
     where: { id: magasinierId },
   });
 
-  if (!magasinier || magasinier.role !== 'MAGASINIER') {
+  if (!magasinier || (magasinier.role !== 'MAGASINIER' && magasinier.role !== 'ADMIN')) {
     throw new Error('Non autorisé: Seuls les magasiniers peuvent mettre à jour le statut');
-  }
+  }  
 
   const updateData: Prisma.StockEtatDeBesoinUpdateInput = {
     status,

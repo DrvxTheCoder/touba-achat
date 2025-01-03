@@ -22,6 +22,8 @@ import { ContentLayout } from "@/components/user-panel/content-layout";
 import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 import ResponsiveStockEdbDialog from "../components/ResponsiveStockEDBForm";
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import { PrintTest } from "@/components/PrintBDCButton";
+import { PrintableBDC } from "../../odm/components/BonDeCaissePDF";
 
 type Category = {
     id: number;
@@ -66,6 +68,28 @@ const LoadingContent = () => (
   </ContentLayout>
 );
 
+const testData = {
+  edbId: "BDC2024001",
+  date: new Date().toLocaleDateString('fr-FR'),
+  department: "Informatique",
+  items: [
+    {
+      description: "Cartouche d'encre HP",
+      quantity: 2,
+      unitPrice: 15000,
+      total: 30000
+    },
+    {
+      description: "Papier A4",
+      quantity: 5,
+      unitPrice: 2500,
+      total: 12500
+    }
+  ],
+  total: 42500,
+  approvedBy: "John Doe"
+};
+
 export default function StockEDBPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -79,6 +103,10 @@ export default function StockEDBPage() {
     const [categoryFilter, setCategoryFilter] = useState("");
     const [categories, setCategories] = useState<Category[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
+
+    const refresh = (() => {
+
+    })
 
   // Check if user has required role
   const hasAccess = session?.user?.role && ['ADMIN', 'MAGASINIER', 'DIRECTEUR_GENERAL'].includes(session.user.role);
@@ -110,36 +138,36 @@ export default function StockEDBPage() {
     fetchInitialData();
   }, [hasAccess]);
 
+  const fetchStockEDBs = async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        search: searchTerm,
+        category: categoryFilter,
+      });
+
+      const response = await fetch(`/api/edb/stock?${queryParams}`);
+      if (!response.ok) throw new Error('Erreur réseau');
+      
+      const { data, total: totalItems } = await response.json();
+      setStockEdbs(data || []);
+      setTotal(totalItems || 0);
+    } catch (error) {
+      console.error("Erreur:", error);
+      setStockEdbs([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   useEffect(() => {
     if (!hasAccess) return;
-
-    const fetchStockEDBs = async () => {
-      setIsLoading(true);
-      try {
-        const queryParams = new URLSearchParams({
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-          search: searchTerm,
-          category: categoryFilter,
-        });
-  
-        const response = await fetch(`/api/edb/stock?${queryParams}`);
-        if (!response.ok) throw new Error('Erreur réseau');
-        
-        const { data, total: totalItems } = await response.json();
-        setStockEdbs(data || []);
-        setTotal(totalItems || 0);
-      } catch (error) {
-        console.error("Erreur:", error);
-        setStockEdbs([]);
-        setTotal(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
     fetchStockEDBs();
-  }, [page, pageSize, searchTerm, categoryFilter, hasAccess]);
+  }, [hasAccess]);
 
   const handleStockEdbSubmit = async (data: any) => {
     try {
@@ -229,7 +257,7 @@ export default function StockEDBPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-10">
                   <ListFilter className="h-4 w-4" />
-                  <text className="hidden md:block mr-2">Catégories</text>
+                  <text className="hidden md:block ml-2">Catégories</text>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -251,18 +279,28 @@ export default function StockEDBPage() {
 
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="rounded-2xl">
               <CardContent className="pt-5">
                 <Table>
-                  <TableHeader className="bg-muted rounded-lg">
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead className="sm:table-cell">Employé</TableHead>
-                      <TableHead className="hidden sm:table-cell">Catégorie</TableHead>
-                      <TableHead className="hidden sm:table-cell">Quantité</TableHead>
-                      <TableHead className="sm:table-cell text-right rounded-l-md">Date</TableHead>
+                <TableHeader className="bg-muted">
+                    <TableRow className="rounded-lg border-0">
+                    <TableHead className="rounded-l-lg">
+                    ID
+                    </TableHead>
+                    <TableHead className=" sm:table-cell">
+                    Statut
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell md:text-left">
+                    Catégorie
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">
+                    Articles
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell text-right rounded-r-lg">
+                    Date
+                    </TableHead>
                     </TableRow>
-                  </TableHeader>
+                </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
@@ -294,7 +332,7 @@ export default function StockEDBPage() {
                   </TableBody>
                 </Table>
               </CardContent>
-              <CardFooter className="flex items-end justify-end border-t bg-muted/50 p-4">
+              <CardFooter className="flex items-end justify-end border-t bg-muted/50 p-4 rounded-bl-2xl rounded-br-2xl">
                 <div className="text-xs text-muted-foreground">
                   {/* Mis à jour: {format(new Date(), "dd/MM/yyyy", { locale: fr })} */}
                 </div>
@@ -330,9 +368,9 @@ export default function StockEDBPage() {
 
           <div>
             {selectedEDB ? (
-              <StockEDBDetails stockEdb={selectedEDB} />
+              <StockEDBDetails stockEdb={selectedEDB} onUpdate={fetchStockEDBs} />
             ) : (
-              <Card>
+              <Card className="rounded-2xl">
                 <CardContent className="p-6 text-sm text-center text-muted-foreground">
                   Sélectionnez un article pour en afficher les détails
                 </CardContent>
@@ -340,6 +378,8 @@ export default function StockEDBPage() {
             )}
           </div>
         </div>
+        <PrintTest />
+        <PrintableBDC data={testData} />
       </main>
     </ContentLayout>
 

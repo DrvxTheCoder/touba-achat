@@ -19,7 +19,8 @@
     ],
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "prisma/dept.mjs"],
   "exclude": ["node_modules"]

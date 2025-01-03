@@ -4,38 +4,13 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { StockEDBStatus } from '@prisma/client';
+import { StatusBadge } from './StatusBadge';
+import { BaseStockEDB } from '../types/stock-edb';
 
-interface StockEDBRow {
-  id: number;
-  edbId: string;
-  description: {
-    items: Array<{ name: string; quantity: number }>;
-    comment?: string;
-  };
-  category: {
-    name: string;
-  };
-  department: {
-    id: number;
-    name: string;
-  };
-  employee?: {
-    name: string;
-    id?: number;
-  } | null;
-  externalEmployeeName?: string | null;
-  createdAt: Date | string;
-  status: StockEDBStatus;
-  convertedEdb?: {
-    description: {
-      items: Array<{ designation: string; quantity: number }>;
-    };
-  } | null;
-}
 
 type StockEDBTableRowProps = {
-  stockEdb: StockEDBRow;
-  onClick: (stockEdb: StockEDBRow) => void;
+  stockEdb: BaseStockEDB;
+  onClick: (stockEdb: BaseStockEDB) => void;
   isSelected: boolean;
 };
 
@@ -67,8 +42,14 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({
         onClick={() => onClick(stockEdb)} 
         className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}
       >
-        <TableCell className="text-xs md:text-base">{stockEdb.edbId}</TableCell>
-        <TableCell className="text-xs md:text-base sm:table-cell">{getEmployeeName()}</TableCell>
+        <TableCell className="text-xs md:text-base">      
+          <div className="text-xs md:font-medium"># {stockEdb.edbId}</div>
+          <div className="hidden text-xs text-muted-foreground md:inline">
+          {getEmployeeName()}
+          </div></TableCell>
+        <TableCell className="text-xs md:text-base sm:table-cell">      
+          <StatusBadge status={stockEdb.status} />
+        </TableCell>
         <TableCell className="text-xs md:text-base hidden sm:table-cell">{stockEdb.category.name}</TableCell>
         <TableCell className="text-xs md:text-base hidden sm:table-cell">{totalItems} article(s)</TableCell>
         <TableCell className="text-xs md:text-base sm:table-cell text-right">

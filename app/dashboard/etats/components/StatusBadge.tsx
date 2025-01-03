@@ -14,6 +14,7 @@ const statusMapping: Record<string, string[]> = {
   'Facture Rattaché': ['MAGASINIER_ATTACHED'],
   'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],
   'Livré': ['DELIVERED'],
+  'Livré (Manquant)': ['PARTIALLY_DELIVERED'],
   'Validé': ['FINAL_APPROVAL'],
   'Rejeté': ['REJECTED'],
   'Traité': ['COMPLETED'],

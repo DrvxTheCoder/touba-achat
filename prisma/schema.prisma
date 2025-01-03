@@ -189,6 +189,7 @@ enum StockEDBStatus {
   SUBMITTED   // When user submits
   ORDERED     // When magasinier marks as ordered
   DELIVERED   // When magasinier marks as delivered
+  PARTIALLY_DELIVERED // When magasinier marks as partially delivered
   CONVERTED   // When converted to standard EDB
 }
 
@@ -318,7 +319,8 @@ model EtatDeBesoinAuditLog {
 model StockEtatDeBesoin {
   id                    Int             @id @default(autoincrement())
   edbId                 String          @unique
-  description          Json            
+  description          Json            // Will now contain: { items: Array<{ name: string, quantity: number, comment: string }> }
+  deliveryHistory     Json?           // Will contain: Array<{ items: Array<{ name: string, quantity: number }>, deliveredAt: string, deliveredBy: number }>
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   status               StockEDBStatus  @default(SUBMITTED)
@@ -329,7 +331,7 @@ model StockEtatDeBesoin {
   department           Department      @relation(fields: [departmentId], references: [id])
   categoryId           Int
   category             Category        @relation(fields: [categoryId], references: [id])
-  convertedEdbId       Int?            @unique  // Add @unique here
+  convertedEdbId       Int?            @unique
   convertedEdb         EtatDeBesoin?   @relation("ConvertedEDB", fields: [convertedEdbId], references: [id])
   orderedAt            DateTime?      
   orderedById          Int?           
@@ -340,8 +342,8 @@ model StockEtatDeBesoin {
   convertedAt          DateTime?      
   convertedById        Int?           
   convertedBy          User?           @relation("StockConverter", fields: [convertedById], references: [id])
+  isFullyDelivered     Boolean         @default(false)
 }
-
 model Attachment {
   id           Int      @id @default(autoincrement())
   edbId        Int

@@ -19,7 +19,7 @@ export default function AuthenticationPage() {
   return (
     <>
     <title>ToubaApp™ - Appli Officiel de Touba Oil SAU</title>
-      <div className="container relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      <div className="container relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0 px-6">
         <div className="relative hidden h-full flex-col p-6 text-white dark:border-r lg:flex">
           <div className="absolute inset-0 bg-zinc-900 opacity-70" />
           <Image
@@ -42,10 +42,12 @@ export default function AuthenticationPage() {
             </blockquote>
           </div>
         </div>
-        <div className=" mt-36 justify-center lg:mt-12">
-          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[30rem] border rounded-lg shadow-lg p-6">
+        <div className="flex flex-col justify-center justify-items-center h-full">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[30rem] border rounded-lg shadow-lg p-4 pt-12 lg:p-8">
+          <div className="w-full flex flex-row justify-center justify-items-center lg:hidden">
+            <CustomLogoSVG width="4rem" height="4rem" />
+          </div>
             <div className="flex flex-col space-y-1 text-center">
-              
               <h1 className="text-3xl font-bold tracking-tight">
                 Connexion
               </h1>
