@@ -212,6 +212,21 @@ export const ODMDataTable: React.FC = () => {
                   <span className="sr-only">Précédent</span>
                 </Button>  
               </PaginationItem>
+              
+              {/* Add numbered page buttons */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <PaginationItem key={pageNum}>
+                  <Button
+                    variant={page === pageNum ? "default" : "outline"}
+                    size="sm"
+                    className="h-6 w-6 text-xs"
+                    onClick={() => setPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                </PaginationItem>
+              ))}
+              
               <PaginationItem>
                 <Button 
                   size="icon" 

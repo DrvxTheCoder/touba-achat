@@ -123,6 +123,7 @@ import { MarkAsDeliveredDialog } from "./MarkAsDeliveredDialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Icons } from "@/components/icons"
 import { useRouter } from "next/navigation"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const ITEMS_PER_PAGE = 5;
 const statusMapping = {
@@ -272,6 +273,7 @@ export default function Etats() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [timeRange, setTimeRange] = useState('last-year');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [isFinalApprobation, setIsFinalApprobation] = useState(false);
@@ -381,7 +383,8 @@ export default function Etats() {
     ITEMS_PER_PAGE, 
     searchTerm, 
     statusFilter,
-    userInfo
+    userInfo,
+    timeRange
   );
 
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
@@ -782,6 +785,18 @@ export default function Etats() {
           <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
             <EDBCards />
             <div className="flex items-center">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-fit h-7">
+                <SelectValue placeholder="Sélectionner une période" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="this-month">Ce mois</SelectItem>
+                <SelectItem value="last-month">Mois dernier</SelectItem>
+                <SelectItem value="last-3-months">Trimestre</SelectItem>
+                <SelectItem value="this-year">Cette année</SelectItem>
+                <SelectItem value="last-year">Année dernière</SelectItem>
+              </SelectContent>
+            </Select>
               <div className="ml-auto flex items-center gap-2">
                 <Input 
                   placeholder="Recherche..." 
@@ -911,33 +926,49 @@ export default function Etats() {
                     </div>
                   </div>
                   <Pagination className="ml-auto mr-0 w-auto">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
-                        className="h-6 w-6"
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1 || isLoading}
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                        <span className="sr-only">Précédent</span>
-                      </Button>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
-                        className="h-6 w-6"
-                        onClick={() => setCurrentPage(prev => Math.min(paginatedData?.totalPages || 1, prev + 1))}
-                        disabled={currentPage === paginatedData?.totalPages || isLoading}
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                        <span className="sr-only">Suivant</span>
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <Button 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-6 w-6"
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1 || isLoading}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          <span className="sr-only">Précédent</span>
+                        </Button>
+                      </PaginationItem>
+                      
+                      {/* Generate numbered page buttons */}
+                      {Array.from({ length: paginatedData?.totalPages || 1 }, (_, i) => i + 1).map((pageNum) => (
+                        <PaginationItem key={pageNum}>
+                          <Button
+                            variant={currentPage === pageNum ? "secondary" : "outline"}
+                            size="sm"
+                            className="h-6 w-6 text-xs"
+                            onClick={() => setCurrentPage(pageNum)}
+                            disabled={isLoading}
+                          >
+                            {pageNum}
+                          </Button>
+                        </PaginationItem>
+                      ))}
+
+                      <PaginationItem>
+                        <Button 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-6 w-6"
+                          onClick={() => setCurrentPage(prev => Math.min(paginatedData?.totalPages || 1, prev + 1))}
+                          disabled={currentPage === paginatedData?.totalPages || isLoading}
+                        >
+                          <ChevronRight className="h-3.5 w-3.5" />
+                          <span className="sr-only">Suivant</span>
+                        </Button>
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                 </CardFooter>
               </Card>
             </div>

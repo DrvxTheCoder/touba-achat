@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
     const pageSize = parseInt(searchParams.get('pageSize') || '5');
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('category');
+    const timeRange = searchParams.get('timeRange') || 'this-month';
 
     const result = await getStockEDBs({
       page,
@@ -92,7 +93,8 @@ export async function GET(req: NextRequest) {
       search,
       categoryId: categoryId ? parseInt(categoryId) : undefined,
       userRole: session.user.role as Role,
-      userId: parseInt(session.user.id)
+      userId: parseInt(session.user.id),
+      timeRange
     });
 
     return NextResponse.json(result);

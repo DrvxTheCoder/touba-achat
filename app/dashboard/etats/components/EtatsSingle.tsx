@@ -222,6 +222,7 @@ const statusMapping = {
           canTakeAction: defaultActionPermissions
         };
       }
+
   
       const { role, access = [] } = session.user;
   
@@ -230,7 +231,7 @@ const statusMapping = {
         canMarkDelivered: edb.status === "SUPPLIER_CHOSEN",
         canMarkComplete: edb.status === "FINAL_APPROVAL",
         canFinalApprove: ["DELIVERED", "FINAL_APPROVAL"].includes(edb.status) && !["COMPLETED", "FINAL_APPROVAL"].includes(edb.status),
-        canReject: !["APPROVED_DG", "COMPLETED", "FINAL_APPROVAL"].includes(edb.status)
+        canReject:   (edb.status === "ESCALATED" && !['ADMIN', 'DIRECTEUR_GENERAL'].includes(session.user.role) || ["APPROVED_DG", "COMPLETED", "FINAL_APPROVAL"].includes(edb.status))
       } : defaultActionPermissions;
   
       return {

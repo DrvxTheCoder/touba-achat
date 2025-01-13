@@ -15,7 +15,7 @@ export async function POST(
   if (!session || !session.user) {
     return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
   }
-  if (session.user.role !== "DIRECTEUR") {
+  if (session.user.role !== "DIRECTEUR" && session.user.role !== "ADMIN") {
     return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
   }
 

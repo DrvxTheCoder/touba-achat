@@ -50,9 +50,9 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({
         <TableCell className="text-xs md:text-base sm:table-cell">      
           <StatusBadge status={stockEdb.status} />
         </TableCell>
-        <TableCell className="text-xs md:text-base hidden sm:table-cell">{stockEdb.category.name}</TableCell>
-        <TableCell className="text-xs md:text-base hidden sm:table-cell">{totalItems} article(s)</TableCell>
-        <TableCell className="text-xs md:text-base sm:table-cell text-right">
+        <TableCell className="text-xs md:text-sm hidden sm:table-cell">{stockEdb.category.name}</TableCell>
+        <TableCell className="text-xs md:text-sm hidden sm:table-cell">{totalItems} article(s)</TableCell>
+        <TableCell className="text-xs md:text-sm sm:table-cell text-right">
           {format(new Date(stockEdb.createdAt), "dd/MM/yyyy", { locale: fr })}
         </TableCell>
       </TableRow>

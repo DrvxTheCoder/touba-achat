@@ -7,7 +7,8 @@ import {
   View, 
   StyleSheet, 
   PDFViewer,
-  Image
+  Image,
+  Font
 } from '@react-pdf/renderer';
 import { Button } from "@/components/ui/button";
 import { Printer, Eye } from "lucide-react";
@@ -23,6 +24,11 @@ const PAPER_WIDTH = 226.772;
 const MARGIN = 25;
 const CONTENT_WIDTH = PAPER_WIDTH - (MARGIN * 2);
 
+Font.register({
+  family: 'Oswald',
+  src: 'https://fonts.gstatic.com/s/oswald/v13/Y_TKV6o8WovbUd3m_X9aAA.ttf'
+});
+
 // Using built-in fonts only
 const styles = StyleSheet.create({
   viewer: {
@@ -37,28 +43,35 @@ const styles = StyleSheet.create({
     padding: MARGIN,
     fontFamily: 'Courier',
   },
+  text: {
+    fontSize: 20,
+    textAlign: 'center',
+    fontFamily: 'Oswald'
+  },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 10,
   },
   logo: {
-    width: 8, // 60% of content width
-    height: 'auto',
+    width: 100,
+    height: 20,
     marginBottom: 5,
   },
   header: {
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 5,
+    fontFamily: 'Courier'
   },
   headerBold: {
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 5,
-    fontFamily: 'Courier-Bold',
+    fontFamily: 'Oswald',
   },
   divider: {
     borderBottom: 1,
+    borderStyle: 'dashed',
     width: '100%',
     marginVertical: 4,
   },
@@ -112,25 +125,16 @@ const BonDeCaissePDF = ({ data }: { data: BDCData }) => {
   return (
     <Document>
       <Page size={[PAPER_WIDTH, 'auto']} style={styles.page}>
-        <View style={styles.logoContainer}>
-          <Image 
-            style={styles.logo}
-            src="/assets/img/touba-logo192x192.png"
-          />
+      <View style={styles.logoContainer}>
+          <Image style={styles.logo} src="/assets/img/logo-black.png" />
         </View>
-        <Text style={styles.headerBold}>TOUBA OIL S.A.U</Text>
-        <Text style={styles.header}>BON DE CAISSE</Text>
+        <Text style={styles.text}>BON DE CAISSE</Text>
         
         <View style={styles.divider} />
         
         <View style={styles.row}>
-          <Text style={styles.label}>N° BDC:</Text>
+          <Text style={styles.label}>ID:</Text>
           <Text style={styles.value}>{data.edbId}</Text>
-        </View>
-        
-        <View style={styles.row}>
-          <Text style={styles.label}>Date:</Text>
-          <Text style={styles.value}>{data.date}</Text>
         </View>
         
         <View style={styles.row}>
@@ -157,7 +161,7 @@ const BonDeCaissePDF = ({ data }: { data: BDCData }) => {
         <View style={styles.divider} />
         
         <View style={[styles.row, styles.total]}>
-          <Text style={styles.label}>Total:</Text>
+          <Text style={styles.label}>Total XOF:</Text>
           <Text style={styles.value}>{data.total}</Text>
         </View>
         

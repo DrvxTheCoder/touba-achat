@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || '';
     const role = session.user.role;
     const skip = (page - 1) * pageSize;
+    const timeRange = searchParams.get('timeRange') || 'this-month';
 
     const statusFilter = status ? status.split(',') as EDBStatus[] : [];
 
@@ -46,6 +47,35 @@ export async function GET(request: Request) {
       ],
       ...(statusFilter.length > 0 ? { status: { in: statusFilter } } : {}),
     };
+
+    // Add time range filtering
+    const now = new Date();
+    switch (timeRange) {
+      case 'this-month':
+        where.createdAt = {
+          gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          lte: now
+        };
+        break;
+      case 'last-month':
+        where.createdAt = {
+          gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          lte: new Date(now.getFullYear(), now.getMonth(), 0)
+        };
+        break;
+      case 'last-3-months':
+        where.createdAt = {
+          gte: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+          lte: now
+        };
+        break;
+      case 'this-year':
+        where.createdAt = {
+          gte: new Date(now.getFullYear(), 0, 1),
+          lte: now
+        };
+        break;
+    }
 
     // Role-based filtering
     switch (role) {

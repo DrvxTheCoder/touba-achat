@@ -166,15 +166,62 @@ export async function getStockEDBs(params?: {
   search?: string;
   userRole?: Role;
   userId?: number;
+  timeRange?: string;
 }) {
   const skip = params?.page && params?.pageSize ? (params.page - 1) * params.pageSize : undefined;
   const take = params?.pageSize;
 
+  const now = new Date();
+  let dateFilter = {};
+
+  switch (params?.timeRange) {
+    case 'this-month':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          lte: now
+        }
+      };
+      break;
+    case 'last-month':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          lte: new Date(now.getFullYear(), now.getMonth(), 0)
+        }
+      };
+      break;
+    case 'last-3-months':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+          lte: now
+        }
+      };
+      break;
+    case 'this-year':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), 0, 1),
+          lte: now
+        }
+      };
+      break;
+    case 'last-year':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear() - 1, 0, 1),
+          lte: new Date(now.getFullYear() - 1, 11, 31)
+        }
+      };
+      break;
+  }
+
   // Build the where condition
   const where: Prisma.StockEtatDeBesoinWhereInput = {
     // Base filters
+    ...dateFilter,
     ...(params?.categoryId && { categoryId: params.categoryId }),
-
     // Role-based filtering
     ...(!UNRESTRICTED_ROLES.includes(params?.userRole as typeof UNRESTRICTED_ROLES[number]) && {
       employee: {

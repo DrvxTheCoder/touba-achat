@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, ListFilter, Package2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, ListFilter, Package2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SpinnerCircular } from "spinners-react";
@@ -24,6 +24,7 @@ import ResponsiveStockEdbDialog from "../components/ResponsiveStockEDBForm";
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import { PrintTest } from "@/components/PrintBDCButton";
 import { PrintableBDC } from "../../odm/components/BonDeCaissePDF";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Category = {
     id: number;
@@ -87,7 +88,7 @@ const testData = {
     }
   ],
   total: 42500,
-  approvedBy: "John Doe"
+  approvedBy: "Daouda Badji"
 };
 
 export default function StockEDBPage() {
@@ -99,8 +100,10 @@ export default function StockEDBPage() {
     const [page, setPage] = useState(1);
     const [pageSize] = useState(5);
     const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState("");
+    const [timeRange, setTimeRange] = useState('this-month');
+    const [categoryFilter, setCategoryFilter] = useState("all");
     const [categories, setCategories] = useState<Category[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
 
@@ -146,6 +149,7 @@ export default function StockEDBPage() {
         pageSize: pageSize.toString(),
         search: searchTerm,
         category: categoryFilter,
+        timeRange: timeRange,
       });
 
       const response = await fetch(`/api/edb/stock?${queryParams}`);
@@ -154,6 +158,7 @@ export default function StockEDBPage() {
       const { data, total: totalItems } = await response.json();
       setStockEdbs(data || []);
       setTotal(totalItems || 0);
+      setTotalPages(Math.ceil(totalItems / pageSize));
     } catch (error) {
       console.error("Erreur:", error);
       setStockEdbs([]);
@@ -167,7 +172,7 @@ export default function StockEDBPage() {
   useEffect(() => {
     if (!hasAccess) return;
     fetchStockEDBs();
-  }, [hasAccess]);
+  }, [hasAccess, page, searchTerm, categoryFilter, timeRange]);
 
   const handleStockEdbSubmit = async (data: any) => {
     try {
@@ -245,40 +250,49 @@ export default function StockEDBPage() {
         
       </div>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Input 
-              placeholder="Rechercher un article..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-10 w-sm lg:max-w-sm"
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10">
-                  <ListFilter className="h-4 w-4" />
-                  <text className="hidden md:block ml-2">Catégories</text>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onSelect={() => setCategoryFilter("")}>
-                  Toutes les catégories
-                </DropdownMenuItem>
-                {categories.map((category) => (
-                  <DropdownMenuItem 
-                    key={category.id}
-                    onSelect={() => setCategoryFilter(category.id.toString())}
-                  >
-                    {category.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <Input 
+                  placeholder="Recherche..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-10 w-sm lg:max-w-sm"
+                />
+              <div className="flex items-center space-x-2">
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="gap-2">
+                <Calendar className="h-4 w-4" />
+                  <SelectValue placeholder="Période" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="this-month">Ce mois</SelectItem>
+                  <SelectItem value="last-month">Mois dernier</SelectItem>
+                  <SelectItem value="last-3-months">Trimestre</SelectItem>
+                  <SelectItem value="this-year">Cette année</SelectItem>
+                  <SelectItem value="last-year">Année dernière</SelectItem>
+                </SelectContent>
+              </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="space-x-1">
+                    <SelectValue placeholder="Catégories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>Toute les catégorie</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem 
+                        key={category.id}
+                        value={category.id.toString()}
+                        onSelect={() => setCategoryFilter(category.id.toString())}
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <Card className="rounded-2xl">
               <CardContent className="pt-5">
                 <Table>
@@ -296,7 +310,7 @@ export default function StockEDBPage() {
                     <TableHead className="hidden md:table-cell">
                     Articles
                     </TableHead>
-                    <TableHead className="hidden sm:table-cell text-right rounded-r-lg">
+                    <TableHead className="sm:table-cell text-right rounded-r-lg">
                     Date
                     </TableHead>
                     </TableRow>
@@ -349,13 +363,29 @@ export default function StockEDBPage() {
                         <ChevronLeft className="h-3.5 w-3.5" />
                       </Button>
                     </PaginationItem>
+                    
+                    {/* Add numbered pagination */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <PaginationItem key={pageNum}>
+                        <Button
+                          variant={page === pageNum ? "secondary" : "outline"}
+                          size="sm"
+                          className="h-6 w-6 text-[10px]"
+                          onClick={() => setPage(pageNum)}
+                          disabled={isLoading}
+                        >
+                          {pageNum}
+                        </Button>
+                      </PaginationItem>
+                    ))}
+
                     <PaginationItem>
                       <Button
                         size="icon"
                         variant="outline"
                         className="h-6 w-6"
-                        onClick={() => setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))}
-                        disabled={page >= Math.ceil(total / pageSize)}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page >= totalPages}
                       >
                         <ChevronRight className="h-3.5 w-3.5" />
                       </Button>

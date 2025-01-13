@@ -44,7 +44,7 @@ export default async function RootLayout({
           >
 
               <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)}/>
-              <Toaster richColors position="top-right" closeButton pauseWhenPageIsHidden  />
+              <Toaster richColors position="top-right" closeButton pauseWhenPageIsHidden className='z-50'  />
               {children}
 
           </ThemeProvider>
