@@ -67,7 +67,7 @@ export const PrintTest = () => {
         <Printer type="epson" width={42} characterSet="pc850_multilingual">
           <Text align="center" size={{ width: 2, height: 2 }}>TOUBA OIL</Text>
           <Br />
-          <Text align="center" bold={true}>Test d'Impression</Text>
+          <Text align="center" bold={true}>Test d&apos;Impression</Text>
           <Line />
           <Row 
             left="Date" 
@@ -136,7 +136,7 @@ export const PrintTest = () => {
       
       {!navigator.serial && (
         <p className="text-sm text-destructive">
-          Votre navigateur ne supporte pas l'API Web Serial. 
+          Votre navigateur ne supporte pas l&apos;lAPI Web Serial. 
           Veuillez utiliser Chrome ou Edge.
         </p>
       )}
