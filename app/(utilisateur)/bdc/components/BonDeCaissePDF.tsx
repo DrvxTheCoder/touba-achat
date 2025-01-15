@@ -1,4 +1,5 @@
 // components/BonDeCaissePDF.tsx
+"use client "
 import { useState } from 'react';
 import { 
   Document, 
@@ -21,7 +22,7 @@ import {
 
 // 80mm = 226.772 points in PDF
 const PAPER_WIDTH = 226.772;
-const MARGIN = 25;
+const MARGIN = 15;
 const CONTENT_WIDTH = PAPER_WIDTH - (MARGIN * 2);
 
 Font.register({
@@ -50,13 +51,14 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 2,
   },
   logo: {
     width: 100,
     height: 20,
-    marginBottom: 5,
+    marginBottom: 0,
   },
+
   header: {
     fontSize: 12,
     textAlign: 'center',
@@ -80,6 +82,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginVertical: 2,
     fontSize: 10,
+  },
+  columnHeader: {
+    flex: 1,
+    fontFamily: 'Oswald',
+  },
+  columnValue: {
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: 'Oswald',
   },
   label: {
     flex: 1,
@@ -107,25 +118,54 @@ const styles = StyleSheet.create({
   }
 });
 
-interface BDCData {
-  edbId: string;
-  date: string;
-  department: string;
-  items: Array<{
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    total: number;
-  }>;
-  total: number;
-  approvedBy: string;
+interface ExpenseItem {
+  item: string;
+  amount: number;
 }
 
-const BonDeCaissePDF = ({ data }: { data: BDCData }) => {
+interface BDCData {
+  id: number;
+  bdcId: string;
+  title: string;
+  description: ExpenseItem[];
+  totalAmount: number;
+  status: string;
+  createdAt: string;
+  departmentId: number;
+  department: {
+    id: number;
+    name: string;
+  };
+  creator: {
+    name: string;
+    matriculation: string;
+    jobTitle: string;
+  };
+  approver?: {
+    name: string;
+  } | null;
+  printedBy?: {
+    name: string;
+  } | null;
+}
+
+export const BonDeCaissePDF = ({ data }: { data: BDCData }) => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString('fr-FR');
+  };
+
   return (
     <Document>
       <Page size={[PAPER_WIDTH, 'auto']} style={styles.page}>
-      <View style={styles.logoContainer}>
+        <View style={styles.logoContainer}>
           <Image style={styles.logo} src="/assets/img/logo-black.png" />
         </View>
         <Text style={styles.text}>BON DE CAISSE</Text>
@@ -133,28 +173,43 @@ const BonDeCaissePDF = ({ data }: { data: BDCData }) => {
         <View style={styles.divider} />
         
         <View style={styles.row}>
-          <Text style={styles.label}>ID:</Text>
-          <Text style={styles.value}>{data.edbId}</Text>
+          <Text style={styles.label}>N° BDC:</Text>
+          <Text style={styles.value}>{data.bdcId}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Date:</Text>
+          <Text style={styles.value}>{formatDate(data.createdAt)}</Text>
+        </View>
+        
+        <View style={styles.row}>
+          <Text style={styles.label}>Demandeur:</Text>
+          <Text style={styles.value}>{data.creator.name}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Matricule:</Text>
+          <Text style={styles.value}>{data.creator.matriculation}</Text>
         </View>
         
         <View style={styles.row}>
           <Text style={styles.label}>Département:</Text>
-          <Text style={styles.value}>{data.department}</Text>
+          <Text style={styles.value}>{data.department.name}</Text>
         </View>
         
         <View style={styles.divider} />
+
+        <View style={styles.row}>
+          <Text style={styles.columnHeader}>Articles/Objet</Text>
+          <Text style={styles.columnValue}>Montant XOF</Text>
+        </View>
         
-        {data.items.map((item, index) => (
-          <View key={index}>
+        {data.description.map((item, index) => (
+          <View key={index} style={styles.row}>
             <Text style={styles.itemDescription}>
-              {item.description}
+              {item.item}
             </Text>
-            <Text style={styles.itemDetails}>
-              {`${item.quantity} x ${item.unitPrice}`}
-            </Text>
-            <View style={styles.row}>
-              <Text style={styles.value}>{item.total}</Text>
-            </View>
+            <Text style={styles.value}>{formatAmount(item.amount)}</Text>
           </View>
         ))}
         
@@ -162,18 +217,27 @@ const BonDeCaissePDF = ({ data }: { data: BDCData }) => {
         
         <View style={[styles.row, styles.total]}>
           <Text style={styles.label}>Total XOF:</Text>
-          <Text style={styles.value}>{data.total}</Text>
+          <Text style={styles.value}>{formatAmount(data.totalAmount)}</Text>
         </View>
         
         <View style={styles.divider} />
         
-        <View style={styles.row}>
-          <Text style={styles.label}>Approuvé par:</Text>
-          <Text style={styles.value}>{data.approvedBy}</Text>
-        </View>
+        {data.approver && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Approuvé par:</Text>
+            <Text style={styles.value}>{data.approver.name}</Text>
+          </View>
+        )}
+
+        {data.printedBy && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Decaissé par:</Text>
+            <Text style={styles.value}>{data.printedBy.name}</Text>
+          </View>
+        )}
         
         <Text style={styles.footer}>
-          {new Date().toLocaleString('fr-FR')}
+          Imprimé le {new Date().toLocaleString('fr-FR')}
         </Text>
       </Page>
     </Document>

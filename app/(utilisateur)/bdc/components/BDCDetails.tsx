@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { BDCSummaryPDFDialog } from "./BDCSummaryPDFDialog";
+import { PrintBDCButton } from "./PrintBDCButton";
 
 interface BDCDetailsProps {
   bdc: BDC;
@@ -88,6 +89,16 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     }
   };
 
+  const canApproveDAF = (userRole?: string | null) => {
+    if (!userRole) return false;
+    switch (bdc.status) {
+      case "APPROVED_DIRECTEUR":
+        return ["DAF", "DIRECTEUR_GENERAL", "ADMIN"].includes(userRole);
+      default:
+        return false;
+    }
+  };
+
   const canReject = (userRole?: string | null) => {
     if (!userRole) return false;
     return ["RESPONSABLE", "DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DAF"].includes(userRole) &&
@@ -102,7 +113,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
   const canPrint = (userRole?: Role) => {
     if (!userRole) return false;
     if (bdc.status === 'PRINTED') return true; // Anyone can download once printed
-    return (userRole === "DAF" || userRole === "ADMIN") && bdc.status === 'APPROVED_DIRECTEUR'; // Only DAF can print initially
+    return (userRole === "DAF" || userRole === "ADMIN") && bdc.status === 'APPROVED_DAF'; // Only DAF can print initially
   };
 
   const handleApprove = async () => {
@@ -125,6 +136,32 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     } catch (error) {
       toast.error("Erreur", {
         description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'approbation"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApproveDAF = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/bdc?id=${bdc.id}&action=approve-daf`, {
+        method: 'PUT',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erreur lors de l\'approbation');
+      }
+
+      toast.success("Succès", {
+        description: "Le bon de caisse a été approuvé par la DAF"
+      });
+
+      await onRefresh();
+    } catch (error) {
+      toast.error("Erreur", {
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'approbation DAF"
       });
     } finally {
       setIsLoading(false);
@@ -224,6 +261,7 @@ const handleDelete = async () => {
             {bdc.status === 'SUBMITTED' && 'Soumis'}
             {bdc.status === 'APPROVED_RESPONSABLE' && 'Approuvé (Resp.)'}
             {bdc.status === 'APPROVED_DIRECTEUR' && 'Approuvé (Dir.)'}
+            {bdc.status === 'APPROVED_DAF' && 'Approuvé (DAF)'}
             {bdc.status === 'PRINTED' && 'Imprimé'}
             {bdc.status === 'REJECTED' && 'Rejeté'}
           </Badge>
@@ -250,6 +288,10 @@ const handleDelete = async () => {
                   <div>
                     <p className="text-muted-foreground">Date de création:</p>
                     <p>{formatDate(bdc.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-primary">Approuvé par:</p>
+                    <p>{bdc.approver?.name}</p>
                   </div>
                 </div>
               </div>
@@ -341,19 +383,30 @@ const handleDelete = async () => {
                   Approuver
                 </Button>
               )}
+              {canApproveDAF(session?.user?.role) && bdc.status === 'APPROVED_DIRECTEUR' && (
+                <Button
+                  onClick={handleApproveDAF}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="text-primary gap-1"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Approuver (DAF)
+                </Button>
+              )}
               {canReject(session?.user?.role) && (
                 <Button
                   onClick={() => setIsRejectDialogOpen(true)}
                   disabled={isLoading}
                   variant="outline"
-                  className="text-destructive h-8 gap-1"
+                  className="text-destructive gap-1"
                 >
                   <BanIcon className="mr-2 h-4 w-4" />
                   Rejeter
                 </Button>
               )}
               {canPrint(session?.user?.role) && (
-                <BDCSummaryPDFDialog bdc={bdc} onRefresh={onRefresh} />
+                <PrintBDCButton bdcId={bdc.id} onPrintComplete={onRefresh} />
               )}
               {canDelete(session?.user?.role) && (
                 <>
@@ -361,7 +414,7 @@ const handleDelete = async () => {
                     onClick={() => setIsDeleteDialogOpen(true)}
                     disabled={isLoading}
                     variant="destructive"
-                    className="h-8 gap-1"
+                    className="gap-1"
                 >
                     <Trash2 className="h-4 w-4" />
                     Supprimer

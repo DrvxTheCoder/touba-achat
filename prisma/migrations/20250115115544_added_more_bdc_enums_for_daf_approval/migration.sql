@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "BDCEventType" ADD VALUE 'APPROVED_DAF';
+
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'BDC_APPROVED_DAF';

@@ -15,6 +15,7 @@ const accessOptions: { value: Access; label: string }[] = [
   { value: 'FINAL_APPROVAL', label: 'Approbation finale' },
   { value: 'RH_APPROVE', label: 'Approbation RH' },
   { value: 'RH_PROCESS', label: 'Traitement ODM' },
+  { value: 'CASHIER', label: 'Caisse' },
 ]
 
 interface AccessSelectProps {

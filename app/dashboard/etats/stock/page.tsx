@@ -23,7 +23,6 @@ import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 import ResponsiveStockEdbDialog from "../components/ResponsiveStockEDBForm";
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import { PrintTest } from "@/components/PrintBDCButton";
-import { PrintableBDC } from "../../odm/components/BonDeCaissePDF";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Category = {
@@ -72,7 +71,8 @@ const LoadingContent = () => (
 const testData = {
   edbId: "BDC2024001",
   date: new Date().toLocaleDateString('fr-FR'),
-  department: "Informatique",
+  username: "Keba Gnabaly",
+  department: "Direction Opération Gaz",
   items: [
     {
       description: "Cartouche d'encre HP",
@@ -88,7 +88,9 @@ const testData = {
     }
   ],
   total: 42500,
-  approvedBy: "Daouda Badji"
+  approvedBy: "Daouda Badji",
+  approvedDAF: "Safietou Ndour",
+  cashier: "Rokhaya Thiam"
 };
 
 export default function StockEDBPage() {
@@ -409,7 +411,6 @@ export default function StockEDBPage() {
           </div>
         </div>
         <PrintTest />
-        <PrintableBDC data={testData} />
       </main>
     </ContentLayout>
 

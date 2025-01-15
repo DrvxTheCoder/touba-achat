@@ -10,9 +10,10 @@ import {
   rejectBDC,
   deleteBDC,
   markBDCAsPrinted,
-  getBDCWithDetails
+  getBDCWithDetails,
+  approveDAF
 } from "@/app/api/bdc/utils/bdc-util";
-import { Role } from "@prisma/client";
+import { Access, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -101,7 +102,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(session.user.id) }
+      where: { id: parseInt(session.user.id) },
     });
 
     if (!user) {
@@ -119,15 +120,23 @@ export async function PUT(req: NextRequest) {
       }
 
       case "approve": {
-        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF'].includes(user.role as Role)) {
+        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF','DCM', 'DRH', 'ADMIN'].includes(user.role as Role)) {
           return NextResponse.json({ error: "Non autorisé pour approuver" }, { status: 403 });
         }
         const approvedBdc = await approveBDC(bdcIdNum, user.id, user.role);
         return NextResponse.json(approvedBdc);
       }
 
+      case "approve-daf": {
+        if (!['DIRECTEUR_GENERAL', 'ADMIN', 'DAF', 'ADMIN'].includes(user.role as Role)) {
+          return NextResponse.json({ error: "Action reservé DAF" }, { status: 403 });
+        }
+        const approvedBdc = await approveDAF(bdcIdNum, user.id, Role.DAF);
+        return NextResponse.json(approvedBdc);
+      }
+
       case "reject": {
-        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF'].includes(user.role as Role)) {
+        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF', 'DCM', 'DRH', 'ADMIN'].includes(user.role as Role)) {
           return NextResponse.json({ error: "Non autorisé pour rejeter" }, { status: 403 });
         }
         const data = await req.json();
@@ -137,8 +146,10 @@ export async function PUT(req: NextRequest) {
       }
 
       case "print": {
-        if (user.role !== Role.DAF) {
-          return NextResponse.json({ error: "Action reservé DAF" }, { status: 403 });
+        const hasCashierAccess = user.access.includes('CASHIER');
+        const isAllowedRole = ['DIRECTEUR_GENERAL', 'DAF', 'ADMIN'].includes(user.role as Role);
+        if (!hasCashierAccess || !isAllowedRole) {
+          return NextResponse.json({ error: "Action non autorisée" }, { status: 403 });
         }
         const printedBdc = await markBDCAsPrinted(bdcIdNum, user.id);
         return NextResponse.json(printedBdc);

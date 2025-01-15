@@ -17,6 +17,7 @@ import { BDCDetails } from "./components/BDCDetails";
 import { BDCForm } from "./components/BDCForm";
 import { BDC } from "./types/bdc";
 import { cn } from "@/lib/utils";
+import { PrinterTest } from "@/components/PrinterTest";
 
 const LoadingContent = () => (
   <ContentLayout title="Chargement...">
@@ -139,7 +140,7 @@ export default function BDCPage() {
         </div>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-10">
             <Card>
               <CardContent className="pt-5">
                 <Table>
@@ -218,6 +219,7 @@ export default function BDCPage() {
                 </Pagination>
               </CardFooter>
             </Card>
+            <PrinterTest />
           </div>
 
           <div>
@@ -232,6 +234,7 @@ export default function BDCPage() {
             )}
           </div>
         </div>
+        
       </main>
     </ContentLayout>
   );

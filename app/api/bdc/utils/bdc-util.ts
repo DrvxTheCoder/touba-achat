@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { BDCEventType, BDCStatus, NotificationType, Role } from "@prisma/client";
+import { Access, BDCEventType, BDCStatus, NotificationType, Role } from "@prisma/client";
 
 type ExpenseItem = {
   item: string;
@@ -378,9 +378,97 @@ export async function rejectBDC(
   });
 }
 
+export async function approveDAF(
+  bdcId: number,
+  userId: number,
+  userRole: Role
+) {
+  return prisma.$transaction(async (tx) => {
+    const bdc = await tx.bonDeCaisse.findUnique({
+      where: { id: bdcId },
+      include: {
+        department: true
+      }
+    });
+
+    if (!bdc) throw new Error("BDC introuvable");
+
+    let newStatus: BDCStatus;
+    let notificationType: NotificationType;
+    let eventType: BDCEventType;
+    let nextAction: Access[] = [];
+
+    if(userRole !== Role.DAF) {
+      throw new Error("Action reservée à la DAF");
+    }else{
+      newStatus = BDCStatus.APPROVED_DAF;
+      notificationType = NotificationType.BDC_APPROVED_DAF;
+      eventType = BDCEventType.APPROVED_DAF;
+      nextAction = [Access.CASHIER];
+    }
+
+    // Update BDC
+    const updatedBdc = await tx.bonDeCaisse.update({
+      where: { id: bdcId },
+      data: {
+        status: newStatus,
+        approverId: userId,
+      },
+    });
+
+    // Find next approvers
+    const nextApprovers = await tx.user.findMany({
+      where: {
+        access: { has: Access.CASHIER },
+        status: 'ACTIVE'
+      },
+      select: { id: true }
+    });
+
+    const nextApproverIds = nextApprovers.map(user => user.id);
+
+    if (nextApproverIds.length > 0) {
+      await createNotification(
+        tx,
+        notificationType,
+        `Le bon de caisse ${bdc.bdcId} a été approuvé par la DAF`,
+        nextApproverIds,
+        bdc.id
+      );
+    }
+
+    await logBDCEvent(tx, bdcId, userId, eventType);
+
+    return updatedBdc;
+  });
+}
+
+
 export async function markBDCAsPrinted(bdcId: number, userId: number) {
   return prisma.$transaction(async (tx) => {
-    const bdc = await tx.bonDeCaisse.update({
+    // First check if BDC exists and is in correct status
+    const bdc = await tx.bonDeCaisse.findUnique({
+      where: { id: bdcId },
+      include: {
+        userCreator: true
+      }
+    });
+
+    if (!bdc) {
+      throw new Error("BDC introuvable");
+    }
+
+    if (bdc.status !== BDCStatus.APPROVED_DAF) {
+      throw new Error("Le BDC doit être approuvé par la DAF avant l'impression");
+    }
+
+    // Check if already printed
+    if (bdc.printedAt) {
+      throw new Error("Ce BDC a déjà été imprimé");
+    }
+
+    // Update BDC status and record print details
+    const updatedBdc = await tx.bonDeCaisse.update({
       where: { id: bdcId },
       data: {
         status: BDCStatus.PRINTED,
@@ -388,21 +476,48 @@ export async function markBDCAsPrinted(bdcId: number, userId: number) {
         printedAt: new Date(),
       },
       include: {
-        userCreator: true
+        userCreator: true,
+        printedBy: true
       }
     });
 
+    // Create notification for BDC creator
     await createNotification(
       tx,
       NotificationType.BDC_PRINTED,
-      `Le bon de caisse ${bdc.bdcId} a été imprimé`,
+      `Le bon de caisse (${bdc.bdcId}) a été décaissé par ${updatedBdc.printedBy?.name || 'le Service Achat'}`,
       [bdc.userCreator.id],
       bdc.id
     );
 
-    await logBDCEvent(tx, bdcId, userId, BDCEventType.PRINTED);
+    // Log the print event
+    await logBDCEvent(tx, bdcId, userId, BDCEventType.PRINTED, {
+      printedAt: updatedBdc.printedAt,
+      printedBy: updatedBdc.printedBy?.name
+    });
 
-    return bdc;
+    // Also notify relevant management roles
+    const managementUsers = await tx.user.findMany({
+      where: {
+        role: {
+          in: [Role.DAF, Role.ADMIN]
+        },
+        status: 'ACTIVE'
+      },
+      select: { id: true }
+    });
+
+    if (managementUsers.length > 0) {
+      await createNotification(
+        tx,
+        NotificationType.BDC_PRINTED,
+        `${bdc.bdcId} a été décaissé par ${updatedBdc.printedBy?.name || 'le Service Achat'}`,
+        managementUsers.map(u => u.id),
+        bdc.id
+      );
+    }
+
+    return updatedBdc;
   });
 }
 

@@ -20,8 +20,10 @@ const getStatusColor = (status: BDCStatus) => {
       return "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30";
     case "APPROVED_DIRECTEUR":
       return "bg-orange-500/20 text-orange-500 hover:bg-orange-500/30";
-    case "PRINTED":
+    case "APPROVED_DAF":
       return "bg-green-500/20 text-green-500 hover:bg-green-500/30";
+    case "PRINTED":
+      return "bg-blue-500/20 text-green-500 hover:bg-blue-500/30";
     case "REJECTED":
       return "bg-red-500/20 text-red-500 hover:bg-red-500/30";
     default:
@@ -37,8 +39,10 @@ const getStatusLabel = (status: BDCStatus) => {
       return "En cours";
     case "APPROVED_DIRECTEUR":
       return "Approuvé";
+    case "APPROVED_DAF":
+      return "Approuvé DAF";
     case "PRINTED":
-      return "Imprimé";
+      return "Décaissé";
     case "REJECTED":
       return "Rejeté";
     case "UPDATED":
