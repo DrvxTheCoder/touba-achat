@@ -1,7 +1,8 @@
+// app/(utilisateur)/bdc/components/PreviewableBDC.tsx
 'use client';
 
 import { useState } from 'react';
-import { PDFViewer } from '@react-pdf/renderer';
+import { PDFViewer, StyleSheet } from '@react-pdf/renderer';
 import { Button } from "@/components/ui/button";
 import { Printer, Eye } from "lucide-react";
 import {
@@ -10,14 +11,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BonDeCaissePDFTemplate } from './BDCTemplate';
+import { BonDeCaissePDFTemplate, type BDCData } from './BonDeCaissePDFTemplate';
 
-interface PreviewableBDCProps {
-  data: BDCData;
-}
+// Styles for the PDFViewer component
+const previewStyles = StyleSheet.create({
+  viewer: {
+    width: '100%',
+    height: '100%',
+    border: '1px solid #e2e8f0',
+    borderRadius: '0.375rem',
+  }
+});
 
-export const PreviewableBDC = ({ data }: PreviewableBDCProps) => {
+export const PreviewableBDC = ({ data }: { data: BDCData }) => {
   const [showPreview, setShowPreview] = useState(false);
+
+  const handlePrint = () => {
+    window.open(`/api/bdc/${data.id}/generatePDF`, '_blank');
+  };
 
   return (
     <div className="flex gap-2">
@@ -36,7 +47,7 @@ export const PreviewableBDC = ({ data }: PreviewableBDCProps) => {
             <DialogTitle>Aperçu du Bon de Caisse</DialogTitle>
           </DialogHeader>
           <div className="flex-1 w-full h-[70vh] min-h-0">
-            <PDFViewer style={styles.viewer}>
+            <PDFViewer style={previewStyles.viewer}>
               <BonDeCaissePDFTemplate data={data} />
             </PDFViewer>
           </div>
@@ -44,9 +55,7 @@ export const PreviewableBDC = ({ data }: PreviewableBDCProps) => {
       </Dialog>
 
       <Button 
-        onClick={() => {
-          window.open(`/api/bdc/${data.id}/pdf`, '_blank');
-        }}
+        onClick={handlePrint}
         className="gap-2"
         variant="outline"
       >

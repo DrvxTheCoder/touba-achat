@@ -1,6 +1,7 @@
 // config/notification-config/bdc-rules.ts
 import { BDCStatus, Role } from '@prisma/client';
 import { keyPersonnel } from './personnel';
+import { ALL } from 'dns';
 
 type NotificationRule = {
   recipients: string[];
@@ -43,9 +44,14 @@ export const bdcNotificationRules: Record<BDCStatus, Record<string, Notification
       skipForUsers: [keyPersonnel.MAGASINIER_SENIOR]
     }
   },
+  APPROVED_DAF: {
+    ALL: {
+      recipients: [keyPersonnel.CAISSIER],
+    }
+  },
   PRINTED: {
     ALL: {
-      recipients: [keyPersonnel.CAISSIER]
+      recipients: []
     }
   },
   REJECTED: {

@@ -44,7 +44,7 @@ export const PrintBDCButton = ({ bdcId, onPrintComplete }: PrintBDCButtonProps) 
                 onPrintComplete?.();
               } catch (error) {
                 console.error('Error marking BDC as printed:', error);
-                toast.warning("L'impression a réussi mais l'état n'a pas été mis à jour");
+                toast.warning("Impression réussi sans la mise à jour du BDC");
               }
             }
           }, 1000);

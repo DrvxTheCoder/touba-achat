@@ -147,7 +147,7 @@ export async function PUT(req: NextRequest) {
 
       case "print": {
         const hasCashierAccess = user.access.includes('CASHIER');
-        const isAllowedRole = ['DIRECTEUR_GENERAL', 'DAF', 'ADMIN'].includes(user.role as Role);
+        const isAllowedRole = ['DIRECTEUR_GENERAL', 'DAF', 'ADMIN', 'MAGASINIER'].includes(user.role as Role);
         if (!hasCashierAccess || !isAllowedRole) {
           return NextResponse.json({ error: "Action non autorisée" }, { status: 403 });
         }
@@ -249,7 +249,7 @@ export async function GET(req: NextRequest) {
    
       let whereClause: any = {};
    
-      if (!['ADMIN', 'DAF', 'DIRECTEUR_GENERAL'].includes(user.role)) {
+      if (!['ADMIN', 'DAF', 'DIRECTEUR_GENERAL'].includes(user.role) && !user.access.includes('CASHIER')) {
         if (user.employee) {
           whereClause.departmentId = user.employee.currentDepartmentId;
         }
@@ -270,7 +270,9 @@ export async function GET(req: NextRequest) {
             department: true,
             creator: true,
             approver: true,
+            approverDAF: true,
             printedBy: true,
+            auditLogs: true,
           },
           orderBy: { createdAt: 'desc' },
           skip,

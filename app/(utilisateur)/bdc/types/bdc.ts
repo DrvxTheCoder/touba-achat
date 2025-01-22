@@ -43,6 +43,11 @@ export type BDC = {
     name: string;
     email: string;
   } | null;
+  approverDAF?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
   printedBy?: {
     id: number;
     name: string;

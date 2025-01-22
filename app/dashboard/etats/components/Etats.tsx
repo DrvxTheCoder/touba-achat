@@ -232,6 +232,8 @@ const useUserPermissions = (session: any, selectedEDB: EDB | null): UserPermissi
       canReject: !["APPROVED_DG", "COMPLETED", "FINAL_APPROVAL"].includes(selectedEDB.status)
     } : defaultActionPermissions;
 
+    const managementRoles = [Role.DIRECTEUR, Role.DAF, Role.DCM, Role.DOG, Role.DRH]
+
     return {
       canHandleStock: 
         role === Role.MAGASINIER || 
@@ -255,7 +257,7 @@ const useUserPermissions = (session: any, selectedEDB: EDB | null): UserPermissi
       
       isAdmin: role === Role.ADMIN,
       isMagasinier: role === Role.MAGASINIER,
-      isDirecteur: role === Role.DIRECTEUR,
+      isDirecteur: managementRoles.includes(role) ,
       canTakeAction: actionPermissions
     };
   }, [session?.user, selectedEDB]);
@@ -273,7 +275,7 @@ export default function Etats() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [timeRange, setTimeRange] = useState('last-year');
+  const [timeRange, setTimeRange] = useState('this-month');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [isFinalApprobation, setIsFinalApprobation] = useState(false);
@@ -516,7 +518,7 @@ export default function Etats() {
       });
       setIsEscalating(false);
     } finally {
-      setIsValidationDialogOpen(false);
+      setIsEscalationDialogOpen(false);
     }
   };
 

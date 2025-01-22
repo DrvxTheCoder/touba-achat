@@ -27,7 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BDCStatus, Role } from "@prisma/client";
+import { Access, BDCStatus, Role } from "@prisma/client";
 import { toast } from "sonner";
 import {
   Table,
@@ -110,10 +110,30 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     return ["ADMIN"].includes(userRole);
   }
 
-  const canPrint = (userRole?: Role) => {
-    if (!userRole) return false;
-    if (bdc.status === 'PRINTED') return true; // Anyone can download once printed
-    return (userRole === "DAF" || userRole === "ADMIN") && bdc.status === 'APPROVED_DAF'; // Only DAF can print initially
+  const canPrint = (userRole?: Role, userAccesses?: Access[]) => {
+    console.log('User Role:', userRole);
+    console.log('User Accesses:', userAccesses);
+    console.log('BDC Status:', bdc.status);
+  
+    // If BDC is already printed, anyone can see the print button
+    if (bdc.status === 'PRINTED') return true;
+  
+    // Early return if no role or access
+    if (!userRole && !userAccesses) return false;
+  
+    // Check for allowed roles
+    const isAllowedRole = ["DAF", "ADMIN", "DIRECTEUR_GENERAL", "MAGASINIER"].includes(userRole as string);
+    
+    // Check for CASHIER access, ensuring userAccesses is an array
+    const hasCashierAccess = Array.isArray(userAccesses) && 
+      userAccesses.some(access => access === 'CASHIER');
+  
+    // For APPROVED_DAF status, either role or CASHIER access is sufficient
+    if (bdc.status === 'APPROVED_DAF') {
+      return isAllowedRole || hasCashierAccess;
+    }
+  
+    return false;
   };
 
   const handleApprove = async () => {
@@ -262,7 +282,7 @@ const handleDelete = async () => {
             {bdc.status === 'APPROVED_RESPONSABLE' && 'Approuvé (Resp.)'}
             {bdc.status === 'APPROVED_DIRECTEUR' && 'Approuvé (Dir.)'}
             {bdc.status === 'APPROVED_DAF' && 'Approuvé (DAF)'}
-            {bdc.status === 'PRINTED' && 'Imprimé'}
+            {bdc.status === 'PRINTED' && 'Décaissé'}
             {bdc.status === 'REJECTED' && 'Rejeté'}
           </Badge>
         </CardHeader>
@@ -289,10 +309,24 @@ const handleDelete = async () => {
                     <p className="text-muted-foreground">Date de création:</p>
                     <p>{formatDate(bdc.createdAt)}</p>
                   </div>
-                  <div>
-                    <p className="text-primary">Approuvé par:</p>
-                    <p>{bdc.approver?.name}</p>
-                  </div>
+                  {(bdc.approver?.name) && (
+                    <div>
+                      <p className="text-primary">Approuvé par:</p>
+                      <p>{bdc.approver?.name}</p>
+                    </div>
+                  )}
+                  {(bdc.approverDAF?.name) && (
+                    <div>
+                      <p className="text-primary">Approbation DAF:</p>
+                      <p>{bdc.approverDAF?.name}</p>
+                    </div>
+                  )}
+                  {(bdc.printedBy?.name) && (
+                    <div>
+                      <p className="text-blue-500">Décaissé par:</p>
+                      <p>{bdc.printedBy?.name}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -305,33 +339,7 @@ const handleDelete = async () => {
               </div>
 
               <Separator />
-
-              {/* Expense Items */}
-              <div>
-                <h3 className="font-semibold mb-2">Articles et Montants</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Article</TableHead>
-                      <TableHead className="text-right">Montant</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {bdc.description.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.item}</TableCell>
-                        <TableCell className="text-right">XOF {item.amount}</TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow>
-                      <TableCell className="font-semibold">Total</TableCell>
-                      <TableCell className="text-right font-extrabold">XOF {bdc.totalAmount}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-
-              <Separator />
+              
 
               {/* Employees */}
               {bdc.employees.length > 0 && (
@@ -355,6 +363,33 @@ const handleDelete = async () => {
                     </Table>
                 </div>
               ) }
+
+            <Separator />
+
+                          {/* Expense Items */}
+                          <div>
+                <h3 className="font-semibold mb-2">Articles et Montants</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Article</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bdc.description.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.item}</TableCell>
+                        <TableCell className="text-right">XOF {item.amount}</TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow>
+                      <TableCell className="font-semibold">Total</TableCell>
+                      <TableCell className="text-right font-extrabold">XOF {bdc.totalAmount}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
 
 
               {bdc.comment && (
@@ -405,7 +440,7 @@ const handleDelete = async () => {
                   Rejeter
                 </Button>
               )}
-              {canPrint(session?.user?.role) && (
+              {canPrint(session?.user?.role, session?.user?.access) && (
                 <PrintBDCButton bdcId={bdc.id} onPrintComplete={onRefresh} />
               )}
               {canDelete(session?.user?.role) && (

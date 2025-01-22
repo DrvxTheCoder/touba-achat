@@ -144,6 +144,9 @@ interface BDCData {
   approver?: {
     name: string;
   } | null;
+  approverDAF?: {
+    name: string;
+  } | null;
   printedBy?: {
     name: string;
   } | null;
@@ -222,10 +225,17 @@ export const BonDeCaissePDF = ({ data }: { data: BDCData }) => {
         
         <View style={styles.divider} />
         
-        {data.approver && (
+        {/* {data.approver && (
           <View style={styles.row}>
             <Text style={styles.label}>Approuvé par:</Text>
             <Text style={styles.value}>{data.approver.name}</Text>
+          </View>
+        )} */}
+        
+        {data.approverDAF && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Approbation DAF:</Text>
+            <Text style={styles.value}>{data.approverDAF.name}</Text>
           </View>
         )}
 

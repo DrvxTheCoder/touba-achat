@@ -39,7 +39,7 @@ async function createNotification(
   tx: any,
   type: NotificationType,
   message: string,
-  recipientIds: number[],
+  recipientIds?: number[],
   bdcId?: number
 ) {
   const notification = await tx.notification.create({
@@ -48,7 +48,7 @@ async function createNotification(
       message,
       bonDeCaisseId: bdcId,
       recipients: {
-        create: recipientIds.map(userId => ({
+        create: recipientIds?.map(userId => ({
           user: {
             connect: { id: userId }
           }
@@ -117,7 +117,7 @@ async function logBDCEvent(
         default:
           initialStatus = BDCStatus.SUBMITTED;
           notificationType = NotificationType.BDC_CREATED;
-          targetRoles = [Role.RESPONSABLE];
+          targetRoles = [Role.RESPONSABLE, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL];
       }
   
       const bdc = await tx.bonDeCaisse.create({
@@ -339,6 +339,7 @@ export async function approveBDC(
         bdc.id
       );
     }
+    await createNotification(tx, notificationType, `Le bon de caisse ${bdc.bdcId} a été approuvé par votre direction`, undefined, bdc.id)
 
     await logBDCEvent(tx, bdcId, userId, eventType);
 
@@ -412,7 +413,7 @@ export async function approveDAF(
       where: { id: bdcId },
       data: {
         status: newStatus,
-        approverId: userId,
+        approverDAFId: userId,
       },
     });
 

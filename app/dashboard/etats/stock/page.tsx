@@ -243,7 +243,7 @@ export default function StockEDBPage() {
         <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins (Stock)</h2>
         <div className="flex items-center space-x-2">
         <Link href="/dashboard/etats"><Button variant="outline"><text className="hidden md:block mr-2">EDB (Standard)</text> <OpenInNewWindowIcon className="h-4 w-4"/></Button></Link>
-        <ResponsiveStockEdbDialog 
+        <StockEdbDialog 
             categories={categories}
             departments={departments}
             onSubmit={handleStockEdbSubmit}
@@ -354,6 +354,7 @@ export default function StockEDBPage() {
                 </div>
                 <Pagination className="flex items-end justify-end">
                   <PaginationContent>
+                    {/* Previous button */}
                     <PaginationItem>
                       <Button
                         size="icon"
@@ -365,22 +366,47 @@ export default function StockEDBPage() {
                         <ChevronLeft className="h-3.5 w-3.5" />
                       </Button>
                     </PaginationItem>
-                    
-                    {/* Add numbered pagination */}
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                      <PaginationItem key={pageNum}>
-                        <Button
-                          variant={page === pageNum ? "secondary" : "outline"}
-                          size="sm"
-                          className="h-6 w-6 text-[10px]"
-                          onClick={() => setPage(pageNum)}
-                          disabled={isLoading}
-                        >
-                          {pageNum}
-                        </Button>
-                      </PaginationItem>
+
+                    {/* First two pages */}
+                    {[1, 2].map((pageNum) => (
+                      pageNum <= totalPages && (
+                        <PaginationItem key={pageNum}>
+                          <Button
+                            variant={page === pageNum ? "secondary" : "outline"}
+                            size="sm"
+                            className="h-6 w-6 text-xs"
+                            onClick={() => setPage(pageNum)}
+                            disabled={isLoading}
+                          >
+                            {pageNum}
+                          </Button>
+                        </PaginationItem>
+                      )
                     ))}
 
+                    {/* Ellipsis */}
+                    {totalPages > 4 && (
+                      <PaginationItem>
+                        <span className="px-2 text-xs text-muted-foreground">...</span>
+                      </PaginationItem>
+                    )}
+
+                    {/* Last page */}
+                    {totalPages > 2 && (
+                      <PaginationItem>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 w-6 text-xs"
+                          onClick={() => setPage(totalPages)}
+                          disabled={isLoading}
+                        >
+                          {totalPages}
+                        </Button>
+                      </PaginationItem>
+                    )}
+
+                    {/* Next button */}
                     <PaginationItem>
                       <Button
                         size="icon"

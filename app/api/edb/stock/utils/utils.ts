@@ -60,58 +60,91 @@ export async function createStockEDB(
     categoryId: number;
     employeeType: 'registered' | 'external';
     employeeId?: number;
-    departmentId?: number;  // Optional since we'll get it from employee for registered users
+    departmentId?: number;
     externalEmployeeName?: string;
   }
 ) {
-  // For registered employees, get their department
-  if (data.employeeType === 'registered' && data.employeeId) {
-    const employee = await prisma.employee.findUnique({
-      where: { id: data.employeeId },
-      include: { currentDepartment: true, user:true }
-    });
+  try {
+    // For registered employees
+    if (data.employeeType === 'registered' && data.employeeId) {
+      const employee = await prisma.employee.findUnique({
+        where: { id: data.employeeId },
+        include: { currentDepartment: true, user: true }
+      });
 
-    if (!employee) {
-      throw new Error('Employé introuvable');
-    }
-
-    const newStockEDB = await prisma.stockEtatDeBesoin.create({
-      data: {
-        edbId: generateEDBId(),
-        description: data.description as Prisma.JsonObject,
-        employee: { connect: { id: data.employeeId } },
-        department: { connect: { id: employee.currentDepartmentId } },
-        category: { connect: { id: data.categoryId } },
-      },
-      include: {
-        department: true,
-        category: true,
-        employee: true
+      if (!employee) {
+        throw new Error('Employé introuvable');
       }
-    });
 
-    await sendStockNotification(newStockEDB, EDBEventType.SUBMITTED, employee.user.id);
-  } 
-  // For external employees
-  else {
-    if (!data.departmentId) {
-      throw new Error('Département requis pour les employés externes');
-    }
+      const newStockEDB = await prisma.stockEtatDeBesoin.create({
+        data: {
+          edbId: generateEDBId(),
+          description: data.description as Prisma.JsonObject,
+          employee: { connect: { id: data.employeeId } },
+          department: { connect: { id: employee.currentDepartmentId } },
+          category: { connect: { id: data.categoryId } },
+          status: 'SUBMITTED',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        include: {
+          department: true,
+          category: true,
+          employee: {
+            include: {
+              user: true
+            }
+          }
+        }
+      });
 
-    return await prisma.stockEtatDeBesoin.create({
-      data: {
-        edbId: generateEDBId(),
-        description: data.description as Prisma.JsonObject,
-        externalEmployeeName: data.externalEmployeeName,
-        department: { connect: { id: data.departmentId } },
-        category: { connect: { id: data.categoryId } },
-      },
-      include: {
-        department: true,
-        category: true,
-        employee: true
+      await sendStockNotification(newStockEDB, EDBEventType.SUBMITTED, employee.user.id);
+      
+      return newStockEDB;
+    } 
+    // For external employees
+    else if (data.employeeType === 'external') {
+      if (!data.departmentId) {
+        throw new Error('Département requis pour les employés externes');
       }
-    });
+      if (!data.externalEmployeeName) {
+        throw new Error('Nom de l\'employé externe requis');
+      }
+
+      return await prisma.stockEtatDeBesoin.create({
+        data: {
+          edbId: generateEDBId(),
+          description: data.description as Prisma.JsonObject,
+          externalEmployeeName: data.externalEmployeeName,
+          department: { connect: { id: data.departmentId } },
+          category: { connect: { id: data.categoryId } },
+          status: 'SUBMITTED',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        include: {
+          department: true,
+          category: true,
+          employee: {
+            include: {
+              user: true
+            }
+          }
+        }
+      });
+    } else {
+      throw new Error('Type d\'employé invalide');
+    }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        throw new Error('Un EDB avec cet identifiant existe déjà');
+      }
+      if (error.code === 'P2025') {
+        throw new Error('Certaines relations requises n\'ont pas été trouvées');
+      }
+    }
+    throw error;
   }
 }
 
