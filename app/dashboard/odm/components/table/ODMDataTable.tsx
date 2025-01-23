@@ -13,6 +13,7 @@ import { SpinnerCircular } from 'spinners-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from 'xlsx';
 import { translateStatus } from '@/app/utils/translate-status';
+import { toast } from 'sonner';
 
 
 interface ODM {
@@ -32,6 +33,7 @@ interface ODM {
 export const ODMDataTable: React.FC = () => {
   const [odms, setOdms] = useState<ODM[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,6 +68,21 @@ export const ODMDataTable: React.FC = () => {
       } finally {
           setLoading(false);
       }
+  };
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      await fetchODMs();
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast.error("Erreur",{
+        description: "Impossible de rafraîchir les données. Veuillez réessayer.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = () => {
@@ -182,61 +199,95 @@ export const ODMDataTable: React.FC = () => {
           </Table>
         </CardContent>
         <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
-          <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground">
-            <Button 
-              size="icon" 
-              variant="outline" 
-              className="h-6 w-6" 
-              onClick={fetchODMs}
-            >
-              <RefreshCwIcon className={`h-3 w-3`} />
-              <span className="sr-only">Rafraîchir</span>
-            </Button>
-            <div>
-              Mis à jour: <time dateTime={new Date().toISOString()}>
-                {new Date().toLocaleDateString()}
-              </time>
+            <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground w-full">
+              <Button 
+                size="icon" 
+                variant="outline" 
+                className="h-6 w-6" 
+                onClick={handleRefresh}
+                disabled={loading}
+              >
+                <RefreshCwIcon className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                <span className="sr-only">Rafraîchir</span>
+              </Button>
+              <div className="hidden md:block">
+                {lastUpdated.toLocaleString()}
+              </div>
             </div>
-          </div>
-          <Pagination className="ml-auto mr-0 w-auto">
-            <PaginationContent>
+          <Pagination className="flex flex-row justify-end gap-2">
+            <PaginationContent className="flex items-center gap-2">
+              {/* First page */}
               <PaginationItem>
-                <Button 
-                  size="icon" 
-                  variant="outline" 
-                  className="h-6 w-6"
-                  onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-                  disabled={page === 1}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-6 w-6 hidden md:flex"
+                  onClick={() => setPage(1)}
+                  disabled={page === 1 || loading}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
-                  <span className="sr-only">Précédent</span>
-                </Button>  
+                  <ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                </Button>
               </PaginationItem>
-              
-              {/* Add numbered page buttons */}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                <PaginationItem key={pageNum}>
-                  <Button
-                    variant={page === pageNum ? "default" : "outline"}
-                    size="sm"
-                    className="h-6 w-6 text-xs"
-                    onClick={() => setPage(pageNum)}
-                  >
-                    {pageNum}
-                  </Button>
-                </PaginationItem>
-              ))}
-              
+
+              {/* Previous */}
               <PaginationItem>
-                <Button 
-                  size="icon" 
-                  variant="outline" 
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-6 w-6"
+                  onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                  disabled={page === 1 || loading}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+              </PaginationItem>
+
+              {/* Page input */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-sm text-muted-foreground hidden md:inline">Page</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={page}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (value >= 1 && value <= totalPages) {
+                      setPage(value);
+                    }
+                  }}
+                  className="h-6 w-12 text-xs"
+                />
+                <span className="text-sm text-muted-foreground hidden md:inline">
+                  sur {totalPages}
+                </span>
+              </div>
+
+              {/* Next */}
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
                   className="h-6 w-6"
                   onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={page === totalPages}
+                  disabled={page === totalPages || loading}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
-                  <span className="sr-only">Suivant</span>
+                </Button>
+              </PaginationItem>
+
+              {/* Last page */}
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-6 w-6 hidden md:flex"
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages || loading}
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight className="h-3.5 w-3.5 -ml-2" />
                 </Button>
               </PaginationItem>
             </PaginationContent>

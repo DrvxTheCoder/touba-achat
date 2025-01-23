@@ -6,18 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, RefreshCw, RefreshCwIcon } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { SpinnerCircular } from "spinners-react";
 import { toast } from "sonner";
 import { ContentLayout } from "@/components/user-panel/content-layout";
 import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BDCTableRow } from "./components/BDCTableRow";
 import { BDCDetails } from "./components/BDCDetails";
 import { BDCForm } from "./components/BDCForm";
 import { BDC } from "./types/bdc";
 import { cn } from "@/lib/utils";
 import { PrinterTest } from "@/components/PrinterTest";
+import { Department } from "@prisma/client";
 
 const LoadingContent = () => (
   <ContentLayout title="Chargement...">
@@ -40,6 +42,31 @@ export default function BDCPage() {
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [timeRange, setTimeRange] = useState('this-month');
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+  // Add the departments fetch in the useEffect
+  useEffect(() => {
+    if (session?.user?.id) {
+      const fetchInitialData = async () => {
+        try {
+          const departmentsRes = await fetch('/api/departments');
+          
+          if (departmentsRes.ok) {
+            const departmentsData = await departmentsRes.json();
+            setDepartments(departmentsData);
+          }
+        } catch (error) {
+          console.error('Error fetching departments:', error);
+        }
+      };
+
+      fetchInitialData();
+    }
+  }, [session?.user?.id]);
   
 
   const fetchBDCs = async () => {
@@ -49,6 +76,9 @@ export default function BDCPage() {
         page: page.toString(),
         pageSize: pageSize.toString(),
         search: searchTerm,
+        timeRange,
+        department: departmentFilter,
+        status: statusFilter,
       });
    
       const response = await fetch(`/api/bdc?${queryParams}`);
@@ -67,13 +97,29 @@ export default function BDCPage() {
     } finally {
       setIsLoading(false);
     }
-   };
+  };
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchBDCs();
     }
   }, [page, pageSize, searchTerm, session?.user?.id]);
+
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    try {
+      await fetchBDCs();
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast.error("Erreur",{
+        description: "Impossible de rafraîchir les données. Veuillez réessayer.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const handleBDCSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -136,6 +182,53 @@ export default function BDCPage() {
               className="h-10 w-sm lg:max-w-sm"
             />
           </div>
+          <div className="flex items-center space-x-2">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="gap-2">
+                <Calendar className="h-4 w-4" />
+                <SelectValue placeholder="Période" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="this-month">Ce mois</SelectItem>
+                <SelectItem value="last-month">Mois dernier</SelectItem>
+                <SelectItem value="last-3-months">Trimestre</SelectItem>
+                <SelectItem value="this-year">Cette année</SelectItem>
+                <SelectItem value="last-year">Année dernière</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="space-x-1">
+                <SelectValue placeholder="Départements" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les départements</SelectItem>
+                {departments.map((department) => (
+                  <SelectItem 
+                    key={department.id}
+                    value={department.id.toString()}
+                  >
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="space-x-1">
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="DRAFT">Brouillon</SelectItem>
+                <SelectItem value="SUBMITTED">Soumis</SelectItem>
+                <SelectItem value="APPROVED">Approuvé</SelectItem>
+                <SelectItem value="APPROVED_DAF">Approuvé DAF</SelectItem>
+                <SelectItem value="REJECTED">Rejeté</SelectItem>
+                <SelectItem value="PRINTED">Imprimé</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <BDCForm onSubmit={handleBDCSubmit} isLoading={isSubmitting} />
         </div>
 
@@ -182,41 +275,99 @@ export default function BDCPage() {
                 </Table>
               </CardContent>
               <CardFooter className="flex items-end justify-between border-t bg-muted/50 p-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => fetchBDCs()}
-                disabled={isLoading}
-            >
-                <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
-            </Button>
-                <Pagination className="flex items-end justify-end">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-6 w-6"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                      </Button>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-6 w-6"
-                        onClick={() => setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))}
-                        disabled={page >= Math.ceil(total / pageSize)}
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+              <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground w-full">
+                  <Button 
+                    size="icon" 
+                    variant="outline" 
+                    className="h-6 w-6" 
+                    onClick={handleRefresh}
+                    disabled={isLoading}
+                  >
+                    <RefreshCwIcon className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span className="sr-only">Rafraîchir</span>
+                  </Button>
+                  <div className="hidden md:block">
+                    {lastUpdated.toLocaleString()}
+                  </div>
+                </div>
+              <Pagination className="flex items-end justify-end">
+                <PaginationContent className="flex items-center gap-2">
+                  {/* First page */}
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-6 w-6 hidden md:flex"
+                      onClick={() => setPage(1)}
+                      disabled={page === 1 || isLoading}
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      <ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                    </Button>
+                  </PaginationItem>
+
+                  {/* Previous */}
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-6 w-6"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1 || isLoading}
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </Button>
+                  </PaginationItem>
+
+                  {/* Page input */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-sm text-muted-foreground hidden md:inline">Page</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={Math.ceil(total / pageSize)}
+                      value={page}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value >= 1 && value <= Math.ceil(total / pageSize)) {
+                          setPage(value);
+                        }
+                      }}
+                      className="h-6 w-12 text-xs"
+                    />
+                    <span className="text-sm text-muted-foreground hidden md:inline">
+                      sur {Math.ceil(total / pageSize)}
+                    </span>
+                  </div>
+
+                  {/* Next */}
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-6 w-6"
+                      onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
+                      disabled={page >= Math.ceil(total / pageSize) || isLoading}
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </PaginationItem>
+
+                  {/* Last page */}
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-6 w-6 hidden md:flex"
+                      onClick={() => setPage(Math.ceil(total / pageSize))}
+                      disabled={page === Math.ceil(total / pageSize) || isLoading}
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                      <ChevronRight className="h-3.5 w-3.5 -ml-2" />
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
               </CardFooter>
             </Card>
             <PrinterTest />
