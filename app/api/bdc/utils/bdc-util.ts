@@ -91,34 +91,42 @@ async function logBDCEvent(
       let initialStatus: BDCStatus;
       let notificationType: NotificationType;
       let targetRoles: Role[] = [];
-  
-      switch (user.role) {
-        case Role.DAF:
-          initialStatus = BDCStatus.APPROVED_DIRECTEUR;
-          notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
-          break;
-        case Role.DIRECTEUR:
-        case Role.DIRECTEUR_GENERAL:
-        case Role.DOG:
-        case Role.DRH:
-        case Role.DCM:
-        case Role.ADMIN:
-        case Role.MAGASINIER:
-          initialStatus = BDCStatus.APPROVED_DIRECTEUR;
-          notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
-          targetRoles = [Role.DAF];
-          break;
-        case Role.RESPONSABLE:
-        case Role.RH:
-          initialStatus = BDCStatus.APPROVED_RESPONSABLE;
-          notificationType = NotificationType.BDC_APPROVED_RESPONSABLE;
-          targetRoles = [Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.DOG];
-          break;
-        default:
-          initialStatus = BDCStatus.SUBMITTED;
-          notificationType = NotificationType.BDC_CREATED;
-          targetRoles = [Role.RESPONSABLE, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL];
+
+      if (user.access.includes(Access.APPROVE_BDC)) {
+        initialStatus = BDCStatus.APPROVED_DIRECTEUR;
+        notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
+        targetRoles = [Role.DAF];
       }
+      else {
+        switch (user.role) {
+          case Role.DAF:
+            initialStatus = BDCStatus.APPROVED_DIRECTEUR;
+            notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
+            break;
+          case Role.DIRECTEUR:
+          case Role.DIRECTEUR_GENERAL:
+          case Role.DOG:
+          case Role.DRH:
+          case Role.DCM:
+          case Role.ADMIN:
+            initialStatus = BDCStatus.APPROVED_DIRECTEUR;
+            notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
+            targetRoles = [Role.DAF];
+            break;
+          case Role.RESPONSABLE:
+          case Role.RH:
+            initialStatus = BDCStatus.APPROVED_RESPONSABLE;
+            notificationType = NotificationType.BDC_APPROVED_RESPONSABLE;
+            targetRoles = [Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.DOG];
+            break;
+          default:
+            initialStatus = BDCStatus.SUBMITTED;
+            notificationType = NotificationType.BDC_CREATED;
+            targetRoles = [Role.RESPONSABLE, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL];
+        }
+      }
+  
+
   
       const bdc = await tx.bonDeCaisse.create({
         data: {
@@ -154,14 +162,16 @@ async function logBDCEvent(
             await createNotification(
               tx,
               notificationType,
-              `Nouveau bon de caisse ${bdcId} à valider`,
+              `Nouveau bon de caisse ${bdcId} à valider - ${user.name}`,
               immediateApproverIds,
               bdc.id
             );
           }
         }
       
-        // Also notify DAF 
+
+      } else if(initialStatus === BDCStatus.APPROVED_DIRECTEUR){
+                  // Also notify DAF 
         const dafUsers = await tx.user.findMany({
           where: {
             role: Role.DAF,
@@ -174,7 +184,7 @@ async function logBDCEvent(
           await createNotification(
             tx,
             NotificationType.BDC_APPROVED_DIRECTOR,
-            `Nouveau bon de caisse ${bdcId} en attente de validation finale`,
+            `Nouveau bon de caisse ${bdcId} en attente de validation finale - ${user.name}`,
             dafUsers.map(u => u.id),
             bdc.id
           );
@@ -203,7 +213,7 @@ async function logBDCEvent(
                   await createNotification(
                     tx,
                     notificationType,
-                    `Nouveau bon de caisse ${bdcId} à valider`,
+                    `Nouveau bon de caisse ${bdcId} à valider - ${user.name}`,
                     approverIds,
                     bdc.id
                   );
@@ -563,11 +573,27 @@ export async function deleteBDC(bdcId: number, userId: number) {
     });
 
     if (!bdc) throw new Error("BDC introuvable");
-    // if (bdc.status !== BDCStatus.SUBMITTED) {
-    //   throw new Error("Seuls les BDC en attente peuvent être supprimés");
-    // }
 
-    // Delete associated notifications
+    // First, find all notifications for this BDC
+    const notifications = await tx.notification.findMany({
+      where: { bonDeCaisseId: bdcId },
+      select: { id: true }
+    });
+
+    const notificationIds = notifications.map(n => n.id);
+
+    // Delete notification recipients first
+    if (notificationIds.length > 0) {
+      await tx.notificationRecipient.deleteMany({
+        where: {
+          notificationId: {
+            in: notificationIds
+          }
+        }
+      });
+    }
+
+    // Then delete the notifications
     await tx.notification.deleteMany({
       where: { bonDeCaisseId: bdcId },
     });
@@ -577,30 +603,47 @@ export async function deleteBDC(bdcId: number, userId: number) {
       where: { bonDeCaisseId: bdcId },
     });
 
-    // Delete the BDC
+    // Finally delete the BDC
     return tx.bonDeCaisse.delete({
       where: { id: bdcId },
     });
   });
 }
 
-export async function getBDCWithDetails(bdcId: number) {
-  return prisma.bonDeCaisse.findUnique({
-    where: { id: bdcId },
-    include: {
-      department: true,
-      creator: true,
-      userCreator: true,
-      approver: true,
-      printedBy: true,
-      auditLogs: {
-        include: {
-          user: true
-        },
-        orderBy: {
-          eventAt: 'asc'
+export async function getBDCWithDetails(bdcId: string, userId: number, userRole: string) {
+  const allowedRoles = [
+    "ADMIN",
+    "DIRECTEUR_GENERAL",
+    "DAF",
+    "MAGASINIER",
+  ]; 
+  return prisma.$transaction(async (tx) => {
+    const bdc = await tx.bonDeCaisse.findUnique({
+      where: { bdcId: bdcId },
+      include: {
+        department: true,
+        creator: true,
+        userCreator: true,
+        approver: true,
+        printedBy: true,
+        auditLogs: {
+          include: {
+            user: true
+          },
+          orderBy: {
+            eventAt: 'asc'
+          }
         }
       }
-    }
+    });
+
+    if (!bdc) throw new Error("BDC introuvable");
+
+    // if(bdc.creator.id !== userId || !allowedRoles.includes(userRole)){
+    //   throw new Error("Accès interdit");
+    // }
+
+    return bdc;
   });
+
 }

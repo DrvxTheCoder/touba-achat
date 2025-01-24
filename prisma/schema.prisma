@@ -34,6 +34,7 @@ enum Access {
   RH_APPROVE
   RH_PROCESS
   CASHIER
+  APPROVE_BDC
   // Add other specific access types as needed
 }
 

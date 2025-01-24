@@ -1,9 +1,9 @@
 {
   "name": "touba-app",
-  "version": "0.1.0",
+  "version": "2.1.1",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
+    "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint"

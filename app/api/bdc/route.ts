@@ -231,8 +231,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const bdcId = searchParams.get("id");
 
+
     if (bdcId) {
-      const bdc = await getBDCWithDetails(parseInt(bdcId));
+      const bdc = await getBDCWithDetails(bdcId, parseInt(session.user.id), session.user.role);
       if (!bdc) return NextResponse.json({ error: "BDC non trouvé" }, { status: 404 });
       return NextResponse.json(bdc);
     }
@@ -282,6 +283,7 @@ export async function GET(req: NextRequest) {
       whereClause.OR = [
         { bdcId: { contains: search, mode: 'insensitive' } },
         { title: { contains: search, mode: 'insensitive' } },
+        { creator: { name: { contains: search, mode: 'insensitive' } } },
         { department: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }

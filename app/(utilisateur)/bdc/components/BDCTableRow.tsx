@@ -5,6 +5,7 @@ import { BDC } from "../types/bdc";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { BDCStatus } from "@prisma/client";
+import { StatusBadge } from "@/app/dashboard/etats/components/StatusBadge";
 
 interface BDCTableRowProps {
   bdc: BDC;
@@ -64,7 +65,10 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
         onClick={onClick}
       >
         <TableCell className="font-medium">
-          {bdc?.bdcId || 'N/A'}
+          <div className="text-xs md:font-medium"># {bdc?.bdcId}</div>
+          <div className="hidden text-xs text-muted-foreground md:inline">
+            {bdc?.creator.name}
+          </div>
         </TableCell>
         <TableCell className="sm:table-cell">
           {bdc?.title || 'N/A'}
@@ -76,9 +80,7 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
           {typeof bdc?.totalAmount === 'number' ? bdc.totalAmount.toLocaleString() : 'N/A'}
         </TableCell>
         <TableCell className="text-right sm:table-cell">
-          <Badge variant="outline" className={getStatusColor(bdc?.status)}>
-            {getStatusLabel(bdc?.status)}
-          </Badge>
+          <StatusBadge status={bdc?.status} />
         </TableCell>
       </TableRow>
     );

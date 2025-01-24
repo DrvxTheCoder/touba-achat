@@ -125,6 +125,7 @@ export const ODMDataTable: React.FC = () => {
                 <SelectItem value="last-month">Mois dernier</SelectItem>
                 <SelectItem value="last-3-months">Trimestre</SelectItem>
                 <SelectItem value="this-year">Cette année</SelectItem>
+                <SelectItem value="last-year">Année dernière</SelectItem>
             </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-2">

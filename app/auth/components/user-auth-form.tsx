@@ -57,8 +57,13 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     if (result.success) {
       router.replace("/");
     } else {
-      // Just use the message directly, as it's already been parsed in customSignIn
-      setError(result.message || "Une erreur inattendue s'est produite");
+      // Parse the error message from the API response
+      try {
+        const errorResponse = JSON.parse(result.message as string);
+        setError(errorResponse.message || "Une erreur inattendue s'est produite");
+      } catch (e) {
+        setError("Une erreur inattendue s'est produite");
+      }
     }
   
     setIsLoading(false);

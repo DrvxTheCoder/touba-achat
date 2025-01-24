@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "Access" ADD VALUE 'APPROVE_BDC';

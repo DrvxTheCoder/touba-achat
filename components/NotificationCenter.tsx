@@ -41,7 +41,7 @@ export const NotificationCenter = () => {
         } else if (type === 'odm') {
             router.push(`/dashboard/odm/${id}`);
         } else if (type === 'bdc') {
-            router.push('/bdc'); // Route to main BDC page
+            router.push(`/bdc?bdcId=${id}`);
         }
     };
 
@@ -84,7 +84,7 @@ export const NotificationCenter = () => {
                             ? `/dashboard/etats/${id}` 
                             : type === 'odm' 
                                 ? `/dashboard/odm/${id}`
-                                : '/bdc'; // Default to BDC page
+                                : `/bdc?bdcId=${id}`;
                         
                         return (
                             <Link href={href} key={notification.id}>

@@ -8,16 +8,18 @@ const statusMapping: Record<string, string[]> = {
   'Soumis': ['SUBMITTED'],
   'Converti':['CONVERTED'],
   'Approuvé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
+  'Approuvé DAF': ['APPROVED_DAF'],
   'Escaladé': ['ESCALATED'],
   'En cours': ['RH_PROCESSING'],
-  'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_RH_PROCESSING', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL', 'AWAITING_FINANCE_APPROVAL'],
+  'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_RH_PROCESSING', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Facture Rattaché': ['MAGASINIER_ATTACHED'],
   'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],
   'Livré': ['DELIVERED'],
-  'Livré (Manquant)': ['PARTIALLY_DELIVERED'],
+  'Livré*': ['PARTIALLY_DELIVERED'],
+  'Décaissé': ['PRINTED'],
   'Validé': ['FINAL_APPROVAL'],
   'Rejeté': ['REJECTED'],
-  'Traité': ['COMPLETED'],
+  'Traité': ['COMPLETED', 'AWAITING_FINANCE_APPROVAL'],
 };
 
 // Function to get the display status based on internal status
@@ -45,11 +47,15 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
     ? 'destructive'
     : displayStatus === 'Approuvé'
     ? 'outline'
+    : displayStatus === 'Approuvé DAF'
+    ? 'default'
     : displayStatus === 'Escaladé'
     ? 'outline'
     : displayStatus === 'Traité'
     ? 'default'
     : displayStatus === 'Validé'
+    ? 'default'
+    : displayStatus === 'Décaissé'
     ? 'default'
     : displayStatus === 'Livré'
     ? 'default'
@@ -58,7 +64,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
   const textSizeClass = textSize === 'tiny' ? 'text-xs' : '';
 
   const badgeContent = (
-    <Badge className={`m-1 ${textSizeClass} w-fit`} variant={variant}>
+    <Badge className={`${textSizeClass} w-fit`} variant={variant}>
       <small>{displayStatus}</small>
     </Badge>
   );
