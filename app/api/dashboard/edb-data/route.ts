@@ -1,120 +1,129 @@
+// api/dashboard/edb-data/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import prisma from '@/lib/prisma';
-import { Role } from '@prisma/client';
+import { Role, EDBStatus } from '@prisma/client';
+import { getDateRange } from './utils/utils';
+
+const ACTIVE_STATUSES: EDBStatus[] = [
+  'APPROVED_DIRECTEUR',
+  'APPROVED_DG',
+  'MAGASINIER_ATTACHED',
+  'SUPPLIER_CHOSEN',
+  'COMPLETED',
+  'FINAL_APPROVAL'
+] as const;
+
+const PENDING_STATUSES: EDBStatus[] = [
+  'SUBMITTED',
+  'ESCALATED',
+  'APPROVED_RESPONSABLE'
+] as const;
+
+// Define the roles that have full access as a const array
+const FULL_ACCESS_ROLES = [
+  Role.DIRECTEUR_GENERAL,
+  Role.ADMIN,
+  Role.AUDIT,
+  Role.MAGASINIER
+] as const;
+
+// Type guard to check if a role has full access
+function hasFullAccess(role: Role): boolean {
+  return FULL_ACCESS_ROLES.includes(role as typeof FULL_ACCESS_ROLES[number]);
+}
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(session.user.id) },
-    include: { employee: { include: { currentDepartment: true } } },
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
-  }
-
-  const { role } = user;
-  const departmentId = user.employee?.currentDepartmentId;
-
-  let edbsQuery = {};
-
-  if (role === Role.RH || role === Role.RESPONSABLE || role === Role.DIRECTEUR) {
-    if (!departmentId) {
-      return NextResponse.json({ error: 'Département non trouvé pour l\'utilisateur' }, { status: 400 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
-    edbsQuery = { where: { departmentId: departmentId } };
-  }
 
-  const edbs = await prisma.etatDeBesoin.findMany(edbsQuery);
+    const searchParams = new URL(req.url).searchParams;
+    const timeRange = searchParams.get('timeRange') || 'this-month';
 
-  const currentDate = new Date();
-  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
-  const lastHour = new Date(currentDate.getTime() - 60 * 60 * 1000);
-
-  // Calculate aggregated data
-  const total = edbs.length;
-  const active = edbs.filter(edb => 
-    [
-      'APPROVED_DIRECTEUR',
-      'APPROVED_DG',
-      'MAGASINIER_ATTACHED',
-      'SUPPLIER_CHOSEN',
-      'COMPLETED',
-      'FINAL_APPROVAL'
-    ].includes(edb.status)
-  ).length;
-  const pending = edbs.filter(edb => edb.status === 'SUBMITTED' || edb.status === 'ESCALATED' || edb.status === 'APPROVED_RESPONSABLE').length;
-  const lastMonthTotal = edbs.filter(edb => new Date(edb.createdAt) >= lastMonth).length;
-  const lastHourActive = edbs.filter(edb => 
-    new Date(edb.updatedAt) >= lastHour && 
-    edb.status !== 'COMPLETED' && 
-    edb.status !== 'REJECTED'
-  ).length;
-
-  const percentageChange = total > 0 ? ((lastMonthTotal / total) * 100).toFixed(1) : '0';
-
-  // Calculate weekly data
-  const today = new Date();
-  const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-  monday.setHours(0, 0, 0, 0);
-
-  const weeklyData = await prisma.etatDeBesoin.groupBy({
-    by: ['createdAt'],
-    where: {
-      createdAt: {
-        gte: monday,
-      },
-      ...(role === Role.RH || role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
-    },
-    _count: {
-      id: true,
-    },
-  });
-
-  const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  const chartData = await Promise.all(weekDays.map(async (day, index) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + index);
-    const dataForDay = weeklyData.find(d => new Date(d.createdAt).toDateString() === date.toDateString());
-    
-    const dayEDBs = await prisma.etatDeBesoin.findMany({
-      where: {
-        createdAt: {
-          gte: date,
-          lt: new Date(date.getTime() + 24 * 60 * 60 * 1000), // Next day
-        },
-        ...(role === Role.RH || role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
-      },
-      include: {
-        finalSupplier: true,
-      },
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(session.user.id) },
+      include: { employee: { include: { currentDepartment: true } } },
     });
-    
-    const amount = dayEDBs.reduce((sum, edb) => sum + (edb.finalSupplier?.amount || 0), 0);
 
-    return {
-      name: day,
-      date: date.toISOString().split('T')[0],
-      count: dataForDay ? dataForDay._count.id : 0,
-      amount: amount,
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    }
+
+    const { role } = user;
+    const dateRange = getDateRange(timeRange);
+
+    // Base where clause with date range
+    let baseWhere: any = {
+      createdAt: dateRange,
     };
-  }));
 
-  return NextResponse.json({
-    aggregatedData: {
-      total,
-      active,
-      pending,
-      percentageChange,
-      lastHourActive,
-    },
-    chartData,
-  });
+    // Add department filter for roles that should only see their department's data
+    if (!hasFullAccess(role)) {
+      const departmentId = user.employee?.currentDepartmentId;
+      
+      if (!departmentId) {
+        return NextResponse.json({ 
+          error: 'Département non trouvé pour l\'utilisateur' 
+        }, { status: 400 });
+      }
+
+      baseWhere.departmentId = departmentId;
+
+      // Special case for IT_ADMIN
+      if (role === Role.IT_ADMIN) {
+        baseWhere = {
+          AND: [
+            { createdAt: dateRange },
+            {
+              OR: [
+                { departmentId: departmentId },
+                { 
+                  category: { 
+                    name: { 
+                      in: ['Logiciels et licences', 'Matériel informatique'] 
+                    } 
+                  } 
+                }
+              ]
+            }
+          ]
+        };
+      }
+    }
+
+    // Get metrics for each time range
+    const [total, active, pending] = await Promise.all([
+      prisma.etatDeBesoin.count({
+        where: baseWhere
+      }),
+      prisma.etatDeBesoin.count({
+        where: {
+          ...baseWhere,
+          status: { in: ACTIVE_STATUSES },
+        },
+      }),
+      prisma.etatDeBesoin.count({
+        where: {
+          ...baseWhere,
+          status: { in: PENDING_STATUSES },
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      metrics: {
+        total,
+        active,
+        pending,
+      },
+      timeRange,
+    });
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    return NextResponse.json({ error: 'Error fetching metrics' }, { status: 500 });
+  }
 }

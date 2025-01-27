@@ -124,6 +124,7 @@
   import { Icons } from "@/components/icons"
   import { useRouter } from "next/navigation"
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import EDBMetrics from "./EDBMetrics"
 
   const ITEMS_PER_PAGE = 5;
   const statusMapping = {
@@ -785,13 +786,15 @@
           </div>
           <div className="grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3 mb-4">
             <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
-              <EDBCards />
+              <EDBMetrics timeRange={timeRange} />
               <div className="flex items-center">
               <Select value={timeRange} onValueChange={setTimeRange}>
                 <SelectTrigger className="w-fit h-7">
                   <SelectValue placeholder="Sélectionner une période" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="today">Aujourdhui</SelectItem>
+                  <SelectItem value="this-week">Cette semaine</SelectItem>
                   <SelectItem value="this-month">Ce mois</SelectItem>
                   <SelectItem value="last-month">Mois dernier</SelectItem>
                   <SelectItem value="last-3-months">Trimestre</SelectItem>
@@ -843,7 +846,7 @@
                 </div>
               </div>
               <div>
-                <Card>
+                <Card className="rounded-xl">
                   <CardContent className="pt-5">
                     <Table>
                     <TableHeader className="bg-muted mb-1">
@@ -903,7 +906,7 @@
                     </TableBody>
                     </Table>
                   </CardContent>
-                  <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
+                  <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3 rounded-b-xl">
                     <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground w-full">
                       <Button 
                         size="icon" 
@@ -962,7 +965,7 @@
                                 setCurrentPage(value);
                               }
                             }}
-                            className="h-6 w-12 text-xs"
+                            className="h-6 w-20 text-xs"
                           />
                           <span className="text-sm text-muted-foreground hidden md:inline">
                             sur {paginatedData?.totalPages || 1}
@@ -1004,7 +1007,7 @@
             
             {/* Right-side card for EDB details */}
             <div>
-              <Card className="overflow-hidden lg:block hidden">
+              <Card className="overflow-hidden lg:block hidden rounded-xl">
                 {selectedEDB ? (
                   <>
                   <CardHeader className="flex flex-row items-start border-b">

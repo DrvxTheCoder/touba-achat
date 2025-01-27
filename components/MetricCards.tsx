@@ -1,5 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { AlertTriangle } from "lucide-react";
+import { SpinnerCircular } from 'spinners-react';
 
 // Types for our metrics
 type MetricCardProps = {
@@ -13,6 +15,43 @@ type MetricCardProps = {
 type CardActionButtonProps = {
   title: string;
   action: React.ReactNode;
+}
+
+interface ErrorCardProps {
+  message?: string;
+  className?: string;
+}
+
+interface LoadingCardProps {
+  isLoadingTitle: string;
+}
+
+export function ErrorCard({ 
+  message = "Une erreur s'est produite lors du calcul des métriques.", 
+  className 
+}: ErrorCardProps) {
+  return (
+    <Card className={className}>
+      <CardContent className="p-6 flex flex-col items-center justify-center gap-2">
+        <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+        <p className="text-sm text-center text-muted-foreground">
+          {message}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function LoadingCard({ isLoadingTitle }: LoadingCardProps) {
+  return (
+    <Card>
+      <CardContent className="p-6 flex flex-col items-center justify-center gap-2">
+        <div className="items-center justify-center">
+          <SpinnerCircular size={40} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export const MetricCard = ({ title, value, description, icon, action }: MetricCardProps) => (

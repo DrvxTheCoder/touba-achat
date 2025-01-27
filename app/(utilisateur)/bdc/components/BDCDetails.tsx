@@ -114,18 +114,16 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
 
   const canPrint = (userRole?: Role, userAccesses?: Access[]) => {
   
-    // Early return if no role or access
-    if (!userRole && !userAccesses) return false;
-  
+
     // Check for allowed roles
-    const isAllowedRole = ["DAF", "ADMIN", "DIRECTEUR_GENERAL"].includes(userRole as string);
+    const isAllowedRole = ["DAF", "ADMIN", "DIRECTEUR_GENERAL", "MAGASINIER"].includes(userRole as string);
     
     // Check for CASHIER access, ensuring userAccesses is an array
     const hasCashierAccess = Array.isArray(userAccesses) && 
       userAccesses.some(access => access === 'CASHIER');
   
     // For APPROVED_DAF status, either role or CASHIER access is sufficient
-    if (bdc.status === 'APPROVED_DAF') {
+    if (bdc.status === 'APPROVED_DAF' || bdc.status === 'PRINTED') {
       return isAllowedRole || hasCashierAccess;
     }
   
@@ -392,16 +390,15 @@ const handleDelete = async () => {
               )}
             </div>
           </ScrollArea>
-
-          {/* Action Buttons */}
-          {(canApprove(session?.user?.role) || canReject(session?.user?.role) || canPrint(session?.user?.role) || canDelete(session?.user?.role)) && (
-            <div className="flex flex-row justify-between items-center gap-2 pt-4 border-t">
-              {bdc.rejectionReason && (
+          {bdc.rejectionReason && (
                 <div className="flex flex-row items-center text-destructive h-8 gap-1">
                   <BanIcon className="mr-2 h-4 w-4" />
                   {`Justificatif: ${bdc.rejectionReason}`}
                 </div>
               )}
+
+          {/* Action Buttons */}
+            <div className="flex flex-row justify-between items-center gap-2 pt-4 border-t">
               <div className="flex flex-row gap-2">
                 {canApprove(session?.user?.role) && bdc.status !== 'APPROVED_DIRECTEUR' && (
                   <Button
@@ -484,7 +481,6 @@ const handleDelete = async () => {
               
 
             </div>
-          )}
         </CardContent>
       </Card>
 

@@ -1,7 +1,6 @@
 // hooks/useNotifications.ts
-import { useState, useEffect } from 'react';
-import { Notification } from '@prisma/client'; // Make sure this import is correct
-import { useSession } from 'next-auth/react';
+import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { NotificationType } from '@prisma/client';
 
 export type CustomNotification = {
@@ -12,33 +11,86 @@ export type CustomNotification = {
   isRead: boolean;
   etatDeBesoinId: string | null;
   ordreDeMissionId: number | null;
-  // Add any other fields that your API returns
 };
 
-export function useNotifications() {
-  const [notifications, setNotifications] = useState<CustomNotification[]>([]);
-  const { data: session } = useSession();
+// Singleton state
+let globalState = {
+  notifications: [] as CustomNotification[],
+  previousNotifications: [] as CustomNotification[],
+  subscribers: new Set<(notifications: CustomNotification[]) => void>(),
+};
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchNotifications();
-    }
-  }, [session]);
+// Singleton audio instance
+const audioElement = typeof window !== 'undefined' ? new Audio('/assets/sounds/notification-chime.wav') : null;
 
-  const fetchNotifications = async () => {
+async function fetchNotifications() {
+  try {
     const response = await fetch('/api/notifications');
     const data: CustomNotification[] = await response.json();
-    setNotifications(data);
-  };
+    
+    const newNotifications = data.filter(notification => 
+      !globalState.previousNotifications.some(prevNotif => 
+        prevNotif.id === notification.id
+      )
+    );
+
+    if (newNotifications.length > 0) {
+      audioElement?.play().catch(console.error);
+      
+      newNotifications.forEach(notification => {
+        toast("Nouvelle notification", {
+          description: notification.message,
+          duration: 5000
+        });
+      });
+    }
+
+    globalState.previousNotifications = data;
+    globalState.notifications = data;
+    globalState.subscribers.forEach(callback => callback(data));
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error);
+  }
+}
+
+// Start polling immediately
+let pollInterval: NodeJS.Timeout | null = null;
+if (typeof window !== 'undefined' && !pollInterval) {
+  fetchNotifications();
+  pollInterval = setInterval(fetchNotifications, 10000);
+}
+
+export function useNotifications() {
+  const [notifications, setNotifications] = useState<CustomNotification[]>(globalState.notifications);
+
+  useEffect(() => {
+    // Subscribe to updates
+    const callback = (newNotifications: CustomNotification[]) => {
+      setNotifications(newNotifications);
+    };
+    globalState.subscribers.add(callback);
+
+    // Initial fetch if no data
+    if (globalState.notifications.length === 0) {
+      fetchNotifications();
+    }
+
+    return () => {
+      globalState.subscribers.delete(callback);
+    };
+  }, []);
 
   const markAsRead = async (id: number) => {
     await fetch(`/api/notifications/${id}`, { method: 'PUT' });
-    setNotifications(notifications.filter(n => n.id !== id));
+    const updatedNotifications = notifications.filter(n => n.id !== id);
+    globalState.notifications = updatedNotifications;
+    globalState.subscribers.forEach(callback => callback(updatedNotifications));
   };
 
   const markAllAsRead = async () => {
     await fetch('/api/notifications/mark-all-read', { method: 'PUT' });
-    setNotifications([]);
+    globalState.notifications = [];
+    globalState.subscribers.forEach(callback => callback([]));
   };
 
   return { notifications, markAsRead, markAllAsRead };

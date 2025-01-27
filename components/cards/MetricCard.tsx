@@ -7,7 +7,7 @@ import { Badge } from '../ui/badge';
 
 interface MetricCardProps {
   title: string;
-  value: number | string;
+  value: number | string | undefined;
   icon: React.ReactNode;
   footer?: string;
   loading?: boolean;
