@@ -38,13 +38,13 @@ export function getAdminMenuList(pathname: string): Group[] {
   return [
     {
       menus: [
-        {
-          href: "/dashboard",
-          label: "Dashboard",
-          active: pathname === "/dashboard",
-          icon: LayoutGrid,
-          submenus: []
-        },
+        // {
+        //   href: "/dashboard",
+        //   label: "Dashboard",
+        //   active: pathname === "/dashboard",
+        //   icon: LayoutGrid,
+        //   submenus: []
+        // },
         {
           href: "/acceuil",
           label: "Accueil",

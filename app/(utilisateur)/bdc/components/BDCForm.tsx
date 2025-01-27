@@ -99,16 +99,16 @@ export function BDCForm({ onSubmit, isLoading }: BDCFormProps) {
           Nouveau BDC
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl p-0">
+        <DialogHeader className="border-b w-full p-4">
           <DialogTitle>Nouveau bon de caisse</DialogTitle>
           <DialogDescription>
             Remplissez les champs suivants pour émettre votre demande.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[600px] pr-4">
+        <ScrollArea style={{height: "25rem"}} className="p-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-2 p-2">
+            <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6 p-2">
               <FormField
                 control={form.control}
                 name="title"
@@ -181,11 +181,12 @@ export function BDCForm({ onSubmit, isLoading }: BDCFormProps) {
                   </div>
                 ))}
               </div>
-              <Separator className="mt-6" />
-              {/* Employees */}
+              
+
+               {/* Employees */}
               
               <div className="space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-row justify-between items-center gap-2">
                     <FormLabel>Employés Concernés (Optionnel)</FormLabel>
                     <Button
                     type="button"
@@ -236,6 +237,8 @@ export function BDCForm({ onSubmit, isLoading }: BDCFormProps) {
                   </div>
                 ))}
               </div>
+
+              
 
               <FormField
                 control={form.control}

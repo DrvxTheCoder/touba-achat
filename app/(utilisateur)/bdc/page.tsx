@@ -448,6 +448,8 @@ export default function BDCPage() {
               bdc={modalBDC}
               onRefresh={async () => {
                 await fetchBDCs();
+                setLastUpdated(new Date());
+                setModalBDC(null);
                 // Also refresh the modal data
                 const response = await fetch(`/api/bdc?id=${modalBDC.id}`);
                 if (response.ok) {

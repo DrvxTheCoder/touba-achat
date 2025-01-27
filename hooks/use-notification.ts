@@ -34,7 +34,9 @@ async function fetchNotifications() {
       )
     );
 
-    if (newNotifications.length > 0) {
+    const reverseOrder = [...newNotifications].reverse();
+
+    if (reverseOrder.length > 0) {
       audioElement?.play().catch(console.error);
       
       newNotifications.forEach(notification => {
