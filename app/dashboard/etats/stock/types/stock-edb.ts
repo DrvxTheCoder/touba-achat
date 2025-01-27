@@ -1,8 +1,7 @@
 // types/stock-edb.ts
-
 import { StockEDBStatus, EDBStatus } from '@prisma/client';
 
-export interface StockEDB {
+export interface BaseStockEDB {
   id: number;
   edbId: string;
   status: StockEDBStatus;
@@ -23,17 +22,22 @@ export interface StockEDB {
     name: string;
   } | null;
   externalEmployeeName?: string | null;
-  createdAt: Date;
-  convertedAt?: Date;
+  createdAt: Date | string;
+  convertedAt?: Date | string;
   convertedBy?: {
     id: number;
     name: string;
   } | null;
+  deliveryHistory?: Array<{
+    items: Array<{ name: string; quantity: number }>;
+    deliveredAt: string;
+    deliveredBy: number;
+  }>;
   convertedEdb?: {
     id: number;
     edbId: string;
-    status: EDBStatus;
-    description: {
+    status: EDBStatus | string;
+    description?: {
       items: Array<{ designation: string; quantity: number }>;
     };
     auditLogs: Array<{
@@ -45,4 +49,24 @@ export interface StockEDB {
       };
     }>;
   } | null;
+}
+
+// For components that need stricter typing
+export interface StockEDB extends BaseStockEDB {
+  category: {
+    id: number;
+    name: string;
+  };
+  createdAt: Date;
+  convertedAt?: Date;
+}
+
+// For components that need more flexible typing (like the Details card)
+export interface StockDetails extends BaseStockEDB {
+  category: {
+    name: string;
+    id: number;
+  };
+  createdAt: Date | string;
+  convertedAt?: Date | string;
 }

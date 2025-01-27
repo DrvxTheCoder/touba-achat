@@ -11,13 +11,14 @@ const statusConfig: Record<StockEDBStatus, { label: string; variant: "default" |
   ORDERED: { label: "Commandé", variant: "secondary" },
   DELIVERED: { label: "Livré", variant: "default" },
   CONVERTED: { label: "Converti", variant: "secondary" },
+  PARTIALLY_DELIVERED: { label: "Livré**", variant: "secondary" },
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const config = statusConfig[status];
   return (
-    <Badge variant={config.variant}>
-      {config.label}
+    <Badge variant={config.variant} className="text-xs">
+      <text className="text-xs">{config.label}</text>
     </Badge>
   );
 }

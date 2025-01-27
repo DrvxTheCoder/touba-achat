@@ -11,10 +11,72 @@ import { NotificationPayload, sendNotification } from '@/app/actions/sendNotific
 
 const prisma = new PrismaClient();
 
+function getDateRange(timeRange: string): { gte: Date; lte: Date } {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  switch (timeRange) {
+    case 'today':
+      return {
+        gte: today,
+        lte: now
+      };
+      
+    case 'this-week': {
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+      return {
+        gte: monday,
+        lte: now
+      };
+    }
+      
+    case 'this-month':
+      return {
+        gte: new Date(now.getFullYear(), now.getMonth(), 1),
+        lte: now
+      };
+      
+    case 'last-month': {
+      const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      return {
+        gte: firstDayLastMonth,
+        lte: lastDayLastMonth
+      };
+    }
+      
+    case 'last-3-months':
+      return {
+        gte: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+        lte: now
+      };
+      
+    case 'this-year':
+      return {
+        gte: new Date(now.getFullYear(), 0, 1),
+        lte: now
+      };
+      
+    case 'last-year':
+      return {
+        gte: new Date(now.getFullYear() - 1, 0, 1),
+        lte: new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
+      };
+      
+    default:
+      return {
+        gte: new Date(now.getFullYear(), now.getMonth(), 1),
+        lte: now
+      };
+  }
+}
+
 
 
 export async function GET(request: Request) {
   try {
+
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -27,10 +89,13 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || '';
     const role = session.user.role;
     const skip = (page - 1) * pageSize;
+    const timeRange = searchParams.get('timeRange') || 'this-month';
+    const dateRange = getDateRange(timeRange);
 
     const statusFilter = status ? status.split(',') as EDBStatus[] : [];
 
     let where: Prisma.EtatDeBesoinWhereInput = {
+      createdAt: dateRange,
       OR: [
         { edbId: { contains: search, mode: 'insensitive' } },
         { title: { contains: search, mode: 'insensitive' } },
@@ -46,6 +111,7 @@ export async function GET(request: Request) {
       ],
       ...(statusFilter.length > 0 ? { status: { in: statusFilter } } : {}),
     };
+    
 
     // Role-based filtering
     switch (role) {

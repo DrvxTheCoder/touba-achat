@@ -9,12 +9,14 @@ import { Access } from '@prisma/client'
 const accessOptions: { value: Access; label: string }[] = [
   { value: 'APPROVE_EDB', label: 'Approuver EDB' },
   { value: 'APPROVE_ODM', label: 'Approuver ODM' },
+  { value: 'APPROVE_BDC', label: 'Approuver BDC' },
   { value: 'ATTACH_DOCUMENTS', label: 'Joindre des documents' },
   { value: 'CHOOSE_SUPPLIER', label: 'Choisir un fournisseur' },
   { value: 'IT_APPROVAL', label: 'Approbation IT' },
   { value: 'FINAL_APPROVAL', label: 'Approbation finale' },
   { value: 'RH_APPROVE', label: 'Approbation RH' },
   { value: 'RH_PROCESS', label: 'Traitement ODM' },
+  { value: 'CASHIER', label: 'Caisse' },
 ]
 
 interface AccessSelectProps {

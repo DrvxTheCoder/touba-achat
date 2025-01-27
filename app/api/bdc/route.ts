@@ -10,11 +10,13 @@ import {
   rejectBDC,
   deleteBDC,
   markBDCAsPrinted,
-  getBDCWithDetails
+  getBDCWithDetails,
+  approveDAF
 } from "@/app/api/bdc/utils/bdc-util";
-import { Role } from "@prisma/client";
+import { Access, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+
 
 // Validation schemas
 const expenseItemSchema = z.object({
@@ -101,7 +103,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(session.user.id) }
+      where: { id: parseInt(session.user.id) },
     });
 
     if (!user) {
@@ -119,15 +121,23 @@ export async function PUT(req: NextRequest) {
       }
 
       case "approve": {
-        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF'].includes(user.role as Role)) {
+        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF','DCM', 'DRH', 'ADMIN'].includes(user.role as Role)) {
           return NextResponse.json({ error: "Non autorisé pour approuver" }, { status: 403 });
         }
         const approvedBdc = await approveBDC(bdcIdNum, user.id, user.role);
         return NextResponse.json(approvedBdc);
       }
 
+      case "approve-daf": {
+        if (!['DIRECTEUR_GENERAL', 'ADMIN', 'DAF', 'ADMIN'].includes(user.role as Role)) {
+          return NextResponse.json({ error: "Action reservé DAF" }, { status: 403 });
+        }
+        const approvedBdc = await approveDAF(bdcIdNum, user.id, Role.DAF);
+        return NextResponse.json(approvedBdc);
+      }
+
       case "reject": {
-        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF'].includes(user.role as Role)) {
+        if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'DOG', 'DAF', 'DCM', 'DRH', 'ADMIN'].includes(user.role as Role)) {
           return NextResponse.json({ error: "Non autorisé pour rejeter" }, { status: 403 });
         }
         const data = await req.json();
@@ -137,8 +147,10 @@ export async function PUT(req: NextRequest) {
       }
 
       case "print": {
-        if (user.role !== Role.DAF) {
-          return NextResponse.json({ error: "Action reservé DAF" }, { status: 403 });
+        const hasCashierAccess = user.access.includes('CASHIER');
+        const isAllowedRole = ['DIRECTEUR_GENERAL', 'DAF', 'ADMIN', 'MAGASINIER'].includes(user.role as Role);
+        if (!hasCashierAccess || !isAllowedRole) {
+          return NextResponse.json({ error: "Action non autorisée" }, { status: 403 });
         }
         const printedBdc = await markBDCAsPrinted(bdcIdNum, user.id);
         return NextResponse.json(printedBdc);
@@ -208,73 +220,126 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
+
 export async function GET(req: NextRequest) {
-    try {
-      const session = await getServerSession(authOptions);
-      if (!session?.user) {
-        return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-      }
-   
-      const { searchParams } = new URL(req.url);
-      const bdcId = searchParams.get("id");
-   
-      if (bdcId) {
-        const bdc = await getBDCWithDetails(parseInt(bdcId));
-        if (!bdc) return NextResponse.json({ error: "BDC non trouvé" }, { status: 404 });
-        return NextResponse.json(bdc);
-      }
-   
-      const page = parseInt(searchParams.get("page") || "1");
-      const pageSize = parseInt(searchParams.get("pageSize") || "5");
-      const skip = (page - 1) * pageSize;
-      const search = searchParams.get("search");
-   
-      const user = await prisma.user.findUnique({
-        where: { id: parseInt(session.user.id) },
-        include: { employee: true }
-      });
-   
-      if (!user) return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
-   
-      let whereClause: any = {};
-   
-      if (!['ADMIN', 'DAF', 'DIRECTEUR_GENERAL'].includes(user.role)) {
-        if (user.employee) {
-          whereClause.departmentId = user.employee.currentDepartmentId;
-        }
-      }
-   
-      if (search) {
-        whereClause.OR = [
-          { bdcId: { contains: search, mode: 'insensitive' } },
-          { title: { contains: search, mode: 'insensitive' } },
-          { department: { name: { contains: search, mode: 'insensitive' } } },
-        ];
-      }
-   
-      const [bdcs, total] = await prisma.$transaction([
-        prisma.bonDeCaisse.findMany({
-          where: whereClause,
-          include: {
-            department: true,
-            creator: true,
-            approver: true,
-            printedBy: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: pageSize
-        }),
-        prisma.bonDeCaisse.count({ where: whereClause })
-      ]);
-   
-      return NextResponse.json({ data: bdcs, total, page, pageSize });
-   
-    } catch (error) {
-      console.error("BDC fetch error:", error);
-      return NextResponse.json(
-        { error: "Erreur lors de la récupération des BDCs" },
-        { status: 500 }
-      );
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
-   }
+
+    const { searchParams } = new URL(req.url);
+    const bdcId = searchParams.get("id");
+
+
+    if (bdcId) {
+      const bdc = await getBDCWithDetails(bdcId, parseInt(session.user.id), session.user.role);
+      if (!bdc) return NextResponse.json({ error: "BDC non trouvé" }, { status: 404 });
+      return NextResponse.json(bdc);
+    }
+
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "5");
+    const skip = (page - 1) * pageSize;
+    const search = searchParams.get("search") || "";
+    const timeRange = searchParams.get("timeRange") || "this-month";
+    const department = searchParams.get("department");
+    const status = searchParams.get("status");
+
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(session.user.id) },
+      include: { employee: true }
+    });
+
+    if (!user) return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+
+    let whereClause: any = {};
+
+    // Base access control
+    if (!['ADMIN', 'DAF', 'DIRECTEUR_GENERAL'].includes(user.role) && !user.access.includes('CASHIER')) {
+      if (user.employee) {
+        whereClause.departmentId = user.employee.currentDepartmentId;
+      }
+    }
+
+    // Department filter
+    if (department && department !== "all") {
+      whereClause.departmentId = parseInt(department);
+    }
+
+    // Status filter
+    if (status && status !== "all") {
+      whereClause.status = status;
+    }
+
+    // Time range filter
+    const timeRangeFilter = getTimeRangeFilter(timeRange);
+    if (timeRangeFilter) {
+      whereClause.createdAt = timeRangeFilter;
+    }
+
+    // Search filter
+    if (search) {
+      whereClause.OR = [
+        { bdcId: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { creator: { name: { contains: search, mode: 'insensitive' } } },
+        { department: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [bdcs, total] = await prisma.$transaction([
+      prisma.bonDeCaisse.findMany({
+        where: whereClause,
+        include: {
+          department: true,
+          creator: true,
+          approver: true,
+          approverDAF: true,
+          printedBy: true,
+          auditLogs: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize
+      }),
+      prisma.bonDeCaisse.count({ where: whereClause })
+    ]);
+
+    return NextResponse.json({ data: bdcs, total, page, pageSize });
+
+  } catch (error) {
+    console.error("BDC fetch error:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la récupération des BDCs" },
+      { status: 500 }
+    );
+  }
+}
+
+// Add this helper function
+function getTimeRangeFilter(timeRange: string) {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+  switch (timeRange) {
+    case 'this-month':
+      return { gte: startOfMonth };
+    case 'last-month':
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { gte: lastMonth, lte: endOfLastMonth };
+    case 'last-3-months':
+      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      return { gte: threeMonthsAgo };
+    case 'this-year':
+      return { gte: startOfYear };
+    case 'last-year':
+      const lastYear = new Date(now.getFullYear() - 1, 0, 1);
+      const endOfLastYear = new Date(now.getFullYear(), 0, 0);
+      return { gte: lastYear, lte: endOfLastYear };
+    default:
+      return null;
+  }
+}

@@ -5,6 +5,7 @@ import { BDC } from "../types/bdc";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { BDCStatus } from "@prisma/client";
+import { StatusBadge } from "@/app/dashboard/etats/components/StatusBadge";
 
 interface BDCTableRowProps {
   bdc: BDC;
@@ -20,8 +21,10 @@ const getStatusColor = (status: BDCStatus) => {
       return "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30";
     case "APPROVED_DIRECTEUR":
       return "bg-orange-500/20 text-orange-500 hover:bg-orange-500/30";
-    case "PRINTED":
+    case "APPROVED_DAF":
       return "bg-green-500/20 text-green-500 hover:bg-green-500/30";
+    case "PRINTED":
+      return "bg-blue-500/20 text-green-500 hover:bg-blue-500/30";
     case "REJECTED":
       return "bg-red-500/20 text-red-500 hover:bg-red-500/30";
     default:
@@ -37,8 +40,10 @@ const getStatusLabel = (status: BDCStatus) => {
       return "En cours";
     case "APPROVED_DIRECTEUR":
       return "Approuvé";
+    case "APPROVED_DAF":
+      return "Approuvé DAF";
     case "PRINTED":
-      return "Imprimé";
+      return "Décaissé";
     case "REJECTED":
       return "Rejeté";
     case "UPDATED":
@@ -49,7 +54,7 @@ const getStatusLabel = (status: BDCStatus) => {
 };
 
 export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
-    console.log('BDC in row:', bdc); // For debugging
+    // console.log('BDC in row:', bdc); // For debugging
     
     return (
       <TableRow 
@@ -60,7 +65,10 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
         onClick={onClick}
       >
         <TableCell className="font-medium">
-          {bdc?.bdcId || 'N/A'}
+          <div className="text-xs md:font-medium"># {bdc?.bdcId}</div>
+          <div className="hidden text-xs text-muted-foreground md:inline">
+            {bdc?.creator.name}
+          </div>
         </TableCell>
         <TableCell className="sm:table-cell">
           {bdc?.title || 'N/A'}
@@ -72,9 +80,7 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
           {typeof bdc?.totalAmount === 'number' ? bdc.totalAmount.toLocaleString() : 'N/A'}
         </TableCell>
         <TableCell className="text-right sm:table-cell">
-          <Badge variant="outline" className={getStatusColor(bdc?.status)}>
-            {getStatusLabel(bdc?.status)}
-          </Badge>
+          <StatusBadge status={bdc?.status} />
         </TableCell>
       </TableRow>
     );

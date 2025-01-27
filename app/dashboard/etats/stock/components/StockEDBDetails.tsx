@@ -12,6 +12,7 @@ import { Role, StockEDBStatus } from "@prisma/client";
 import { 
   MoreVertical, 
   PackageCheck, 
+  PackageSearch, 
   RefreshCw,
 } from "lucide-react";
 import {
@@ -26,48 +27,13 @@ import { StockEDB } from '../types/stock-edb';
 import { Badge } from '@/components/ui/badge';
 import { EDBEventType, EDBStatus } from '@/app/(utilisateur)/etats-de-besoin/data/types';
 import Link from 'next/link';
+import { PartialDeliveryDialog } from './PartialDeliveryDialog';
+import { Separator } from '@/components/ui/separator';
+import StockEDBPDFDialog from './StockEDBSummaryDialog';
+import { StockDetails } from '@/app/dashboard/etats/stock/types/stock-edb';
 
 interface StockEDBDetailsProps {
-  stockEdb: {
-    id: number;
-    edbId: string;
-    status: StockEDBStatus;
-    description: {
-      items: Array<{ name: string; quantity: number }>;
-      comment?: string;
-    };
-    department: {
-      id: number;
-      name: string;
-    };
-    category: {
-      name: string;
-    };
-    employee?: {
-      name: string;
-      id?: number;
-    } | null;
-    externalEmployeeName?: string | null;
-    createdAt: Date | string;
-    convertedAt?: Date | string;
-    convertedBy?: {
-      id: number;
-      name: string;
-    } | null;
-    convertedEdb?: {
-      id: number;
-      edbId: string;
-      status: string;
-      auditLogs: Array<{
-        id: number;
-        eventType: string;
-        eventAt: string;
-        user: {
-          name: string;
-        };
-      }>;
-    } | null;
-  };
+  stockEdb: StockDetails;
   onUpdate?: () => void;
 }
 
@@ -101,6 +67,16 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
   const canPerformActions = session?.user?.role && ['ADMIN', 'MAGASINIER'].includes(session.user.role);
   const isConverted = stockEdb.status === StockEDBStatus.CONVERTED;
   const isDelivered = stockEdb.status === StockEDBStatus.DELIVERED;
+  const [isPartialDeliveryDialogOpen, setIsPartialDeliveryDialogOpen] = useState(false);
+
+  const totalDelivered = (stockEdb.deliveryHistory || []).reduce((acc, delivery) => {
+    delivery.items.forEach(item => {
+      acc[item.name] = (acc[item.name] || 0) + item.quantity;
+    });
+    return acc;
+  }, {} as Record<string, number>);
+
+  const hasDeliveries = Object.keys(totalDelivered).length > 0;
 
   const handleMarkAsDelivered = async () => {
     setIsLoading(true);
@@ -170,12 +146,14 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
   };
 
   return (
-    <Card>
+    <Card className="rounded-2xl">
       <CardHeader className="space-y-1 border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl">#{stockEdb.edbId}</CardTitle>
           <div className="flex items-center gap-2">
             <StatusBadge status={stockEdb.status} />
+
+            <StockEDBPDFDialog stockEdb={stockEdb} />
             
             {isConverted && stockEdb.convertedEdb && (
               <EDBTimelineDialog 
@@ -191,6 +169,13 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setIsPartialDeliveryDialogOpen(true)}
+                    disabled={stockEdb.status === "DELIVERED" || isConverted || isLoading}
+                  >
+                    <PackageSearch className="mr-2 h-4 w-4" />
+                    Marquer comme livré (reste manquant)
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setIsDeliveryDialogOpen(true)}
                     disabled={isDelivered || isLoading}
@@ -237,7 +222,7 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
 
         <div>
           <h3 className="font-semibold mb-2">Articles</h3>
-          <ScrollArea className="h-[200px] rounded-md border border-dashed p-4">
+          <ScrollArea className="h-[200px] rounded-md border border-dashed p-4 flex flex-col">
             <div className="space-y-2">
               {stockEdb.description.items.map((item: any, index: any) => (
                 <div key={index} className="flex justify-between items-center">
@@ -246,8 +231,41 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
                 </div>
               ))}
             </div>
+            {hasDeliveries && (
+              <div className="mt-4">
+                <h3 className="mb-2 text-muted-foreground">Historique (Livraison)</h3>
+                <ScrollArea className="h-[200px] rounded-md border border-dashed p-4">
+                  <div className="space-y-4">
+                    {stockEdb.deliveryHistory?.map((delivery, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">
+                            {format(new Date(delivery.deliveredAt), "Pp", { locale: fr })}
+                          </span>
+                        </div>
+                        <div className="pl-4 space-y-1">
+                          {delivery.items.map((item, itemIndex) => (
+                            <div key={itemIndex} className="flex justify-between items-center text-sm">
+                              <span>{item.name}</span>
+                              <Badge variant="secondary">
+                                {item.quantity} livré{item.quantity > 1 ? 's' : ''}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                        {index < (stockEdb.deliveryHistory?.length || 0) - 1 && (
+                          <Separator className="my-2" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
           </ScrollArea>
         </div>
+
+
 
         {stockEdb.description.comment && (
           <div>
@@ -260,7 +278,7 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
       </CardContent>
       
       {isConverted && stockEdb.convertedEdb && (
-        <CardFooter className="border-t bg-muted/50 px-6 py-3">
+        <CardFooter className="border-t bg-muted/50 px-6 py-3 rounded-bl-2xl rounded-br-2xl">
           <div className="text-xs text-muted-foreground flex items-center justify-between w-full">
             <span className="hover:underline"><Link href={`/dashboard/etats/${stockEdb.convertedEdb.edbId}`}>#{stockEdb.convertedEdb.edbId} {"(Standard)"}</Link></span>
             <StatusBadge status={stockEdb.convertedEdb.status} />
@@ -286,6 +304,19 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
         description="Êtes-vous sûr de vouloir convertir l'EDB #{edbId} en EDB standard ? Cette action est irréversible."
         isLoading={isLoading}
         edbId={stockEdb.edbId}
+      />
+
+      <PartialDeliveryDialog
+        isOpen={isPartialDeliveryDialogOpen}
+        onClose={() => setIsPartialDeliveryDialogOpen(false)}
+        id={stockEdb.id}
+        stockEdbId={stockEdb.edbId.toString()}
+        description={stockEdb.description}
+        deliveryHistory={stockEdb.deliveryHistory || []}
+        onSuccess={() => {
+          if (onUpdate) onUpdate();
+          setIsPartialDeliveryDialogOpen(false);
+        }}
       />
     </Card>
   );

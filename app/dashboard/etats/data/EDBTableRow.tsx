@@ -26,7 +26,7 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
       className={`cursor-pointer hover:bg-muted/60  ${isSelected ? 'bg-muted/60' : ''}`}
     >
       <TableCell>
-        <div className="text-xs md:font-medium"># {displayId}</div>
+        <Link href={`/dashboard/etats/${displayId}`}><div className="text-xs md:font-medium hover:underline"># {displayId}</div></Link>
         <div className="hidden text-xs text-muted-foreground md:inline">
           {displayName}
         </div>

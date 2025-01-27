@@ -13,12 +13,14 @@ interface UserInfo {
   role: string;
 }
 
+// useEDBs.ts
 export const useEDBs = (
   page: number, 
   pageSize: number, 
   searchTerm: string, 
   statusFilter: string[],
-  userInfo: UserInfo
+  userInfo: UserInfo,
+  timeRange: string,  // Added parameter
 ) => {
   const [paginatedData, setPaginatedData] = useState<PaginatedEDBs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +35,7 @@ export const useEDBs = (
         ...(searchTerm && { search: searchTerm }),
         ...(statusFilter.length > 0 && { status: statusFilter.join(',') }),
         role: userInfo.role,
+        timeRange: timeRange // Add timeRange to query params
       });
       const response = await fetch(`/api/edb?${queryParams}`);
       if (!response.ok) {
@@ -46,7 +49,7 @@ export const useEDBs = (
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, searchTerm, statusFilter, userInfo.role]);
+  }, [page, pageSize, searchTerm, statusFilter, userInfo.role, timeRange]); // Add timeRange to dependencies
 
   useEffect(() => {
     fetchEDBs();

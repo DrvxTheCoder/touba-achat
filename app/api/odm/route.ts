@@ -70,6 +70,12 @@ export async function GET(req: Request) {
           lte: now
         };
         break;
+      case 'last-year': 
+        where.createdAt = {
+          gte: new Date(now.getFullYear() - 1, 0, 1),
+          lte: new Date(now.getFullYear() - 1, 11, 31)
+        };
+        break;
     }
 
     // Add search functionality

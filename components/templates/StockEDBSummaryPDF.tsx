@@ -20,99 +20,23 @@ type StockEDBSummaryPDFProps = {
 };
 
 const styles = StyleSheet.create({
-  page: { 
-    padding: 30, 
-    position: 'relative', 
-    fontFamily: 'Ubuntu' 
-  },
-  section: { 
-    margin: 10, 
-    padding: 10 
-  },
-  sectionTwo: { 
-    margin: 5, 
-    padding: 10, 
-    borderWidth: 1, 
-    borderStyle: 'dashed', 
-    borderRadius: 15 
-  },
-  title: { 
-    fontSize: 24, 
-    marginBottom: 20, 
-    textAlign: 'center', 
-    fontWeight: 'bold' 
-  },
-  header: { 
-    fontSize: 18, 
-    marginBottom: 20, 
-    textAlign: 'center', 
-    fontWeight: 'bold' 
-  },
-  text: { 
-    fontSize: 12, 
-    marginBottom: 10 
-  },
-  topSection: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'flex-start', 
-    margin: 10, 
-    marginBottom: 20 
-  },
+  page: { padding: 30, position: 'relative', fontFamily: 'Ubuntu' },
+  section: { margin: 10, padding: 10 },
+  sectionTwo: { margin: 5, padding: 10, borderWidth: 1, borderStyle: 'dashed', borderRadius: 15 },
+  title: { fontSize: 24, marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
+  header: { fontSize: 18, marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
+  amount: { fontSize: 16 , marginTop: 10, textAlign: 'right', fontWeight: 'bold' },
+  text: { fontSize: 12, marginBottom: 10 },
+  topSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', margin: 10, marginBottom: 20 },
   logo: { width: 50 },
   qrCode: { width: 80, height: 80 },
-  watermark: { 
-    position: 'absolute', 
-    top: '50%', 
-    left: '45%', 
-    transform: 'translate(-50%, -50%)', 
-    opacity: 0.1, 
-    width: 200 
-  },
-  table: { 
-    width: 'auto', 
-    borderStyle: 'solid', 
-    borderWidth: 1, 
-    borderRightWidth: 0, 
-    borderBottomWidth: 0 
-  },
-  tableRow: { 
-    margin: 'auto', 
-    flexDirection: 'row' 
-  },
-  tableCol: { 
-    width: '50%', 
-    borderStyle: 'solid', 
-    borderWidth: 1, 
-    borderLeftWidth: 0, 
-    borderTopWidth: 0 
-  },
-  tableCell: { 
-    margin: 'auto', 
-    marginTop: 5, 
-    fontSize: 10 
-  },
+  watermark: { position: 'absolute', top: '50%', left: '45%', transform: 'translate(-50%, -50%)', opacity: 0.1, width: 200 },
+  table: { width: 'auto', borderStyle: 'solid', borderWidth: 1, borderRightWidth: 0, borderBottomWidth: 0 },
+  tableRow: { margin: 'auto', flexDirection: 'row' },
+  tableCol: { width: '50%', borderStyle: 'solid', borderWidth: 1, borderLeftWidth: 0, borderTopWidth: 0 },
+  tableCell: { margin: 'auto', marginTop: 5, fontSize: 10 },
   timeline: { marginTop: 20 },
-  stamp: { 
-    position: 'absolute', 
-    bottom: 50, 
-    right: 50, 
-    width: 100, 
-    height: 100 
-  },
-  statusBadge: {
-    padding: 4,
-    borderRadius: 4,
-    backgroundColor: '#e5e7eb',
-    marginTop: 5
-  },
-  comment: {
-    fontSize: 11,
-    fontStyle: 'italic',
-    marginTop: 10,
-    padding: 8,
-    backgroundColor: '#f3f4f6'
-  }
+  stamp: { position: 'absolute', bottom: 50, right: 50, width: 100, height: 100 },
 });
 
 const getStatusLabel = (status: string): string => {
@@ -120,6 +44,7 @@ const getStatusLabel = (status: string): string => {
     SUBMITTED: 'Soumis',
     DELIVERED: 'Livré',
     CONVERTED: 'Converti en EDB',
+    PARTIALLY_DELIVERED: 'Livré (reste manquant)',
     ORDERED: 'Commandé'
   };
   return statusMap[status] || status;
@@ -131,7 +56,7 @@ const StockEDBSummaryPDF: React.FC<StockEDBSummaryPDFProps> = ({ stockEdb }) => 
   useEffect(() => {
     const generateQRCode = async () => {
       try {
-        const qrCodeDataUrl = await QRCode.toDataURL(`${pageURL}/dashboard/etats/stock/${stockEdb.edbId}`);
+        const qrCodeDataUrl = await QRCode.toDataURL(`${pageURL}/dashboard/etats/stock`);
         setQrCodeImage(qrCodeDataUrl);
       } catch (err) {
         console.error('Error generating QR code:', err);
@@ -164,9 +89,7 @@ const StockEDBSummaryPDF: React.FC<StockEDBSummaryPDFProps> = ({ stockEdb }) => 
           </Text>
           <Text style={styles.text}>Département: {stockEdb.department.name}</Text>
           <Text style={styles.text}>Catégorie: {stockEdb.category.name}</Text>
-          <View style={styles.statusBadge}>
-            <Text style={styles.text}>Statut: {getStatusLabel(stockEdb.status)}</Text>
-          </View>
+          <Text style={styles.text}>Statut: {getStatusLabel(stockEdb.status)}</Text>
         </View>
 
         <View style={styles.section}>
@@ -193,8 +116,8 @@ const StockEDBSummaryPDF: React.FC<StockEDBSummaryPDFProps> = ({ stockEdb }) => 
           </View>
           
           {stockEdb.description.comment && (
-            <View style={styles.comment}>
-              <Text>Commentaire: {stockEdb.description.comment}</Text>
+            <View style={styles.section}>
+              <Text style={styles.text}>Commentaire: {stockEdb.description.comment}</Text>
             </View>
           )}
         </View>

@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipProvider
 } from "@/components/ui/tooltip";
-import { getAdminMenuList, getUserMenuList } from "@/lib/menu-list";
+import { getAdminMenuList, getUserMenuList, getMagasinierMenuList } from "@/lib/menu-list";
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles";
 
 interface MenuProps {
@@ -23,8 +23,12 @@ interface MenuProps {
 
 export function Menu({ isOpen }: MenuProps) {
   const pathname = usePathname();
-  const { hasReadAccess } = useAllowedRoles();
-  const menuList = hasReadAccess ? getAdminMenuList(pathname) : getUserMenuList(pathname);
+  const { hasReadAccess, hasMagasinierAccess } = useAllowedRoles();
+  const menuList = hasReadAccess 
+    ? getAdminMenuList(pathname) 
+    : hasMagasinierAccess 
+    ? getMagasinierMenuList(pathname) 
+    : getUserMenuList(pathname);
 
   return (
       <nav className="mt-8 h-96 w-full">

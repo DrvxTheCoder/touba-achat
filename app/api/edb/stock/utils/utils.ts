@@ -60,58 +60,91 @@ export async function createStockEDB(
     categoryId: number;
     employeeType: 'registered' | 'external';
     employeeId?: number;
-    departmentId?: number;  // Optional since we'll get it from employee for registered users
+    departmentId?: number;
     externalEmployeeName?: string;
   }
 ) {
-  // For registered employees, get their department
-  if (data.employeeType === 'registered' && data.employeeId) {
-    const employee = await prisma.employee.findUnique({
-      where: { id: data.employeeId },
-      include: { currentDepartment: true, user:true }
-    });
+  try {
+    // For registered employees
+    if (data.employeeType === 'registered' && data.employeeId) {
+      const employee = await prisma.employee.findUnique({
+        where: { id: data.employeeId },
+        include: { currentDepartment: true, user: true }
+      });
 
-    if (!employee) {
-      throw new Error('Employé introuvable');
-    }
-
-    const newStockEDB = await prisma.stockEtatDeBesoin.create({
-      data: {
-        edbId: generateEDBId(),
-        description: data.description as Prisma.JsonObject,
-        employee: { connect: { id: data.employeeId } },
-        department: { connect: { id: employee.currentDepartmentId } },
-        category: { connect: { id: data.categoryId } },
-      },
-      include: {
-        department: true,
-        category: true,
-        employee: true
+      if (!employee) {
+        throw new Error('Employé introuvable');
       }
-    });
 
-    await sendStockNotification(newStockEDB, EDBEventType.SUBMITTED, employee.user.id);
-  } 
-  // For external employees
-  else {
-    if (!data.departmentId) {
-      throw new Error('Département requis pour les employés externes');
-    }
+      const newStockEDB = await prisma.stockEtatDeBesoin.create({
+        data: {
+          edbId: generateEDBId(),
+          description: data.description as Prisma.JsonObject,
+          employee: { connect: { id: data.employeeId } },
+          department: { connect: { id: employee.currentDepartmentId } },
+          category: { connect: { id: data.categoryId } },
+          status: 'SUBMITTED',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        include: {
+          department: true,
+          category: true,
+          employee: {
+            include: {
+              user: true
+            }
+          }
+        }
+      });
 
-    return await prisma.stockEtatDeBesoin.create({
-      data: {
-        edbId: generateEDBId(),
-        description: data.description as Prisma.JsonObject,
-        externalEmployeeName: data.externalEmployeeName,
-        department: { connect: { id: data.departmentId } },
-        category: { connect: { id: data.categoryId } },
-      },
-      include: {
-        department: true,
-        category: true,
-        employee: true
+      await sendStockNotification(newStockEDB, EDBEventType.SUBMITTED, employee.user.id);
+      
+      return newStockEDB;
+    } 
+    // For external employees
+    else if (data.employeeType === 'external') {
+      if (!data.departmentId) {
+        throw new Error('Département requis pour les employés externes');
       }
-    });
+      if (!data.externalEmployeeName) {
+        throw new Error('Nom de l\'employé externe requis');
+      }
+
+      return await prisma.stockEtatDeBesoin.create({
+        data: {
+          edbId: generateEDBId(),
+          description: data.description as Prisma.JsonObject,
+          externalEmployeeName: data.externalEmployeeName,
+          department: { connect: { id: data.departmentId } },
+          category: { connect: { id: data.categoryId } },
+          status: 'SUBMITTED',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        include: {
+          department: true,
+          category: true,
+          employee: {
+            include: {
+              user: true
+            }
+          }
+        }
+      });
+    } else {
+      throw new Error('Type d\'employé invalide');
+    }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        throw new Error('Un EDB avec cet identifiant existe déjà');
+      }
+      if (error.code === 'P2025') {
+        throw new Error('Certaines relations requises n\'ont pas été trouvées');
+      }
+    }
+    throw error;
   }
 }
 
@@ -166,15 +199,62 @@ export async function getStockEDBs(params?: {
   search?: string;
   userRole?: Role;
   userId?: number;
+  timeRange?: string;
 }) {
   const skip = params?.page && params?.pageSize ? (params.page - 1) * params.pageSize : undefined;
   const take = params?.pageSize;
 
+  const now = new Date();
+  let dateFilter = {};
+
+  switch (params?.timeRange) {
+    case 'this-month':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          lte: now
+        }
+      };
+      break;
+    case 'last-month':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          lte: new Date(now.getFullYear(), now.getMonth(), 0)
+        }
+      };
+      break;
+    case 'last-3-months':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+          lte: now
+        }
+      };
+      break;
+    case 'this-year':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), 0, 1),
+          lte: now
+        }
+      };
+      break;
+    case 'last-year':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear() - 1, 0, 1),
+          lte: new Date(now.getFullYear() - 1, 11, 31)
+        }
+      };
+      break;
+  }
+
   // Build the where condition
   const where: Prisma.StockEtatDeBesoinWhereInput = {
     // Base filters
+    ...dateFilter,
     ...(params?.categoryId && { categoryId: params.categoryId }),
-
     // Role-based filtering
     ...(!UNRESTRICTED_ROLES.includes(params?.userRole as typeof UNRESTRICTED_ROLES[number]) && {
       employee: {
@@ -313,9 +393,9 @@ export async function updateStockEDBStatus(
     where: { id: magasinierId },
   });
 
-  if (!magasinier || magasinier.role !== 'MAGASINIER') {
+  if (!magasinier || (magasinier.role !== 'MAGASINIER' && magasinier.role !== 'ADMIN')) {
     throw new Error('Non autorisé: Seuls les magasiniers peuvent mettre à jour le statut');
-  }
+  }  
 
   const updateData: Prisma.StockEtatDeBesoinUpdateInput = {
     status,

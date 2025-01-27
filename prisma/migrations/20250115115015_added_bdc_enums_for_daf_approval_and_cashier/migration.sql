@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "Access" ADD VALUE 'CASHIER';
+
+-- AlterEnum
+ALTER TYPE "BDCStatus" ADD VALUE 'APPROVED_DAF';

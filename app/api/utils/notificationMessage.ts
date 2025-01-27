@@ -131,7 +131,7 @@ function generateODMNotificationMessage(
       body = `L'ordre de mission (${id}) a été approuvé. En cours de traitement par les Ressources Humaines (${actionInitiator}).`;
       break;
     case 'AWAITING_FINANCE_APPROVAL':
-      body = `L'ordre de mission (${id}) a été traité par les Ressources Humaines et nécessite l'approbation de la Direction Administrative et Financière (${actionInitiator}).`;
+      body = `L'ordre de mission (${id}) a été traité par les Ressources Humaines et nécessite l'approbation de la Direction Administrative et Financière.`;
       break;
     case 'COMPLETED':
       subject = `ODM (${id}) traité`;

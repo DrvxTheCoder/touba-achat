@@ -27,7 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BDCStatus, Role } from "@prisma/client";
+import { Access, BDCStatus, Role } from "@prisma/client";
 import { toast } from "sonner";
 import {
   Table,
@@ -39,6 +39,9 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { BDCSummaryPDFDialog } from "./BDCSummaryPDFDialog";
+import { PrintBDCButton } from "./PrintBDCButton";
+import { StatusBadge } from "@/app/dashboard/etats/components/StatusBadge";
+import { Icons } from "@/components/icons";
 
 interface BDCDetailsProps {
   bdc: BDC;
@@ -88,6 +91,16 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     }
   };
 
+  const canApproveDAF = (userRole?: string | null) => {
+    if (!userRole) return false;
+    switch (bdc.status) {
+      case "APPROVED_DIRECTEUR":
+        return ["DAF", "DIRECTEUR_GENERAL", "ADMIN"].includes(userRole);
+      default:
+        return false;
+    }
+  };
+
   const canReject = (userRole?: string | null) => {
     if (!userRole) return false;
     return ["RESPONSABLE", "DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DAF"].includes(userRole) &&
@@ -99,10 +112,22 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     return ["ADMIN"].includes(userRole);
   }
 
-  const canPrint = (userRole?: Role) => {
-    if (!userRole) return false;
-    if (bdc.status === 'PRINTED') return true; // Anyone can download once printed
-    return (userRole === "DAF" || userRole === "ADMIN") && bdc.status === 'APPROVED_DIRECTEUR'; // Only DAF can print initially
+  const canPrint = (userRole?: Role, userAccesses?: Access[]) => {
+  
+
+    // Check for allowed roles
+    const isAllowedRole = ["DAF", "ADMIN", "DIRECTEUR_GENERAL", "MAGASINIER"].includes(userRole as string);
+    
+    // Check for CASHIER access, ensuring userAccesses is an array
+    const hasCashierAccess = Array.isArray(userAccesses) && 
+      userAccesses.some(access => access === 'CASHIER');
+  
+    // For APPROVED_DAF status, either role or CASHIER access is sufficient
+    if (bdc.status === 'APPROVED_DAF' || bdc.status === 'PRINTED') {
+      return isAllowedRole || hasCashierAccess;
+    }
+  
+    return false;
   };
 
   const handleApprove = async () => {
@@ -125,6 +150,32 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     } catch (error) {
       toast.error("Erreur", {
         description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'approbation"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApproveDAF = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/bdc?id=${bdc.id}&action=approve-daf`, {
+        method: 'PUT',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erreur lors de l\'approbation');
+      }
+
+      toast.success("Succès", {
+        description: "Le bon de caisse a été approuvé par la DAF"
+      });
+
+      await onRefresh();
+    } catch (error) {
+      toast.error("Erreur", {
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'approbation DAF"
       });
     } finally {
       setIsLoading(false);
@@ -220,13 +271,7 @@ const handleDelete = async () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-lg font-medium">Détails du BDC</CardTitle>
-          <Badge variant="outline" className='text-xs'>
-            {bdc.status === 'SUBMITTED' && 'Soumis'}
-            {bdc.status === 'APPROVED_RESPONSABLE' && 'Approuvé (Resp.)'}
-            {bdc.status === 'APPROVED_DIRECTEUR' && 'Approuvé (Dir.)'}
-            {bdc.status === 'PRINTED' && 'Imprimé'}
-            {bdc.status === 'REJECTED' && 'Rejeté'}
-          </Badge>
+          <StatusBadge status={bdc.status}/>
         </CardHeader>
         <CardContent className="space-y-4">
           <ScrollArea className="h-[400px] p-4 border border-dashed rounded-lg">
@@ -251,6 +296,24 @@ const handleDelete = async () => {
                     <p className="text-muted-foreground">Date de création:</p>
                     <p>{formatDate(bdc.createdAt)}</p>
                   </div>
+                  {(bdc.approver?.name) && (
+                    <div>
+                      <p className="font-extrabold">Approbation Dir.:</p>
+                      <p>{bdc.approver?.name}</p>
+                    </div>
+                  )}
+                  {(bdc.approverDAF?.name) && (
+                    <div>
+                      <p className="font-extrabold">Approbation DAF:</p>
+                      <p>{bdc.approverDAF?.name}</p>
+                    </div>
+                  )}
+                  {(bdc.printedBy?.name) && (
+                    <div>
+                      <p className="font-extrabold">Décaissé par:</p>
+                      <p>{bdc.printedBy?.name}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -263,9 +326,35 @@ const handleDelete = async () => {
               </div>
 
               <Separator />
+              
 
-              {/* Expense Items */}
-              <div>
+              {/* Employees */}
+              {bdc.employees.length > 0 && (
+                <div>
+                    <h3 className="font-semibold mb-2">Employés Concernés</h3>
+                    <Table className="border-none">
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Rôle</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {bdc.employees.map((employee, index) => (
+                        <TableRow key={index}>
+                            <TableCell>{employee.name}</TableCell>
+                            <TableCell>{employee.role}</TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                </div>
+              ) }
+
+            <Separator />
+
+                          {/* Expense Items */}
+                          <div>
                 <h3 className="font-semibold mb-2">Articles et Montants</h3>
                 <Table>
                   <TableHeader>
@@ -289,31 +378,6 @@ const handleDelete = async () => {
                 </Table>
               </div>
 
-              <Separator />
-
-              {/* Employees */}
-              {bdc.employees.length > 0 && (
-                <div>
-                    <h3 className="font-semibold mb-2">Employés Concernés</h3>
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Nom</TableHead>
-                        <TableHead>Rôle</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {bdc.employees.map((employee, index) => (
-                        <TableRow key={index}>
-                            <TableCell>{employee.name}</TableCell>
-                            <TableCell>{employee.role}</TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </div>
-              ) }
-
 
               {bdc.comment && (
                 <>
@@ -326,45 +390,62 @@ const handleDelete = async () => {
               )}
             </div>
           </ScrollArea>
+          {bdc.rejectionReason && (
+                <div className="flex flex-row items-center text-destructive h-8 gap-1">
+                  <BanIcon className="mr-2 h-4 w-4" />
+                  {`Justificatif: ${bdc.rejectionReason}`}
+                </div>
+              )}
 
           {/* Action Buttons */}
-          {(canApprove(session?.user?.role) || canReject(session?.user?.role) || canPrint(session?.user?.role)) && (
-            <div className="flex gap-2 pt-4 border-t">
-              {canApprove(session?.user?.role) && bdc.status !== 'APPROVED_DIRECTEUR' && (
-                <Button
-                  onClick={handleApprove}
-                  disabled={isLoading}
-                  variant="outline"
-                  className="text-primary h-8 gap-1"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Approuver
-                </Button>
-              )}
-              {canReject(session?.user?.role) && (
-                <Button
-                  onClick={() => setIsRejectDialogOpen(true)}
-                  disabled={isLoading}
-                  variant="outline"
-                  className="text-destructive h-8 gap-1"
-                >
-                  <BanIcon className="mr-2 h-4 w-4" />
-                  Rejeter
-                </Button>
-              )}
-              {canPrint(session?.user?.role) && (
-                <BDCSummaryPDFDialog bdc={bdc} onRefresh={onRefresh} />
-              )}
+            <div className="flex flex-row justify-between items-center gap-2 pt-4 border-t">
+              <div className="flex flex-row gap-2">
+                {canApprove(session?.user?.role) && bdc.status !== 'APPROVED_DIRECTEUR' && (
+                  <Button
+                    onClick={handleApprove}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="text-primary h-8 gap-1"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Approuver
+                  </Button>
+                )}
+                {canApproveDAF(session?.user?.role) && bdc.status === 'APPROVED_DIRECTEUR' && (
+                  <Button
+                    onClick={handleApproveDAF}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="text-primary gap-1"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Approuver (DAF)
+                  </Button>
+                )}
+                {canReject(session?.user?.role) && (
+                  <Button
+                    onClick={() => setIsRejectDialogOpen(true)}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="text-destructive gap-1"
+                  >
+                    <BanIcon className="mr-2 h-4 w-4" />
+                    Rejeter
+                  </Button>
+                )}
+                {canPrint(session?.user?.role, session?.user?.access) && (
+                  <PrintBDCButton bdcId={bdc.id} onPrintComplete={onRefresh} />
+                )}
+              </div>
+              
               {canDelete(session?.user?.role) && (
-                <>
+              <div>
                 <Button
                     onClick={() => setIsDeleteDialogOpen(true)}
                     disabled={isLoading}
                     variant="destructive"
-                    className="h-8 gap-1"
                 >
                     <Trash2 className="h-4 w-4" />
-                    Supprimer
                 </Button>
 
                 <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -390,29 +471,16 @@ const handleDelete = async () => {
                         variant="destructive"
                         >
                         Supprimer
+                        {isLoading && (<Icons.spinner className="ml-2 h-4 w-4 animate-spin" />)}
                         </Button>
                     </DialogFooter>
                     </DialogContent>
                 </Dialog>
-                </>
+                </div>
                 )}
+              
+
             </div>
-          )}
-        {bdc.rejectionReason && (
-            <div className="flex flex-row items-center gap-2">
-                <Button
-                    disabled={true}
-                    variant="outline"
-                    className="text-destructive h-8 gap-1"
-                    >
-                <BanIcon className="mr-2 h-4 w-4" />
-                Rejeté
-                </Button>
-                  <div>
-                    <i className="font-semibold text-destructive text-sm">Raison: {bdc.rejectionReason}</i>
-                  </div>
-            </div>
-            )}
         </CardContent>
       </Card>
 

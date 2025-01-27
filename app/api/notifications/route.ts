@@ -21,7 +21,7 @@ export async function GET() {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'asc'
       },
       take: 50, // Limit to the 50 most recent notifications
       include: {

@@ -18,7 +18,7 @@ export async function PATCH(
       );
     }
 
-    if (session.user.role !== 'MAGASINIER') {
+    if ((session.user.role !== 'MAGASINIER' && session.user.role !== 'ADMIN')) {
       return NextResponse.json(
         { error: 'Non autorisé' },
         { status: 403 }

@@ -28,9 +28,13 @@ export const useAllowedRoles = () => {
   const allowedFullAccessRoles = [
     "ADMIN",
   ];
+  const magasinierRoles = [
+    "MAGASINIER",
+  ];
   return {
     hasReadAccess: session?.user?.role && allowedReadRoles.includes(session.user.role as string),
     hasWriteAccess: session?.user?.role && allowedWriteRoles.includes(session.user.role as string),
-    hasFullAccess: session?.user?.role && allowedFullAccessRoles.includes(session.user.role as string)
+    hasFullAccess: session?.user?.role && allowedFullAccessRoles.includes(session.user.role as string),
+    hasMagasinierAccess: session?.user?.role && magasinierRoles.includes(session.user.role as string),
   };
 };

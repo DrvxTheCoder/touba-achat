@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, ListFilter, Package2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, ListFilter, Package2, RefreshCwIcon } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SpinnerCircular } from "spinners-react";
@@ -22,6 +22,8 @@ import { ContentLayout } from "@/components/user-panel/content-layout";
 import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 import ResponsiveStockEdbDialog from "../components/ResponsiveStockEDBForm";
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import { PrintTest } from "@/components/PrintBDCButton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Category = {
     id: number;
@@ -66,6 +68,31 @@ const LoadingContent = () => (
   </ContentLayout>
 );
 
+const testData = {
+  edbId: "BDC2024001",
+  date: new Date().toLocaleDateString('fr-FR'),
+  username: "Keba Gnabaly",
+  department: "Direction Opération Gaz",
+  items: [
+    {
+      description: "Cartouche d'encre HP",
+      quantity: 2,
+      unitPrice: 15000,
+      total: 30000
+    },
+    {
+      description: "Papier A4",
+      quantity: 5,
+      unitPrice: 2500,
+      total: 12500
+    }
+  ],
+  total: 42500,
+  approvedBy: "Daouda Badji",
+  approvedDAF: "Safietou Ndour",
+  cashier: "Rokhaya Thiam"
+};
+
 export default function StockEDBPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -75,10 +102,17 @@ export default function StockEDBPage() {
     const [page, setPage] = useState(1);
     const [pageSize] = useState(5);
     const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState("");
+    const [timeRange, setTimeRange] = useState('this-month');
+    const [categoryFilter, setCategoryFilter] = useState("all");
     const [categories, setCategories] = useState<Category[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
+    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+    const refresh = (() => {
+
+    })
 
   // Check if user has required role
   const hasAccess = session?.user?.role && ['ADMIN', 'MAGASINIER', 'DIRECTEUR_GENERAL'].includes(session.user.role);
@@ -110,36 +144,53 @@ export default function StockEDBPage() {
     fetchInitialData();
   }, [hasAccess]);
 
+  const fetchStockEDBs = async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        search: searchTerm,
+        category: categoryFilter,
+        timeRange: timeRange,
+      });
+
+      const response = await fetch(`/api/edb/stock?${queryParams}`);
+      if (!response.ok) throw new Error('Erreur réseau');
+      
+      const { data, total: totalItems } = await response.json();
+      setStockEdbs(data || []);
+      setTotal(totalItems || 0);
+      setTotalPages(Math.ceil(totalItems / pageSize));
+    } catch (error) {
+      console.error("Erreur:", error);
+      setStockEdbs([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    try {
+      await fetchStockEDBs();
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast.error("Erreur",{
+        description: "Impossible de rafraîchir les données. Veuillez réessayer.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   useEffect(() => {
     if (!hasAccess) return;
-
-    const fetchStockEDBs = async () => {
-      setIsLoading(true);
-      try {
-        const queryParams = new URLSearchParams({
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-          search: searchTerm,
-          category: categoryFilter,
-        });
-  
-        const response = await fetch(`/api/edb/stock?${queryParams}`);
-        if (!response.ok) throw new Error('Erreur réseau');
-        
-        const { data, total: totalItems } = await response.json();
-        setStockEdbs(data || []);
-        setTotal(totalItems || 0);
-      } catch (error) {
-        console.error("Erreur:", error);
-        setStockEdbs([]);
-        setTotal(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
     fetchStockEDBs();
-  }, [page, pageSize, searchTerm, categoryFilter, hasAccess]);
+  }, [hasAccess, page, searchTerm, categoryFilter, timeRange]);
 
   const handleStockEdbSubmit = async (data: any) => {
     try {
@@ -208,7 +259,7 @@ export default function StockEDBPage() {
         <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins (Stock)</h2>
         <div className="flex items-center space-x-2">
         <Link href="/dashboard/etats"><Button variant="outline"><text className="hidden md:block mr-2">EDB (Standard)</text> <OpenInNewWindowIcon className="h-4 w-4"/></Button></Link>
-        <ResponsiveStockEdbDialog 
+        <StockEdbDialog 
             categories={categories}
             departments={departments}
             onSubmit={handleStockEdbSubmit}
@@ -217,52 +268,71 @@ export default function StockEDBPage() {
         
       </div>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Input 
-              placeholder="Rechercher un article..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-10 w-sm lg:max-w-sm"
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10">
-                  <ListFilter className="h-4 w-4" />
-                  <text className="hidden md:block mr-2">Catégories</text>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onSelect={() => setCategoryFilter("")}>
-                  Toutes les catégories
-                </DropdownMenuItem>
-                {categories.map((category) => (
-                  <DropdownMenuItem 
-                    key={category.id}
-                    onSelect={() => setCategoryFilter(category.id.toString())}
-                  >
-                    {category.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Card>
+          <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <Input 
+                  placeholder="Recherche..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-10 w-sm lg:max-w-sm"
+                />
+              <div className="flex items-center space-x-2">
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="gap-2">
+                <Calendar className="h-4 w-4" />
+                  <SelectValue placeholder="Période" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="this-month">Ce mois</SelectItem>
+                  <SelectItem value="last-month">Mois dernier</SelectItem>
+                  <SelectItem value="last-3-months">Trimestre</SelectItem>
+                  <SelectItem value="this-year">Cette année</SelectItem>
+                  <SelectItem value="last-year">Année dernière</SelectItem>
+                </SelectContent>
+              </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="space-x-1">
+                    <SelectValue placeholder="Catégories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>Toute les catégorie</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem 
+                        key={category.id}
+                        value={category.id.toString()}
+                        onSelect={() => setCategoryFilter(category.id.toString())}
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Card className="rounded-2xl">
               <CardContent className="pt-5">
                 <Table>
-                  <TableHeader className="bg-muted rounded-lg">
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead className="sm:table-cell">Employé</TableHead>
-                      <TableHead className="hidden sm:table-cell">Catégorie</TableHead>
-                      <TableHead className="hidden sm:table-cell">Quantité</TableHead>
-                      <TableHead className="sm:table-cell text-right rounded-l-md">Date</TableHead>
+                <TableHeader className="bg-muted">
+                    <TableRow className="rounded-lg border-0">
+                    <TableHead className="rounded-l-lg">
+                    ID
+                    </TableHead>
+                    <TableHead className=" sm:table-cell">
+                    Statut
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell md:text-left">
+                    Catégorie
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">
+                    Articles
+                    </TableHead>
+                    <TableHead className="sm:table-cell text-right rounded-r-lg">
+                    Date
+                    </TableHead>
                     </TableRow>
-                  </TableHeader>
+                </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
@@ -294,32 +364,97 @@ export default function StockEDBPage() {
                   </TableBody>
                 </Table>
               </CardContent>
-              <CardFooter className="flex items-end justify-end border-t bg-muted/50 p-4">
+              <CardFooter className="flex items-end justify-end border-t bg-muted/50 p-4 rounded-bl-2xl rounded-br-2xl">
+              <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground w-full">
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className="h-6 w-6" 
+                      onClick={handleRefresh}
+                      disabled={isLoading}
+                    >
+                      <RefreshCwIcon className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                      <span className="sr-only">Rafraîchir</span>
+                    </Button>
+                    <div className="hidden md:block">
+                        {lastUpdated.toLocaleString()}
+                    </div>
+                  </div>
                 <div className="text-xs text-muted-foreground">
                   {/* Mis à jour: {format(new Date(), "dd/MM/yyyy", { locale: fr })} */}
                 </div>
-                <Pagination className="flex items-end justify-end">
-                  <PaginationContent>
+                <Pagination className="flex flex-row justify-end gap-2">
+                  <PaginationContent className="flex items-center gap-2">
+                    {/* First page */}
+                    <PaginationItem>
+                      <Button
+                        size="icon"  
+                        variant="outline"
+                        className="h-6 w-6"
+                        onClick={() => setPage(1)}
+                        disabled={page === 1 || isLoading}
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        <ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                      </Button>
+                    </PaginationItem>
+
+                    {/* Previous */}
                     <PaginationItem>
                       <Button
                         size="icon"
-                        variant="outline"
+                        variant="outline" 
                         className="h-6 w-6"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page === 1}
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1 || isLoading}
                       >
                         <ChevronLeft className="h-3.5 w-3.5" />
                       </Button>
                     </PaginationItem>
+
+                    {/* Page input */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span>Page</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        value={page}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (value >= 1 && value <= totalPages) {
+                            setPage(value);
+                          }
+                        }}
+                        className="h-6 w-12 text-xs"
+                      />
+                      <span>sur {totalPages}</span>
+                    </div>
+
+                    {/* Next */}
                     <PaginationItem>
                       <Button
                         size="icon"
                         variant="outline"
                         className="h-6 w-6"
-                        onClick={() => setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))}
-                        disabled={page >= Math.ceil(total / pageSize)}
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page >= totalPages || isLoading}
                       >
                         <ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </PaginationItem>
+
+                    {/* Last page */}
+                    <PaginationItem>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-6 w-6"
+                        onClick={() => setPage(totalPages)}
+                        disabled={page === totalPages || isLoading}
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-3.5 w-3.5 -ml-2" />
                       </Button>
                     </PaginationItem>
                   </PaginationContent>
@@ -330,9 +465,9 @@ export default function StockEDBPage() {
 
           <div>
             {selectedEDB ? (
-              <StockEDBDetails stockEdb={selectedEDB} />
+              <StockEDBDetails stockEdb={selectedEDB} onUpdate={fetchStockEDBs} />
             ) : (
-              <Card>
+              <Card className="rounded-2xl">
                 <CardContent className="p-6 text-sm text-center text-muted-foreground">
                   Sélectionnez un article pour en afficher les détails
                 </CardContent>
@@ -340,6 +475,7 @@ export default function StockEDBPage() {
             )}
           </div>
         </div>
+        <PrintTest />
       </main>
     </ContentLayout>
 

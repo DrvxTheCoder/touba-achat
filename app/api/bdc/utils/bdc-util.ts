@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { BDCEventType, BDCStatus, NotificationType, Role } from "@prisma/client";
+import { Access, BDCEventType, BDCStatus, NotificationType, Role } from "@prisma/client";
 
 type ExpenseItem = {
   item: string;
@@ -39,7 +39,7 @@ async function createNotification(
   tx: any,
   type: NotificationType,
   message: string,
-  recipientIds: number[],
+  recipientIds?: number[],
   bdcId?: number
 ) {
   const notification = await tx.notification.create({
@@ -48,7 +48,7 @@ async function createNotification(
       message,
       bonDeCaisseId: bdcId,
       recipients: {
-        create: recipientIds.map(userId => ({
+        create: recipientIds?.map(userId => ({
           user: {
             connect: { id: userId }
           }
@@ -91,34 +91,42 @@ async function logBDCEvent(
       let initialStatus: BDCStatus;
       let notificationType: NotificationType;
       let targetRoles: Role[] = [];
-  
-      switch (user.role) {
-        case Role.DAF:
-          initialStatus = BDCStatus.APPROVED_DIRECTEUR;
-          notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
-          break;
-        case Role.DIRECTEUR:
-        case Role.DIRECTEUR_GENERAL:
-        case Role.DOG:
-        case Role.DRH:
-        case Role.DCM:
-        case Role.ADMIN:
-        case Role.MAGASINIER:
-          initialStatus = BDCStatus.APPROVED_DIRECTEUR;
-          notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
-          targetRoles = [Role.DAF];
-          break;
-        case Role.RESPONSABLE:
-        case Role.RH:
-          initialStatus = BDCStatus.APPROVED_RESPONSABLE;
-          notificationType = NotificationType.BDC_APPROVED_RESPONSABLE;
-          targetRoles = [Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.DOG];
-          break;
-        default:
-          initialStatus = BDCStatus.SUBMITTED;
-          notificationType = NotificationType.BDC_CREATED;
-          targetRoles = [Role.RESPONSABLE];
+
+      if (user.access.includes(Access.APPROVE_BDC)) {
+        initialStatus = BDCStatus.APPROVED_DIRECTEUR;
+        notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
+        targetRoles = [Role.DAF];
       }
+      else {
+        switch (user.role) {
+          case Role.DAF:
+            initialStatus = BDCStatus.APPROVED_DIRECTEUR;
+            notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
+            break;
+          case Role.DIRECTEUR:
+          case Role.DIRECTEUR_GENERAL:
+          case Role.DOG:
+          case Role.DRH:
+          case Role.DCM:
+          case Role.ADMIN:
+            initialStatus = BDCStatus.APPROVED_DIRECTEUR;
+            notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
+            targetRoles = [Role.DAF];
+            break;
+          case Role.RESPONSABLE:
+          case Role.RH:
+            initialStatus = BDCStatus.APPROVED_RESPONSABLE;
+            notificationType = NotificationType.BDC_APPROVED_RESPONSABLE;
+            targetRoles = [Role.DIRECTEUR, Role.DIRECTEUR_GENERAL, Role.DOG];
+            break;
+          default:
+            initialStatus = BDCStatus.SUBMITTED;
+            notificationType = NotificationType.BDC_CREATED;
+            targetRoles = [Role.RESPONSABLE, Role.DIRECTEUR, Role.DIRECTEUR_GENERAL];
+        }
+      }
+  
+
   
       const bdc = await tx.bonDeCaisse.create({
         data: {
@@ -154,14 +162,16 @@ async function logBDCEvent(
             await createNotification(
               tx,
               notificationType,
-              `Nouveau bon de caisse ${bdcId} à valider`,
+              `Nouveau bon de caisse ${bdcId} à valider - ${user.name}`,
               immediateApproverIds,
               bdc.id
             );
           }
         }
       
-        // Also notify DAF 
+
+      } else if(initialStatus === BDCStatus.APPROVED_DIRECTEUR){
+                  // Also notify DAF 
         const dafUsers = await tx.user.findMany({
           where: {
             role: Role.DAF,
@@ -174,7 +184,7 @@ async function logBDCEvent(
           await createNotification(
             tx,
             NotificationType.BDC_APPROVED_DIRECTOR,
-            `Nouveau bon de caisse ${bdcId} en attente de validation finale`,
+            `Nouveau bon de caisse ${bdcId} en attente de validation finale - ${user.name}`,
             dafUsers.map(u => u.id),
             bdc.id
           );
@@ -203,7 +213,7 @@ async function logBDCEvent(
                   await createNotification(
                     tx,
                     notificationType,
-                    `Nouveau bon de caisse ${bdcId} à valider`,
+                    `Nouveau bon de caisse ${bdcId} à valider - ${user.name}`,
                     approverIds,
                     bdc.id
                   );
@@ -339,6 +349,7 @@ export async function approveBDC(
         bdc.id
       );
     }
+    await createNotification(tx, notificationType, `Le bon de caisse ${bdc.bdcId} a été approuvé par votre direction`, undefined, bdc.id)
 
     await logBDCEvent(tx, bdcId, userId, eventType);
 
@@ -378,9 +389,97 @@ export async function rejectBDC(
   });
 }
 
+export async function approveDAF(
+  bdcId: number,
+  userId: number,
+  userRole: Role
+) {
+  return prisma.$transaction(async (tx) => {
+    const bdc = await tx.bonDeCaisse.findUnique({
+      where: { id: bdcId },
+      include: {
+        department: true
+      }
+    });
+
+    if (!bdc) throw new Error("BDC introuvable");
+
+    let newStatus: BDCStatus;
+    let notificationType: NotificationType;
+    let eventType: BDCEventType;
+    let nextAction: Access[] = [];
+
+    if(userRole !== Role.DAF) {
+      throw new Error("Action reservée à la DAF");
+    }else{
+      newStatus = BDCStatus.APPROVED_DAF;
+      notificationType = NotificationType.BDC_APPROVED_DAF;
+      eventType = BDCEventType.APPROVED_DAF;
+      nextAction = [Access.CASHIER];
+    }
+
+    // Update BDC
+    const updatedBdc = await tx.bonDeCaisse.update({
+      where: { id: bdcId },
+      data: {
+        status: newStatus,
+        approverDAFId: userId,
+      },
+    });
+
+    // Find next approvers
+    const nextApprovers = await tx.user.findMany({
+      where: {
+        access: { has: Access.CASHIER },
+        status: 'ACTIVE'
+      },
+      select: { id: true }
+    });
+
+    const nextApproverIds = nextApprovers.map(user => user.id);
+
+    if (nextApproverIds.length > 0) {
+      await createNotification(
+        tx,
+        notificationType,
+        `Le bon de caisse ${bdc.bdcId} a été approuvé par la DAF`,
+        nextApproverIds,
+        bdc.id
+      );
+    }
+
+    await logBDCEvent(tx, bdcId, userId, eventType);
+
+    return updatedBdc;
+  });
+}
+
+
 export async function markBDCAsPrinted(bdcId: number, userId: number) {
   return prisma.$transaction(async (tx) => {
-    const bdc = await tx.bonDeCaisse.update({
+    // First check if BDC exists and is in correct status
+    const bdc = await tx.bonDeCaisse.findUnique({
+      where: { id: bdcId },
+      include: {
+        userCreator: true
+      }
+    });
+
+    if (!bdc) {
+      throw new Error("BDC introuvable");
+    }
+
+    if (bdc.status !== BDCStatus.APPROVED_DAF) {
+      throw new Error("Le BDC doit être approuvé par la DAF avant l'impression");
+    }
+
+    // Check if already printed
+    if (bdc.printedAt) {
+      throw new Error("Ce BDC a déjà été imprimé");
+    }
+
+    // Update BDC status and record print details
+    const updatedBdc = await tx.bonDeCaisse.update({
       where: { id: bdcId },
       data: {
         status: BDCStatus.PRINTED,
@@ -388,21 +487,48 @@ export async function markBDCAsPrinted(bdcId: number, userId: number) {
         printedAt: new Date(),
       },
       include: {
-        userCreator: true
+        userCreator: true,
+        printedBy: true
       }
     });
 
+    // Create notification for BDC creator
     await createNotification(
       tx,
       NotificationType.BDC_PRINTED,
-      `Le bon de caisse ${bdc.bdcId} a été imprimé`,
+      `Le bon de caisse (${bdc.bdcId}) a été décaissé par ${updatedBdc.printedBy?.name || 'le Service Achat'}`,
       [bdc.userCreator.id],
       bdc.id
     );
 
-    await logBDCEvent(tx, bdcId, userId, BDCEventType.PRINTED);
+    // Log the print event
+    await logBDCEvent(tx, bdcId, userId, BDCEventType.PRINTED, {
+      printedAt: updatedBdc.printedAt,
+      printedBy: updatedBdc.printedBy?.name
+    });
 
-    return bdc;
+    // Also notify relevant management roles
+    const managementUsers = await tx.user.findMany({
+      where: {
+        role: {
+          in: [Role.DAF, Role.ADMIN]
+        },
+        status: 'ACTIVE'
+      },
+      select: { id: true }
+    });
+
+    if (managementUsers.length > 0) {
+      await createNotification(
+        tx,
+        NotificationType.BDC_PRINTED,
+        `${bdc.bdcId} a été décaissé par ${updatedBdc.printedBy?.name || 'le Service Achat'}`,
+        managementUsers.map(u => u.id),
+        bdc.id
+      );
+    }
+
+    return updatedBdc;
   });
 }
 
@@ -447,11 +573,27 @@ export async function deleteBDC(bdcId: number, userId: number) {
     });
 
     if (!bdc) throw new Error("BDC introuvable");
-    // if (bdc.status !== BDCStatus.SUBMITTED) {
-    //   throw new Error("Seuls les BDC en attente peuvent être supprimés");
-    // }
 
-    // Delete associated notifications
+    // First, find all notifications for this BDC
+    const notifications = await tx.notification.findMany({
+      where: { bonDeCaisseId: bdcId },
+      select: { id: true }
+    });
+
+    const notificationIds = notifications.map(n => n.id);
+
+    // Delete notification recipients first
+    if (notificationIds.length > 0) {
+      await tx.notificationRecipient.deleteMany({
+        where: {
+          notificationId: {
+            in: notificationIds
+          }
+        }
+      });
+    }
+
+    // Then delete the notifications
     await tx.notification.deleteMany({
       where: { bonDeCaisseId: bdcId },
     });
@@ -461,30 +603,47 @@ export async function deleteBDC(bdcId: number, userId: number) {
       where: { bonDeCaisseId: bdcId },
     });
 
-    // Delete the BDC
+    // Finally delete the BDC
     return tx.bonDeCaisse.delete({
       where: { id: bdcId },
     });
   });
 }
 
-export async function getBDCWithDetails(bdcId: number) {
-  return prisma.bonDeCaisse.findUnique({
-    where: { id: bdcId },
-    include: {
-      department: true,
-      creator: true,
-      userCreator: true,
-      approver: true,
-      printedBy: true,
-      auditLogs: {
-        include: {
-          user: true
-        },
-        orderBy: {
-          eventAt: 'asc'
+export async function getBDCWithDetails(bdcId: string, userId: number, userRole: string) {
+  const allowedRoles = [
+    "ADMIN",
+    "DIRECTEUR_GENERAL",
+    "DAF",
+    "MAGASINIER",
+  ]; 
+  return prisma.$transaction(async (tx) => {
+    const bdc = await tx.bonDeCaisse.findUnique({
+      where: { bdcId: bdcId },
+      include: {
+        department: true,
+        creator: true,
+        userCreator: true,
+        approver: true,
+        printedBy: true,
+        auditLogs: {
+          include: {
+            user: true
+          },
+          orderBy: {
+            eventAt: 'asc'
+          }
         }
       }
-    }
+    });
+
+    if (!bdc) throw new Error("BDC introuvable");
+
+    // if(bdc.creator.id !== userId || !allowedRoles.includes(userRole)){
+    //   throw new Error("Accès interdit");
+    // }
+
+    return bdc;
   });
+
 }

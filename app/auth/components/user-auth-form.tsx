@@ -25,21 +25,7 @@ async function customSignIn(email: string, password: string): Promise<{ success:
       const decodedError = decodeURIComponent(result.error);
       console.log("Decoded error:", decodedError);  // For debugging
 
-      let errorMessage;
-      try {
-        // Try to parse it as JSON
-        const parsedError = JSON.parse(decodedError);
-        if (parsedError.message.length() > 30){
-          errorMessage = "Une erreur s'est produite lors de la connexion. Vérifiez votre connexion internet et ressayez.";
-        }else {
-          errorMessage = parsedError.message
-        }
-        
-
-      } catch {
-        // If it's not JSON, use it as is
-        errorMessage = "Une erreur s'est produite lors de la connexion. Vérifiez votre connexion internet et ressayez.";
-      }
+      const errorMessage = result.error;
 
       return { success: false, message: errorMessage };
     }
@@ -71,8 +57,13 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     if (result.success) {
       router.replace("/");
     } else {
-      // Just use the message directly, as it's already been parsed in customSignIn
-      setError(result.message || "Une erreur inattendue s'est produite");
+      // Parse the error message from the API response
+      try {
+        const errorResponse = JSON.parse(result.message as string);
+        setError(errorResponse.message || "Une erreur inattendue s'est produite");
+      } catch (e) {
+        setError("Une erreur inattendue s'est produite");
+      }
     }
   
     setIsLoading(false);
