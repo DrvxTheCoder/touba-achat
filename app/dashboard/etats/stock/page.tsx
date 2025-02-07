@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, ChevronLeft, ChevronRight, ListFilter, Package2, RefreshCwIcon } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutListIcon, ListFilter, Package2, RefreshCwIcon, TagIcon } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SpinnerCircular } from "spinners-react";
@@ -24,6 +24,7 @@ import ResponsiveStockEdbDialog from "../components/ResponsiveStockEDBForm";
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import { PrintTest } from "@/components/PrintBDCButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Category = {
     id: number;
@@ -110,10 +111,6 @@ export default function StockEDBPage() {
     const [departments, setDepartments] = useState<Department[]>([]);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-    const refresh = (() => {
-
-    })
-
   // Check if user has required role
   const hasAccess = session?.user?.role && ['ADMIN', 'MAGASINIER', 'DIRECTEUR_GENERAL'].includes(session.user.role);
 
@@ -146,6 +143,7 @@ export default function StockEDBPage() {
 
   const fetchStockEDBs = async () => {
     setIsLoading(true);
+    setSelectedEDB(null);
     try {
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -258,7 +256,16 @@ export default function StockEDBPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-lg md:text-3xl font-bold tracking-tight">États de Besoins (Stock)</h2>
         <div className="flex items-center space-x-2">
-        <Link href="/dashboard/etats"><Button variant="outline"><text className="hidden md:block mr-2">EDB (Standard)</text> <OpenInNewWindowIcon className="h-4 w-4"/></Button></Link>
+          <TooltipProvider disableHoverableContent>
+            <Tooltip delayDuration={100}>
+              <TooltipTrigger asChild>
+              <Link href="/dashboard/etats"><Button variant="outline" size={'icon'}> <OpenInNewWindowIcon className="h-4 w-4"/></Button></Link>
+                </TooltipTrigger>
+              <TooltipContent side="bottom">
+                  EDBs Standard
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         <StockEdbDialog 
             categories={categories}
             departments={departments}
@@ -270,8 +277,8 @@ export default function StockEDBPage() {
         
 
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="lg:col-span-2 md:col-span-4 space-y-4">
+          <div className="flex items-center justify-between gap-2">
             <Input 
                   placeholder="Recherche..." 
                   value={searchTerm}
@@ -282,7 +289,7 @@ export default function StockEDBPage() {
               <Select value={timeRange} onValueChange={setTimeRange}>
                 <SelectTrigger className="gap-2">
                 <Calendar className="h-4 w-4" />
-                  <SelectValue placeholder="Période" />
+                  {/* <SelectValue placeholder="Période" className="hidden" /> */}
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="this-month">Ce mois</SelectItem>
@@ -294,7 +301,8 @@ export default function StockEDBPage() {
               </Select>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger className="space-x-1">
-                    <SelectValue placeholder="Catégories" />
+                  <TagIcon className="h-4 w-4" />
+                    {/* <SelectValue placeholder="Catégories" /> */}
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value='all'>Toute les catégorie</SelectItem>
@@ -312,7 +320,7 @@ export default function StockEDBPage() {
               </div>
             </div>
             <Card className="rounded-2xl">
-              <CardContent className="pt-5">
+              <CardContent className="pt-5 p-1 md:p-4">
                 <Table>
                 <TableHeader className="bg-muted">
                     <TableRow className="rounded-lg border-0">
@@ -328,8 +336,11 @@ export default function StockEDBPage() {
                     <TableHead className="hidden md:table-cell">
                     Articles
                     </TableHead>
-                    <TableHead className="sm:table-cell text-right rounded-r-lg">
+                    <TableHead className="hidden md:table-cell md:rounded-r-lg">
                     Date
+                    </TableHead>
+                    <TableHead className="md:hidden table-cell text-right rounded-r-lg">
+                    
                     </TableHead>
                     </TableRow>
                 </TableHeader>
@@ -386,7 +397,7 @@ export default function StockEDBPage() {
                 <Pagination className="flex flex-row justify-end gap-2">
                   <PaginationContent className="flex items-center gap-2">
                     {/* First page */}
-                    <PaginationItem>
+                    <PaginationItem className="hidden md:block">
                       <Button
                         size="icon"  
                         variant="outline"
@@ -414,7 +425,7 @@ export default function StockEDBPage() {
 
                     {/* Page input */}
                     <div className="flex items-center gap-2 text-sm">
-                      <span>Page</span>
+                      <span className="hidden md:block">Page</span>
                       <Input
                         type="number"
                         min={1}
@@ -428,7 +439,7 @@ export default function StockEDBPage() {
                         }}
                         className="h-6 w-12 text-xs"
                       />
-                      <span>sur {totalPages}</span>
+                      <span className="w-fit flex flex-row items-center"> / {totalPages}</span>
                     </div>
 
                     {/* Next */}
@@ -445,7 +456,7 @@ export default function StockEDBPage() {
                     </PaginationItem>
 
                     {/* Last page */}
-                    <PaginationItem>
+                    <PaginationItem className="hidden md:block">
                       <Button
                         size="icon"
                         variant="outline"
@@ -475,7 +486,6 @@ export default function StockEDBPage() {
             )}
           </div>
         </div>
-        <PrintTest />
       </main>
     </ContentLayout>
 

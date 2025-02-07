@@ -13,6 +13,13 @@ interface BDCTableRowProps {
   isSelected: boolean;
 }
 
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return `${text.substring(0, maxLength - 3)}...`;
+};
+
+
+
 const getStatusColor = (status: BDCStatus) => {
   switch (status) {
     case "SUBMITTED":
@@ -55,6 +62,8 @@ const getStatusLabel = (status: BDCStatus) => {
 
 export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
     // console.log('BDC in row:', bdc); // For debugging
+
+    const truncatedTitle = truncateText(bdc?.title, 40);
     
     return (
       <TableRow 
@@ -71,7 +80,7 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
           </div>
         </TableCell>
         <TableCell className="sm:table-cell">
-          {bdc?.title || 'N/A'}
+          {truncatedTitle || 'N/A'}
         </TableCell>
         <TableCell className="hidden sm:table-cell">
           {bdc?.department?.name || 'N/A'}

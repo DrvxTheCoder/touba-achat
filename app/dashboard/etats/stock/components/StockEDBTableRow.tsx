@@ -6,6 +6,9 @@ import { fr } from "date-fns/locale";
 import { StockEDBStatus } from '@prisma/client';
 import { StatusBadge } from './StatusBadge';
 import { BaseStockEDB } from '../types/stock-edb';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 
 
 type StockEDBTableRowProps = {
@@ -43,7 +46,7 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({
         className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}
       >
         <TableCell className="text-xs md:text-base">      
-          <div className="text-xs md:font-medium"># {stockEdb.edbId}</div>
+          <div className="text-[0.6rem] md:text-xs"># {stockEdb.edbId}</div>
           <div className="hidden text-xs text-muted-foreground md:inline">
           {getEmployeeName()}
           </div></TableCell>
@@ -52,8 +55,11 @@ export const StockEDBTableRow: React.FC<StockEDBTableRowProps> = ({
         </TableCell>
         <TableCell className="text-xs md:text-sm hidden sm:table-cell">{stockEdb.category.name}</TableCell>
         <TableCell className="text-xs md:text-sm hidden sm:table-cell">{totalItems} article(s)</TableCell>
-        <TableCell className="text-xs md:text-sm sm:table-cell text-right">
+        <TableCell className="text-xs md:text-sm hidden sm:table-cell">
           {format(new Date(stockEdb.createdAt), "dd/MM/yyyy", { locale: fr })}
+        </TableCell>
+        <TableCell className="text-xs md:hidden sm:table-cell text-right">
+          <Button variant={'outline'} size={'icon'}><Link href={`/dashboard/etats/stock?edbId=${stockEdb.edbId}`}><OpenInNewWindowIcon className='h-4 w-4'/></Link></Button>
         </TableCell>
       </TableRow>
     );

@@ -11,7 +11,6 @@ const ACTIVE_STATUSES: EDBStatus[] = [
   'APPROVED_DG',
   'MAGASINIER_ATTACHED',
   'SUPPLIER_CHOSEN',
-  'COMPLETED',
   'FINAL_APPROVAL'
 ] as const;
 
@@ -19,6 +18,12 @@ const PENDING_STATUSES: EDBStatus[] = [
   'SUBMITTED',
   'ESCALATED',
   'APPROVED_RESPONSABLE'
+] as const;
+
+const COMPLETED_STATUSES: EDBStatus[] = [
+  'COMPLETED',
+  'FINAL_APPROVAL',
+  'DELIVERED'
 ] as const;
 
 // Define the roles that have full access as a const array
@@ -96,7 +101,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get metrics for each time range
-    const [total, active, pending] = await Promise.all([
+    const [total, active, pending, completed] = await Promise.all([
       prisma.etatDeBesoin.count({
         where: baseWhere
       }),
@@ -112,6 +117,12 @@ export async function GET(req: NextRequest) {
           status: { in: PENDING_STATUSES },
         },
       }),
+      prisma.etatDeBesoin.count({
+        where: {
+          ...baseWhere,
+          status: { in: COMPLETED_STATUSES },
+        },
+      }),
     ]);
 
     return NextResponse.json({
@@ -119,6 +130,7 @@ export async function GET(req: NextRequest) {
         total,
         active,
         pending,
+        completed,
       },
       timeRange,
     });

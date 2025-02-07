@@ -1,31 +1,30 @@
-// api/dashboard/odm-data/route.ts
+// api/dashboard/bdc-data/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import prisma from '@/lib/prisma';
-import { Role, ODMStatus } from '@prisma/client';
+import { Role, BDCStatus } from '@prisma/client';
 import { getDateRange } from '../edb-data/utils/utils';
 
-const ACTIVE_STATUSES: ODMStatus[] = [
-  'AWAITING_RH_PROCESSING',
-  'RH_PROCESSING',
-] as const;
-
-const PENDING_STATUSES: ODMStatus[] = [
+const PENDING_STATUSES: BDCStatus[] = [
   'SUBMITTED',
-  'AWAITING_DIRECTOR_APPROVAL',
+  'APPROVED_RESPONSABLE',
+  'APPROVED_DIRECTEUR',
 ] as const;
 
-const COMPLETED_STATUSES: ODMStatus[] = [
-  'COMPLETED',
-  'AWAITING_FINANCE_APPROVAL',
+const APPROVED_STATUSES: BDCStatus[] = [
+  'APPROVED_DAF',
+] as const;
+
+const COMPLETED_STATUSES: BDCStatus[] = [
+  'PRINTED',
 ] as const;
 
 const FULL_ACCESS_ROLES = [
   Role.DIRECTEUR_GENERAL,
   Role.ADMIN,
   Role.AUDIT,
-  Role.RH
+  Role.DAF
 ] as const;
 
 function hasFullAccess(role: Role): boolean {
@@ -70,23 +69,23 @@ export async function GET(req: NextRequest) {
       baseWhere.departmentId = departmentId;
     }
 
-    const [total, active, pending, completed] = await Promise.all([
-      prisma.ordreDeMission.count({
+    const [total, pending, approved, completed] = await Promise.all([
+      prisma.bonDeCaisse.count({
         where: baseWhere
       }),
-      prisma.ordreDeMission.count({
-        where: {
-          ...baseWhere,
-          status: { in: ACTIVE_STATUSES },
-        },
-      }),
-      prisma.ordreDeMission.count({
+      prisma.bonDeCaisse.count({
         where: {
           ...baseWhere,
           status: { in: PENDING_STATUSES },
         },
       }),
-      prisma.ordreDeMission.count({
+      prisma.bonDeCaisse.count({
+        where: {
+          ...baseWhere,
+          status: { in: APPROVED_STATUSES },
+        },
+      }),
+      prisma.bonDeCaisse.count({
         where: {
           ...baseWhere,
           status: { in: COMPLETED_STATUSES },
@@ -94,24 +93,24 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    // Calculate total cost for completed ODMs
-    const totalAmount = await prisma.ordreDeMission.aggregate({
+    // Calculate total amount for printed BDCs
+    const totalAmount = await prisma.bonDeCaisse.aggregate({
       where: {
         ...baseWhere,
-        totalCost: { not: null },
+        status: 'PRINTED',
       },
       _sum: {
-        totalCost: true,
+        totalAmount: true,
       },
     });
 
     return NextResponse.json({
       metrics: {
         total,
-        active,
         pending,
+        approved,
         completed,
-        totalAmount: totalAmount._sum.totalCost || 0,
+        totalAmount: totalAmount._sum.totalAmount || 0,
       },
       timeRange,
     });

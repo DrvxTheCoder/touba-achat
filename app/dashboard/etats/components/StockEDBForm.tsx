@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Package2, Check, ChevronsUpDown, Trash2Icon, PlusCircleIcon } from "lucide-react";
+import { Package2, Check, ChevronsUpDown, Trash2Icon, PlusCircleIcon, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { Access, CategoryType } from "@prisma/client";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -224,10 +224,22 @@ export default function StockEdbDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Package2 className="w-4 h-4" />
-          <text className="hidden md:block">Nouveau</text>
+        <Button variant="outline" className="gap-2" size={'icon'}>
+          <TooltipProvider disableHoverableContent>
+            <Tooltip delayDuration={100}>
+              <TooltipTrigger asChild>
+                <div>
+                <PackagePlus className="w-4 h-4" />
+                <text className="hidden">Nouveau</text>
+                </div>
+                </TooltipTrigger>
+              <TooltipContent side="bottom" className='shadow justify-between gap-1 text-sm rounded-sm border mr-10 mt-4 p-1 px-2'>
+               Nouvelle demande
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </Button>
+
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>

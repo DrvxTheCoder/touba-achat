@@ -40,7 +40,7 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onClick, isSelect
   return (
     <TableRow onClick={() => onClick(edb)} className={`cursor-pointer ${isSelected ? 'bg-muted/20' : ''}`}>
       <TableCell>
-        <div className="text-xs md:font-medium"># {edb.edbId}</div>
+        <div className="text-[0.5rem] md:text-xs"># {edb.edbId}</div>
         <div className="hidden text-xs text-muted-foreground md:inline">
           {edb.creator.name}
         </div>

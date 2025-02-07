@@ -10,6 +10,9 @@ import {
     Font,
     DocumentProps
   } from '@react-pdf/renderer';
+import QRCode from 'qrcode';
+
+const pageURL = "https://touba-app.com";
   
 // 80mm = 226.772 points in PDF
 const PAPER_WIDTH = 226.772;
@@ -90,6 +93,15 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
+  labeltwo: {
+    flex: 1,
+    fontSize: 8,
+  },
+  valuetwo: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 8,
+  },
   itemDescription: {
     fontSize: 10,
     marginTop: 2,
@@ -106,7 +118,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 8,
     textAlign: 'center',
-  }
+  },
+  qrCode: { width: 50, height: 50, marginBottom: 5 },
 });
 
 interface ExpenseItem {
@@ -157,6 +170,10 @@ interface ExpenseItem {
     const formatAmount = (amount: number) => {
       return amount.toLocaleString('fr-FR');
     };
+
+    
+    const qrCodeDataUrl = QRCode.toDataURL(`${pageURL}/bdc?bdcId=${data.bdcId}`);
+
   
     return (
         <Document>
@@ -166,34 +183,33 @@ interface ExpenseItem {
           </View>
           <Text style={styles.text}>BON DE CAISSE</Text>
           
-          <View style={styles.divider} />
           
           <View style={styles.row}>
-            <Text style={styles.label}>N° BDC:</Text>
-            <Text style={styles.value}>{data.bdcId}</Text>
-          </View>
-  
-          <View style={styles.row}>
-            <Text style={styles.label}>Date:</Text>
+            <Text style={styles.label}>{data.bdcId}</Text>
             <Text style={styles.value}>{formatDate(data.createdAt)}</Text>
-          </View>
+          </View> 
+
+          <View style={styles.divider} />
           
           <View style={styles.row}>
-            <Text style={styles.label}>Demandeur:</Text>
-            <Text style={styles.value}>{data.creator.name}</Text>
+            <Text style={styles.labeltwo}>Demandeur:</Text>
+            <Text style={styles.valuetwo}>{data.creator.name}</Text>
           </View>
   
           <View style={styles.row}>
-            <Text style={styles.label}>Matricule:</Text>
-            <Text style={styles.value}>{data.creator.matriculation}</Text>
+            <Text style={styles.labeltwo}>Matricule:</Text>
+            <Text style={styles.valuetwo}>{data.creator.matriculation}</Text>
           </View>
           
           <View style={styles.row}>
-            <Text style={styles.label}>Département:</Text>
-            <Text style={styles.value}>{data.department.name}</Text>
+            <Text style={styles.labeltwo}>Département:</Text>
+            <Text style={styles.valuetwo}>{data.department.name}</Text>
           </View>
           
           <View style={styles.divider} />
+          <View style={styles.row} >
+            
+          </View>
   
           <View style={styles.row}>
             <Text style={styles.columnHeader}>Articles/Objet</Text>
@@ -220,28 +236,33 @@ interface ExpenseItem {
           
           {data.approver && (
             <View style={styles.row}>
-              <Text style={styles.label}>Approuvé par:</Text>
-              <Text style={styles.value}>{data.approver.name}</Text>
+              <Text style={styles.labeltwo}>Approuvé par:</Text>
+              <Text style={styles.valuetwo}>{data.approver.name}</Text>
             </View>
           )}
 
         {data.approverDAF && (
         <View style={styles.row}>
-            <Text style={styles.label}>Approbation DAF:</Text>
-            <Text style={styles.value}>{data.approverDAF.name}</Text>
+            <Text style={styles.labeltwo}>Approbation DAF:</Text>
+            <Text style={styles.valuetwo}>{data.approverDAF.name}</Text>
         </View>
         )}
   
           {data.printedBy && (
             <View style={styles.row}>
-              <Text style={styles.label}>Decaissé par:</Text>
-              <Text style={styles.value}>{data.printedBy.name}</Text>
+              <Text style={styles.labeltwo}>Decaissé par:</Text>
+              <Text style={styles.valuetwo}>{data.printedBy.name}</Text>
             </View>
           )}
           
           <Text style={styles.footer}>
             Imprimé le {new Date().toLocaleString('fr-FR')}
           </Text>
+          <View style={styles.footer}>
+            <Text style={styles.footer}>
+              <Image style={styles.qrCode} src={qrCodeDataUrl} />
+            </Text>
+          </View>
         </Page>
       </Document>
     );

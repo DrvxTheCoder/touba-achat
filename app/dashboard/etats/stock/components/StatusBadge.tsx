@@ -18,7 +18,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const config = statusConfig[status];
   return (
     <Badge variant={config.variant} className="text-xs">
-      <text className="text-xs">{config.label}</text>
+      <small className="text-[0.5rem]">{config.label}</small>
     </Badge>
   );
 }

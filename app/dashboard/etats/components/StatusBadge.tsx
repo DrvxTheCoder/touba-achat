@@ -64,7 +64,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
   const textSizeClass = textSize === 'tiny' ? 'text-xs' : '';
 
   const badgeContent = (
-    <Badge className={`${textSizeClass} w-fit`} variant={variant}>
+    <Badge className={`${textSizeClass} text-[0.6rem] md:text-xs w-fit text-nowrap`} variant={variant}>
       <small>{displayStatus}</small>
     </Badge>
   );

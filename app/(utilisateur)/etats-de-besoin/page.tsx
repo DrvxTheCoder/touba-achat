@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListFilter, RefreshCwIcon } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SpinnerCircular } from "spinners-react";
@@ -18,6 +18,10 @@ import UserStockEdbForm from "./components/UserStockEDBForm";
 import { ContentLayout } from "@/components/user-panel/content-layout";
 import DynamicBreadcrumbs from "@/components/DynamicBreadcrumbs";
 import { StockEDB } from "@/app/dashboard/etats/stock/types/stock-edb";
+import { useSearchParams } from "next/navigation";
+import { StockEDBDetails } from "@/app/dashboard/etats/stock/components/StockEDBDetails";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import router from "next/router";
 
 // Define proper types
 
@@ -48,6 +52,8 @@ export default function UserStockEDBPage() {
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [modalEDB, setModalEDB] = useState<StockEDB | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -98,6 +104,27 @@ export default function UserStockEDBPage() {
     }
   }, [page, pageSize, searchTerm, session?.user?.id]);
 
+    useEffect(() => {
+      const bdcId = searchParams.get('edbId');
+      if (bdcId && session?.user?.id) {
+        const fetchBDCDetails = async () => {
+          try {
+            const response = await fetch(`/api/edb/${bdcId}/stock`);
+            if (response.ok) {
+              const data = await response.json();
+              setModalEDB(data);
+            }
+          } catch (error) {
+            console.error('Error fetching EDB details:', error);
+            toast.error("Erreur", {
+              description: "Impossible de charger les détails de l\'EDB.",
+            });
+          }
+        };
+        fetchBDCDetails();
+      }
+    }, [searchParams, session?.user?.id]);
+
   const handleStockEdbSubmit = async (data: any) => {
     try {
       const response = await fetch('/api/edb/stock/user', {
@@ -127,6 +154,14 @@ export default function UserStockEDBPage() {
         description: error instanceof Error ? error.message : "Une erreur est survenue lors de la création de la demande stock.",
       });
     }
+  };
+
+  const handleCloseModal = () => {
+    setModalEDB(null);
+    // Remove the bdcId parameter from URL
+    const newURL = new URL(window.location.href);
+    newURL.searchParams.delete('edbId');
+    router.replace(newURL.pathname);
   };
 
   if (status === "loading") {
@@ -166,7 +201,7 @@ export default function UserStockEDBPage() {
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
           <div className="lg:col-span-2">
             <Card>
-              <CardContent className="pt-5">
+              <CardContent className="pt-5 p-1 md:p-4">
                 <Table>
                   <TableHeader className="bg-muted">
                     <TableRow>
@@ -206,39 +241,100 @@ export default function UserStockEDBPage() {
                       })
                     )}
                   </TableBody>
-                </Table>
-              </CardContent>
-              <CardFooter className="flex items-end justify-end border-t bg-muted/50 p-4">
-                <div className="text-xs text-muted-foreground">
-                  {/* Mis à jour: {format(new Date(), "dd/MM/yyyy", { locale: fr })} */}
+                  </Table>
+            </CardContent>
+            <CardFooter className="flex items-end justify-between border-t bg-muted/50 p-4">
+            <div className="flex flex-row items-center gap-1 text-xs text-muted-foreground w-full">
+                <Button 
+                  size="icon" 
+                  variant="outline" 
+                  className="h-6 w-6" 
+                  onClick={() => fetchStockEDBs()}
+                  disabled={isLoading}
+                >
+                  <RefreshCwIcon className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span className="sr-only">Rafraîchir</span>
+                </Button>
+              </div>
+            <Pagination className="flex items-end justify-end">
+              <PaginationContent className="flex items-center gap-2">
+                {/* First page */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-6 w-6 hidden md:flex"
+                    onClick={() => setPage(1)}
+                    disabled={page === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                  </Button>
+                </PaginationItem>
+
+                {/* Previous */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-6 w-6"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                </PaginationItem>
+
+                {/* Page input */}
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-sm text-muted-foreground hidden md:inline">Page</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={Math.ceil(total / pageSize)}
+                    value={page}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (value >= 1 && value <= Math.ceil(total / pageSize)) {
+                        setPage(value);
+                      }
+                    }}
+                    className="h-6 w-20 text-xs"
+                  />
+                  <span className="text-sm text-muted-foreground hidden md:inline">
+                    sur {Math.ceil(total / pageSize)}
+                  </span>
                 </div>
-                <Pagination className="flex items-end justify-end">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-6 w-6"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                      </Button>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-6 w-6"
-                        onClick={() => setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))}
-                        disabled={page >= Math.ceil(total / pageSize)}
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </CardFooter>
+
+                {/* Next */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-6 w-6"
+                    onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
+                    disabled={page >= Math.ceil(total / pageSize) || isLoading}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </PaginationItem>
+
+                {/* Last page */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-6 w-6 hidden md:flex"
+                    onClick={() => setPage(Math.ceil(total / pageSize))}
+                    disabled={page === Math.ceil(total / pageSize) || isLoading}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-3.5 w-3.5 -ml-2" />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            </CardFooter>
             </Card>
           </div>
 
@@ -254,6 +350,20 @@ export default function UserStockEDBPage() {
             )}
           </div>
         </div>
+        <Dialog 
+        open={!!modalEDB} 
+        onOpenChange={(open) => {
+          if (!open) handleCloseModal();
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-8">
+          {modalEDB && (
+            <StockEDBDetails 
+              stockEdb={modalEDB}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       </main>
     </ContentLayout>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { MetricCard, ErrorCard, LoadingCard } from '@/components/MetricCards';
-import { Package2, Clock1, ClipboardList, ExternalLink, Eye } from 'lucide-react';
+import { MetricCard, ErrorCard, LoadingCard, SimpleMetricCard } from '@/components/MetricCards';
+import { Package2, Clock1, ClipboardList, ExternalLink, Eye, PackageCheck, HeartPulse, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FilteredEDBDialog } from './EDBFilteredDialog';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -11,10 +11,12 @@ interface MetricsData {
   total: number;
   active: number;
   pending: number;
+  completed: number;
 }
 
 interface EDBMetricsProps {
   timeRange: string;
+  onRefresh?: () => void;
 }
 
 export default function EDBMetrics({ timeRange }: EDBMetricsProps) {
@@ -23,7 +25,7 @@ export default function EDBMetrics({ timeRange }: EDBMetricsProps) {
   const [error, setError] = useState<string | null>(null);
   const [dialogConfig, setDialogConfig] = useState<{
     isOpen: boolean;
-    type: 'all' | 'active' | 'pending';
+    type: 'all' | 'active' | 'pending' | 'completed';
     title: string;
   }>({
     isOpen: false,
@@ -71,11 +73,12 @@ export default function EDBMetrics({ timeRange }: EDBMetricsProps) {
     fetchMetrics();
   }, [timeRange]);
 
-  const handleCardAction = (type: 'all' | 'active' | 'pending') => {
+  const handleCardAction = (type: 'all' | 'active' | 'pending' | 'completed') => {
     const titles = {
       all: 'Tous les États de Besoins',
       active: 'États de Besoins Actifs',
-      pending: 'États de Besoins en Attente'
+      pending: 'États de Besoins en Attente',
+      completed: 'Traités'
     };
 
     setDialogConfig({
@@ -96,10 +99,15 @@ export default function EDBMetrics({ timeRange }: EDBMetricsProps) {
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="flex md:flex-row flex-col gap-4">
+        <div className='md:w-fit'>
+          <LoadingCard isLoadingTitle="Chargement des métriques..."/>
+        </div>
+        <div className="w-full grid gap-4 md:grid-cols-3">
         <LoadingCard isLoadingTitle="Chargement des métriques..." />
         <LoadingCard isLoadingTitle="Chargement des métriques..." />
         <LoadingCard isLoadingTitle="Chargement des métriques..." />
+      </div>
       </div>
     );
   }
@@ -114,55 +122,31 @@ export default function EDBMetrics({ timeRange }: EDBMetricsProps) {
   }
 
   const timeRangeLabels: Record<string, string> = {
-    'today': "aujourd'hui",
-    'this-week': 'cette semaine',
-    'this-month': 'ce mois',
-    'last-month': 'le mois dernier',
-    'last-3-months': 'ce trimestre',
-    'this-year': 'cette année',
-    'last-year': "l'année dernière"
+    'today': "Aujourd'hui",
+    'this-week': 'Cette semaine',
+    'this-month': 'Ce mois',
+    'last-month': 'Mois dernier',
+    'last-3-months': 'Trimestre',
+    'this-year': 'Année',
+    'last-year': "Année précédente"
   };
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard
+      <div className="flex md:flex-row flex-col gap-4">
+      <div className='md:w-fit'>
+      <SimpleMetricCard
           title="Total"
           value={metrics.total}
-          description={`Pour ${timeRangeLabels[timeRange] || 'la période'}`}
-          icon={<Package2 className="h-6 w-6" />}
-        //   action={
-        //     <Button
-        //         variant="outline"
-        //         className='h-6'
-        //         onClick={() => handleCardAction('all')}
-        //         >
-        //         <small className='hidden md:block font-bold'>Voir</small><Eye className="h-4 w-4 md:hidden" />
-        //     </Button>
-        //   }
+          description={`${timeRangeLabels[timeRange] || 'Sur la période'}`}
         />
-
-        <MetricCard
-          title="En Attente"
-          value={metrics.pending}
-          description="En attente de validation"
-          icon={<Clock1 className="h-6 w-6" />}
-          action={
-            <Button
-              variant="outline"
-              className='h-6'
-              onClick={() => handleCardAction('pending')}
-            >
-              <small className='hidden md:block font-bold'>Voir</small><Eye className="h-4 w-4 md:hidden" />
-            </Button>
-          }
-        />
-
-        <MetricCard
-          title="États Actifs"
+      </div>
+      <div className="w-full grid gap-4 md:grid-cols-3">
+      <MetricCard
+          title="Actifs"
           value={metrics.active}
           description="En cours de traitement"
-          icon={<ClipboardList className="h-6 w-6" />}
+          icon={<Activity className="h-6 w-6" />}
           action={
             <Button
             variant="outline"
@@ -173,6 +157,38 @@ export default function EDBMetrics({ timeRange }: EDBMetricsProps) {
           </Button>
           }
         />
+        <MetricCard
+          title="En Attente"
+          value={metrics.pending}
+          icon={<Clock1 className="h-6 w-6" />}
+          action={
+            <Button
+              variant="outline"
+              className='h-6'
+              onClick={() => handleCardAction('pending')}
+            >
+              <small className='hidden md:block font-bold'>Voir</small><Eye className="h-4 w-4 md:hidden" />
+            </Button>
+          }
+          description="En attente d'approbation"
+        />
+
+        <MetricCard
+          title="Traités"
+          value={metrics.completed}
+          icon={<PackageCheck className="h-6 w-6" />}
+          action={
+          <Button
+            variant="outline"
+            className='h-6'
+            onClick={() => handleCardAction('completed')}
+          >
+            <small className='hidden md:block font-bold'>Voir</small><Eye className="h-4 w-4 md:hidden" />
+          </Button>
+          }
+        />
+        </div>
+
       </div>
 
       <FilteredEDBDialog

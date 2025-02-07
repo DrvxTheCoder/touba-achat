@@ -29,7 +29,7 @@ export async function POST(
     }
 
     // Check if the EDB is in the correct state for final approval
-    if (edb.status !== 'SUPPLIER_CHOSEN') {
+    if (edb.status !== 'DELIVERED') {
       return NextResponse.json({ message: 'L\'EDB n\'est pas en attente d\'approbation finale' }, { status: 400 });
     }
 

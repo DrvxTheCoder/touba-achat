@@ -24,7 +24,9 @@
     Store,
     StoreIcon,
     WarehouseIcon,
-    Trash2
+    Trash2,
+    ComputerIcon,
+    FileBoxIcon
   } from "lucide-react"
 
   import { Badge } from "@/components/ui/badge"
@@ -269,12 +271,14 @@ import EDBMetrics from "./EDBMetrics"
 
   export default function Etats() {
 
+    
+
     const { data: session } = useSession();
     const router = useRouter();
     const [currentPage, setCurrentPage] = useState(1);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
+    
     const [searchTerm, setSearchTerm] = useState("");
     const [timeRange, setTimeRange] = useState('this-month');
     const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
@@ -285,6 +289,26 @@ import EDBMetrics from "./EDBMetrics"
     const [isMarkingAsComplete, setIsMarkingAsComplete] = useState(false);
     const [isMarkingAsDelivered, setIsMarkingAsDelivered] = useState(false);
     const [isAttachDocumentDialogOpen, setIsAttachDocumentDialogOpen] = useState(false);
+    const [isMarkingAsIT, setIsMarkingAsIT] = useState(false);
+    const [isMarkAsItDialogOpen, setIsMarkAsItDialogOpen] = useState(false);
+    const [undoMarkAsItDialogOpen, setUndoMarkAsItDialogOpen] = useState(false);
+    const userInfo = useMemo(() => ({
+      role: session?.user?.role || '',
+    }), [session?.user?.role]);
+
+    const statusFilter = useMemo(() => {
+      return selectedFilters
+        .filter(isValidStatusMappingKey)
+        .flatMap(key => statusMapping[key]);
+    }, [selectedFilters]);
+    const { paginatedData, isLoading, error, refetch, selectedEDB, setSelectedEDB } = useEDBs(
+      currentPage, 
+      ITEMS_PER_PAGE, 
+      searchTerm, 
+      statusFilter,
+      userInfo,
+      timeRange
+    );
 
     const [currentPdfIndex, setCurrentPdfIndex] = useState<number | null>(null);
     const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
@@ -296,7 +320,7 @@ import EDBMetrics from "./EDBMetrics"
     const canEscalate = selectedEDB?.status === 'APPROVED_RESPONSABLE' || selectedEDB?.status === 'SUBMITTED'
     const hasAttachments = selectedEDB?.attachments && selectedEDB.attachments.length > 0;
 
-    const isITCategory = selectedEDB && ['Matériel informatique', 'Logiciels et licences'].includes(selectedEDB.category);
+    const isITCategory = selectedEDB && ['Matériel informatique', 'Logiciels et licences'].includes(selectedEDB.category) && selectedEDB.itApprovalRequired === true;
     const chosenFilePath = selectedEDB?.finalSupplier?.filePath;
     const isSupplierChosen = !!selectedEDB?.finalSupplier;
 
@@ -347,16 +371,6 @@ import EDBMetrics from "./EDBMetrics"
       }
     };
 
-    const userInfo = useMemo(() => ({
-      role: session?.user?.role || '',
-    }), [session?.user?.role]);
-
-    const statusFilter = useMemo(() => {
-      return selectedFilters
-        .filter(isValidStatusMappingKey)
-        .flatMap(key => statusMapping[key]);
-    }, [selectedFilters]);
-
     const { canValidate, canReject, canAttachDocuments, canChooseSupplier, canApproveIT, canGiveFinalApproval } = useMemo(() => {
       if (!selectedEDB || !session?.user?.role) {
         return {
@@ -381,14 +395,6 @@ import EDBMetrics from "./EDBMetrics"
       );
     }, [selectedEDB, session?.user?.role, session?.user?.access]);
 
-    const { paginatedData, isLoading, error, refetch } = useEDBs(
-      currentPage, 
-      ITEMS_PER_PAGE, 
-      searchTerm, 
-      statusFilter,
-      userInfo,
-      timeRange
-    );
 
     const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
     const [isFinalApprovalDialogOpen, setIsFinalApprovalDialogOpen] = useState(false);
@@ -430,9 +436,7 @@ import EDBMetrics from "./EDBMetrics"
         toast.success("EDB Supprimé", {
           description: `L'EDB #${selectedEDB.edbId} a été supprimé avec succès.`,
         });
-        
-        // Redirect to the ODMs list
-        router.push('/dashboard/etats');
+        refetch();
       } catch (error: any) {
         console.error('Error deleting EDB:', error);
         toast.error("Erreur", {
@@ -441,6 +445,58 @@ import EDBMetrics from "./EDBMetrics"
       } finally {
         setIsDeleting(false);
         setIsDeleteDialogOpen(false);
+      }
+    };
+
+    const handleMarkAsIT = async () => {
+      if (!selectedEDB) return;
+      setIsMarkingAsIT(true);
+      try {
+        const response = await fetch(`/api/edb/${selectedEDB.id}/mark-as-IT`, {
+          method: 'POST',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de opération');
+        }
+        refetch();
+        toast.success("Succès",{
+          description: `L'EDB #${selectedEDB.id} a été marqué comme etant informatique.`,
+        });
+      } catch (error : any) {
+        console.error('Error validating EDB:', error);
+        toast.error("Erreur",{
+          description: error.message || "Une erreur est survenue lors de l'opération.",
+        });
+      } finally {
+        setIsMarkAsItDialogOpen(false);
+        setIsMarkingAsIT(false);
+      }
+    };
+
+    const handleUndoMarkAsIT = async () => {
+      if (!selectedEDB) return;
+      setIsMarkingAsIT(true);
+      try {
+        const response = await fetch(`/api/edb/${selectedEDB.id}/mark-as-IT?action=undo`, {
+          method: 'POST',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de opération');
+        }
+        refetch();
+        toast.success("Succès",{
+          description: `Opération sur L'EDB #${selectedEDB.id} reussi.`,
+        });
+      } catch (error : any) {
+        console.error('Error validating EDB:', error);
+        toast.error("Erreur",{
+          description: error.message || "Une erreur est survenue lors de l'opération.",
+        });
+      } finally {
+        setUndoMarkAsItDialogOpen(false);
+        setIsMarkingAsIT(false);
       }
     };
 
@@ -666,9 +722,6 @@ import EDBMetrics from "./EDBMetrics"
       }
     };
 
-    useEffect(() => {
-      console.log("Dialog open state:", isAttachDocumentDialogOpen);
-    }, [isAttachDocumentDialogOpen]);
 
     const handleOpenAttachDialog = useCallback(() => {
       if (!selectedEDB) {
@@ -757,9 +810,7 @@ import EDBMetrics from "./EDBMetrics"
       });
     }
 
-    
 
-    
     return (
       <>
         <title>États de Besoins - Touba App™</title>
@@ -847,7 +898,7 @@ import EDBMetrics from "./EDBMetrics"
               </div>
               <div>
                 <Card className="rounded-xl">
-                  <CardContent className="pt-5">
+                  <CardContent className="pt-5 p-1 md:p-4">
                     <Table>
                     <TableHeader className="bg-muted mb-1">
                         <TableRow className="rounded-lg border-0">
@@ -857,7 +908,7 @@ import EDBMetrics from "./EDBMetrics"
                         <TableHead className="hidden sm:table-cell">
                             Catégorie
                         </TableHead>
-                        <TableHead className="text-right md:text-left">
+                        <TableHead className="text-left">
                             Statut
                         </TableHead>
                         <TableHead className="hidden md:table-cell">
@@ -871,7 +922,7 @@ import EDBMetrics from "./EDBMetrics"
                         </TableHead>
                         </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className="rounded-lg">
                       {isLoading ? (
                         <TableRow>
                           <TableCell colSpan={6} className="h-24 text-center">
@@ -1116,6 +1167,28 @@ import EDBMetrics from "./EDBMetrics"
                               </DropdownMenuItem>
                             )}
                             {permissions.isAdmin && (
+                              <>
+                              {selectedEDB.itApprovalRequired === true ? (
+                                <DropdownMenuItem
+                                  className="text-blue-400"
+                                  onClick={() => setUndoMarkAsItDialogOpen(true)}
+                                >
+                                  Marquer comme standard
+                                  <DropdownMenuShortcut>
+                                    <FileBoxIcon className="ml-4 h-4 w-4" />
+                                  </DropdownMenuShortcut>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  className="text-blue-400"
+                                  onClick={() => setIsMarkAsItDialogOpen(true)}
+                                >
+                                  Marquer comme informatique
+                                  <DropdownMenuShortcut>
+                                    <ComputerIcon className="ml-4 h-4 w-4" />
+                                  </DropdownMenuShortcut>
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() => setIsDeleteDialogOpen(true)}
@@ -1125,6 +1198,7 @@ import EDBMetrics from "./EDBMetrics"
                                   <Trash2 className="ml-4 h-4 w-4" />
                                 </DropdownMenuShortcut>
                               </DropdownMenuItem>
+                              </>
                             )}
       
                             <DropdownMenuItem 
@@ -1353,6 +1427,61 @@ import EDBMetrics from "./EDBMetrics"
                             <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                           )}
                           Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                  {/* Mark as IT */}
+                  <AlertDialog open={isMarkAsItDialogOpen} onOpenChange={setIsMarkAsItDialogOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la conversion en EDB informatique</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir marquer l&apos;EDB #{selectedEDB?.edbId} comme étant informatique? Le choix du fournisseur sera reservé au Service Informatique.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isMarkingAsIT}>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleMarkAsIT();
+                          }}
+                          disabled={isDeleting}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          {isMarkingAsIT && (
+                            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Confirmer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  {/* Undo mark as IT */}
+                  <AlertDialog open={undoMarkAsItDialogOpen} onOpenChange={setUndoMarkAsItDialogOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la conversion en EDB simple</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir poursuivre l&apos;action sur l&apos;EDB #{selectedEDB?.edbId}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isMarkingAsIT}>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleUndoMarkAsIT();
+                          }}
+                          disabled={isMarkingAsIT}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          {isMarkingAsIT && (
+                            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Confirmer
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

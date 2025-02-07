@@ -19,7 +19,7 @@ const ITEMS_PER_PAGE = 5;
 interface FilteredDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  filterType: 'all' | 'active' | 'pending';
+  filterType: 'all' | 'active' | 'pending' | 'completed';
   timeRange: string;
   title: string;
 }
@@ -47,7 +47,8 @@ export function FilteredEDBDialog({
   const statusMap = {
     all: [],
     active: ['APPROVED_DIRECTEUR', 'APPROVED_DG', 'MAGASINIER_ATTACHED', 'SUPPLIER_CHOSEN', 'COMPLETED', 'FINAL_APPROVAL'],
-    pending: ['SUBMITTED', 'ESCALATED', 'APPROVED_RESPONSABLE']
+    pending: ['SUBMITTED', 'ESCALATED', 'APPROVED_RESPONSABLE'],
+    completed: ['COMPLETED', 'DELIVERED']
   };
 
   const fetchData = useCallback(async () => {

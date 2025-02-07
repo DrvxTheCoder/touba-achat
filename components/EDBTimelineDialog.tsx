@@ -207,12 +207,12 @@ const EventNode: React.FC<{ edb: EDBTimelineProps['edb']; keyEvent: KeyEvent }> 
       <PopoverTrigger asChild>
         <div className="relative">
           {isCurrentStep && !isRejected && (
-            <span className="absolute inline-flex h-full w-full rounded-full opacity-75 bg-secondary-foreground animate-ping"></span>
+            <span className="absolute inline-flex h-full w-full rounded-full opacity-75 bg-cyan-600/60 animate-ping"></span>
           )}
           <div className={`relative flex-shrink-0 w-8 h-8 rounded-full 
             ${isRejected ? 'bg-destructive border-2 border-destructive' :
               status === 'COMPLETED' ? 'bg-primary' : 
-              status === 'IN_PROGRESS' ? 'bg-muted-foreground' : 'bg-muted-foreground/75 opacity-40'}
+              status === 'IN_PROGRESS' ? 'bg-cyan-600' : 'bg-muted-foreground/75 opacity-40'}
             flex items-center justify-center cursor-pointer`}>
             {isRejected ? <XCircle className="text-white" size={16} /> : <Icon className="text-white" size={16} />}
           </div>

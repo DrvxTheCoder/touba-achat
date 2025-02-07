@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 
 type EDBDetailsCardProps = {
   edb: EDB;
+  onRefresh: () => Promise<void>;
 };
 
 const getStatusBadge = (status: string) => {
@@ -54,7 +55,7 @@ function formatDate(date: Date | string) {
   });
 }
 
-export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb }) => {
+export const EDBDetailsCard: React.FC<EDBDetailsCardProps> = ({ edb, onRefresh }) => {
   const { data: session } = useSession();
   const [currentPdfIndex, setCurrentPdfIndex] = useState<number | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);

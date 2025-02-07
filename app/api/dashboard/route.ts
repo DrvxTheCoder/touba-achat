@@ -1,140 +1,122 @@
-// app/api/dashboard/edb-data/route.ts
+// api/dashboard/odm-data/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import prisma from '@/lib/prisma';
-import { Role, EDBStatus } from '@prisma/client';
+import { Role, ODMStatus } from '@prisma/client';
+import { getDateRange } from './edb-data/utils/utils';
+
+const ACTIVE_STATUSES: ODMStatus[] = [
+  'AWAITING_RH_PROCESSING',
+  'RH_PROCESSING',
+] as const;
+
+const PENDING_STATUSES: ODMStatus[] = [
+  'SUBMITTED',
+  'AWAITING_DIRECTOR_APPROVAL',
+] as const;
+
+const COMPLETED_STATUSES: ODMStatus[] = [
+  'COMPLETED',
+  'AWAITING_FINANCE_APPROVAL',
+] as const;
+
+const FULL_ACCESS_ROLES = [
+  Role.DIRECTEUR_GENERAL,
+  Role.ADMIN,
+  Role.AUDIT,
+  Role.RH
+] as const;
+
+function hasFullAccess(role: Role): boolean {
+  return FULL_ACCESS_ROLES.includes(role as typeof FULL_ACCESS_ROLES[number]);
+}
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(session.user.id) },
-    include: { employee: { include: { currentDepartment: true } } },
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
-  }
-
-  const { role } = user;
-  const departmentId = user.employee?.currentDepartmentId;
-
-  let edbsQuery = {};
-
-  if (role === Role.RESPONSABLE || role === Role.DIRECTEUR) {
-    if (!departmentId) {
-      return NextResponse.json({ error: 'Département non trouvé pour l\'utilisateur' }, { status: 400 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
-    edbsQuery = { where: { departmentId: departmentId } };
-  }
 
-  const edbs = await prisma.etatDeBesoin.findMany({
-    ...edbsQuery,
-    include: {
-      finalSupplier: true,
-    },
-  });
+    const searchParams = new URL(req.url).searchParams;
+    const timeRange = searchParams.get('timeRange') || 'this-month';
 
-  const currentDate = new Date();
-  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
-  const lastHour = new Date(currentDate.getTime() - 60 * 60 * 1000);
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(session.user.id) },
+      include: { employee: { include: { currentDepartment: true } } },
+    });
 
-  // Calculate aggregated data
-  const total = edbs.length;
-  const active = edbs.filter(edb => 
-    [
-      'APPROVED_DIRECTEUR',
-      'APPROVED_DG',
-      'MAGASINIER_ATTACHED',
-      'SUPPLIER_CHOSEN',
-      'COMPLETED',
-      'FINAL_APPROVAL'
-    ].includes(edb.status)
-  ).length;
-  const pending = edbs.filter(edb => 
-    [
-      'SUBMITTED', 
-      'ESCALATED', 
-      'APPROVED_RESPONSABLE',
-      'AWAITING_MAGASINIER',
-      'AWAITING_SUPPLIER_CHOICE',
-      'AWAITING_IT_APPROVAL',
-      'AWAITING_FINAL_APPROVAL'
-    ].includes(edb.status)
-  ).length;
-  const lastMonthTotal = edbs.filter(edb => new Date(edb.createdAt) >= lastMonth).length;
-  const lastHourActive = edbs.filter(edb => 
-    new Date(edb.updatedAt) >= lastHour && 
-    edb.status !== EDBStatus.COMPLETED && 
-    edb.status !== EDBStatus.REJECTED
-  ).length;
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    }
 
-  const percentageChange = total > 0 ? ((lastMonthTotal / total) * 100).toFixed(1) : '0';
+    const { role } = user;
+    const dateRange = getDateRange(timeRange);
 
-  // Calculate total amount based on finalSupplier amounts
-  const totalAmount = edbs.reduce((sum, edb) => sum + (edb.finalSupplier?.amount || 0), 0);
+    let baseWhere: any = {
+      createdAt: dateRange,
+    };
 
-  // Calculate weekly data
-  const today = new Date();
-  const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-  monday.setHours(0, 0, 0, 0);
+    if (!hasFullAccess(role)) {
+      const departmentId = user.employee?.currentDepartmentId;
+      
+      if (!departmentId) {
+        return NextResponse.json({ 
+          error: 'Département non trouvé pour l\'utilisateur' 
+        }, { status: 400 });
+      }
 
-  const weeklyData = await prisma.etatDeBesoin.groupBy({
-    by: ['createdAt'],
-    where: {
-      createdAt: {
-        gte: monday,
-      },
-      ...(role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
-    },
-    _count: {
-      id: true,
-    },
-  });
+      baseWhere.departmentId = departmentId;
+    }
 
-  const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  const chartData = await Promise.all(weekDays.map(async (day, index) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + index);
-    const dataForDay = weeklyData.find(d => new Date(d.createdAt).toDateString() === date.toDateString());
-    
-    const dayEDBs = await prisma.etatDeBesoin.findMany({
-      where: {
-        createdAt: {
-          gte: date,
-          lt: new Date(date.getTime() + 24 * 60 * 60 * 1000), // Next day
+    const [total, active, pending, completed] = await Promise.all([
+      prisma.ordreDeMission.count({
+        where: baseWhere
+      }),
+      prisma.ordreDeMission.count({
+        where: {
+          ...baseWhere,
+          status: { in: ACTIVE_STATUSES },
         },
-        ...(role === Role.RESPONSABLE || role === Role.DIRECTEUR ? { departmentId: departmentId } : {}),
+      }),
+      prisma.ordreDeMission.count({
+        where: {
+          ...baseWhere,
+          status: { in: PENDING_STATUSES },
+        },
+      }),
+      prisma.ordreDeMission.count({
+        where: {
+          ...baseWhere,
+          status: { in: COMPLETED_STATUSES },
+        },
+      }),
+    ]);
+
+    // Calculate total cost for completed ODMs
+    const totalAmount = await prisma.ordreDeMission.aggregate({
+      where: {
+        ...baseWhere,
+        totalCost: { not: null },
       },
-      include: {
-        finalSupplier: true,
+      _sum: {
+        totalCost: true,
       },
     });
-    
-    const amount = dayEDBs.reduce((sum, edb) => sum + (edb.finalSupplier?.amount || 0), 0);
 
-    return {
-      name: day,
-      date: date.toISOString().split('T')[0],
-      count: dataForDay ? dataForDay._count.id : 0,
-      amount: amount,
-    };
-  }));
-
-  return NextResponse.json({
-    aggregatedData: {
-      total,
-      active,
-      pending,
-      totalAmount,
-      percentageChange,
-      lastHourActive,
-    },
-    chartData,
-  });
+    return NextResponse.json({
+      metrics: {
+        total,
+        active,
+        pending,
+        completed,
+        totalAmount: totalAmount._sum.totalCost || 0,
+      },
+      timeRange,
+    });
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    return NextResponse.json({ error: 'Error fetching metrics' }, { status: 500 });
+  }
 }

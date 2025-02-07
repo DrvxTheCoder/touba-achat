@@ -9,7 +9,7 @@ type MetricCardProps = {
   value: number | undefined;
   description?: string;
   action?: React.ReactNode;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
 type CardActionButtonProps = {
@@ -76,6 +76,24 @@ export const MetricCard = ({ title, value, description, icon, action }: MetricCa
       <div className="flex">
         {action}
       </div>
+    </CardContent>
+  </Card>
+);
+
+export const SimpleMetricCard = ({ title, value, description }: MetricCardProps) => (
+  <Card className="flex items-center min-h-32 rounded-2xl">
+    <CardContent className="flex flex-row justify-center items-center p-3 px-6 gap-2 w-full">
+        <div className="flex flex-col justify-center items-center gap-1">
+          <h5 className="text-sm font-semibold leading-5">
+            {title}
+          </h5>
+          <p className="mt-1 text-2xl font-bold leading-6">
+            {value}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 w-fit text-center items-center justify-center">
+            {description}
+          </p>
+        </div>
     </CardContent>
   </Card>
 );

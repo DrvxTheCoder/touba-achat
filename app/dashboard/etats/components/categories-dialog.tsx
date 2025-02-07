@@ -125,7 +125,7 @@ export function CategoriesDialog() {
   return (
     <Dialog onOpenChange={handlecloseDialog} >
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" size={'icon'}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       }
   
       const isITCategory = ['Matériel informatique', 'Logiciels et licences'].includes(edb.category.name);
-      if (isITCategory && session.user.role !== Role.IT_ADMIN) {
+      if (isITCategory && session.user.role !== Role.IT_ADMIN && session.user.role !== Role.ADMIN) {
         return NextResponse.json({ error: 'Ce choix est reservé au Service Informatique' }, { status: 403 });
       }
   

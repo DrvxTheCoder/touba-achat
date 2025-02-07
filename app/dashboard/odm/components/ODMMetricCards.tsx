@@ -1,81 +1,138 @@
-// components/ODMMetrics.tsx
-import { useEffect, useState } from 'react';
-import { MetricCard } from '@/components/cards/MetricCard';
-import { DollarSign, LuggageIcon, CheckCircleIcon, ClockIcon, TrendingUpIcon, TrendingUp } from "lucide-react";
+"use client";
 
-interface ODMMetricsData {
-  aggregatedData: {
-    total: number;
-    active: number;
-    pending: number;
-    processedByRH: number;
-    totalCostSum: number;
-    percentageChange: string;
-  };
-  chartData: any; // You can define a more specific type if needed
+import { useState, useEffect } from 'react';
+import { MetricCard, ErrorCard, LoadingCard, SimpleMetricCard } from '@/components/MetricCards';
+import { Package2, Clock1, ClipboardList, ExternalLink, BanknoteIcon, Activity } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+
+interface MetricsData {
+  total: number;
+  active: number;
+  pending: number;
+  completed: number;
+  totalAmount: number;
 }
 
-export function ODMMetrics() {
-  const [metrics, setMetrics] = useState<ODMMetricsData | null>(null);
+interface ODMMetricsProps {
+  timeRange: string;
+}
+
+export default function ODMMetricsCard({ timeRange }: ODMMetricsProps) {
+  const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    async function fetchMetrics() {
+    const fetchMetrics = async () => {
+      setLoading(true);
       try {
-        const response = await fetch('/api/dashboard/odm-data');
-        if (!response.ok) {
-          throw new Error('Failed to fetch ODM metrics');
-        }
+        const response = await fetch(`/api/dashboard/odm-data?timeRange=${timeRange}`);
+        if (!response.ok) throw new Error('Erreur lors du chargement des métriques');
         const data = await response.json();
-        setMetrics(data);
+        setMetrics(data.metrics);
+        setError(null);
       } catch (error) {
-        console.error('Error fetching ODM metrics:', error);
+        console.error('Failed to fetch metrics:', error);
+        setError('Erreur lors du chargement des métriques');
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchMetrics();
-  }, []);
+  }, [timeRange]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(value);
+  const handleCardAction = (type: 'all' | 'active' | 'pending' | 'completed') => {
+    router.push(`/dashboard/odm?filter=${type}&timeRange=${timeRange}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex md:flex-row flex-col gap-4">
+        <div className='md:w-fit'>
+          <LoadingCard isLoadingTitle="Chargement des métriques..."/>
+        </div>
+        <div className="w-full grid gap-4 md:grid-cols-3">
+        <LoadingCard isLoadingTitle="Chargement des métriques..." />
+        <LoadingCard isLoadingTitle="Chargement des métriques..." />
+        <LoadingCard isLoadingTitle="Chargement des métriques..." />
+      </div>
+      </div>
+    );
+  }
+
+  if (error || !metrics) {
+    return (
+      <ErrorCard 
+        message={error || "Une erreur s'est produite lors du calcul des métriques."} 
+        className="md:col-span-4"
+      />
+    );
+  }
+
+  const timeRangeLabels: Record<string, string> = {
+    'today': "Aujourd'hui",
+    'this-week': 'Cette semaine',
+    'this-month': 'Ce mois',
+    'last-month': 'Mois dernier',
+    'last-3-months': 'Trimestre',
+    'this-year': 'Cette année',
+    'last-year': "Année dernière"
   };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-      {/* <MetricCard
-        title="Évolution"
-        value={`${metrics?.aggregatedData.percentageChange ?? 0}%`}
-        icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
-        loading={loading}
-        trend={parseFloat(metrics?.aggregatedData.percentageChange ?? '0')}
-      /> */}
-      <MetricCard
-        title="Dépenses Totales"
-        value={formatCurrency(metrics?.aggregatedData.totalCostSum ?? 0)}
-        icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-        loading={loading}
+    <div className="flex md:flex-row flex-col gap-4">
+    <div className='md:w-fit'>
+    <SimpleMetricCard
+        title="Total"
+        value={metrics.total}
+        description={`${timeRangeLabels[timeRange] || 'Sur la période'}`}
       />
-      <MetricCard
-        title="Total ODMs"
-        value={metrics?.aggregatedData.total ?? 0}
-        icon={<LuggageIcon className="h-4 w-4 text-muted-foreground" />}
-        loading={loading}
-        trend={parseFloat(metrics?.aggregatedData.percentageChange ?? '0')}
+    </div>
+    <div className="w-full grid gap-4 md:grid-cols-3">
+    <MetricCard
+        title="En Attente"
+        value={metrics.pending}
+        icon={<Clock1 className="h-6 w-6" />}
+        description='En attente de validation'
+        // action={
+        //   <Button
+        //     variant="outline"
+        //     className="h-6"
+        //     onClick={() => handleCardAction('pending')}
+        //   >
+        //     <small className="hidden md:block font-bold">Voir</small>
+        //     <ExternalLink className="h-4 w-4 md:hidden" />
+        //   </Button>
+        // }
       />
+
       <MetricCard
-        title="Traités"
-        value={metrics?.aggregatedData.processedByRH ?? 0}
-        icon={<CheckCircleIcon className="h-4 w-4 text-muted-foreground" />}
-        loading={loading}
+        title="Actifs"
+        value={metrics.active}
+        icon={<Activity className="h-6 w-6" />}
+        description='En cours de traitement'
+        // action={
+        //   <Button
+        //     variant="outline"
+        //     className="h-6"
+        //     onClick={() => handleCardAction('active')}
+        //   >
+        //     <small className="hidden md:block font-bold">Voir</small>
+        //     <ExternalLink className="h-4 w-4 md:hidden" />
+        //   </Button>
+        // }
       />
+
       <MetricCard
-        title="En attente"
-        value={metrics?.aggregatedData.pending ?? 0}
-        icon={<ClockIcon className="h-4 w-4 text-muted-foreground" />}
-        loading={loading}
+        title="Montant Total"
+        value={metrics.totalAmount}
+        description="XOF"
+        icon={<BanknoteIcon className="h-6 w-6" />}
       />
+      </div>
 
     </div>
   );

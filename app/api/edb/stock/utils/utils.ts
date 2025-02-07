@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import generateEDBId from '../../utils/edb-id-generator';
-import { EDBEventType, Prisma, Role, StockEDBStatus, StockEtatDeBesoin } from '@prisma/client';
+import { EDBEventType, NotificationType, Prisma, Role, StockEDBStatus, StockEtatDeBesoin } from '@prisma/client';
 import { createEDBForUser, logEDBEvent, sendEDBNotification } from '../../utils/edbAuditLogUtil';
 import { determineRecipients } from '@/app/api/utils/notificationsUtil';
 import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
@@ -48,6 +48,30 @@ export async function sendStockNotification(
   };
 
   await sendNotification(notificationPayload);
+}
+
+async function createNotification(
+  tx: any,
+  type: NotificationType,
+  message: string,
+  recipientIds?: number[],
+  bdcId?: number
+) {
+  const notification = await tx.notification.create({
+    data: {
+      type,
+      message,
+      bonDeCaisseId: bdcId,
+      recipients: {
+        create: recipientIds?.map(userId => ({
+          user: {
+            connect: { id: userId }
+          }
+        }))
+      }
+    },
+  });
+  return notification;
 }
 
 
@@ -262,6 +286,144 @@ export async function getStockEDBs(params?: {
       }
     }),
 
+    // Search conditions
+    ...(params?.search ? {
+      OR: [
+        { 
+          edbId: { 
+            contains: params.search,
+            mode: 'insensitive' as Prisma.QueryMode
+          } 
+        },
+        {
+          description: {
+            path: ['items'],
+            array_contains: [{
+              name: { contains: params.search }
+            }]
+          } as Prisma.JsonFilter
+        }
+      ]
+    } : {})
+  };
+
+  // Get total count for pagination
+  const total = await prisma.stockEtatDeBesoin.count({ where });
+
+  // Get filtered and paginated data
+  const data = await prisma.stockEtatDeBesoin.findMany({
+    where,
+    include: {
+      department: true,
+      category: true,
+      employee: true,
+      orderedBy: true,
+      deliveredBy: true,
+      convertedBy: true,
+      convertedEdb: {
+        select: {
+          id: true,
+          edbId: true,
+          status: true,
+          auditLogs: {
+            include: {
+              user: {
+                select: {
+                  name: true
+                }
+              }
+            },
+            orderBy: {
+              eventAt: 'asc'
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip,
+    take,
+  });
+
+
+  return {
+    data,
+    total,
+    page: params?.page || 1,
+    pageSize: params?.pageSize || 10
+  };
+}
+
+export async function getUserStockEDBs(params?: {
+  departmentId?: number;
+  employeeId?: number;
+  categoryId?: number;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  userId?: number;
+  timeRange?: string;
+}) {
+  const skip = params?.page && params?.pageSize ? (params.page - 1) * params.pageSize : undefined;
+  const take = params?.pageSize;
+
+  const now = new Date();
+  let dateFilter = {};
+
+  switch (params?.timeRange) {
+    case 'this-month':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          lte: now
+        }
+      };
+      break;
+    case 'last-month':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          lte: new Date(now.getFullYear(), now.getMonth(), 0)
+        }
+      };
+      break;
+    case 'last-3-months':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+          lte: now
+        }
+      };
+      break;
+    case 'this-year':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear(), 0, 1),
+          lte: now
+        }
+      };
+      break;
+    case 'last-year':
+      dateFilter = {
+        createdAt: {
+          gte: new Date(now.getFullYear() - 1, 0, 1),
+          lte: new Date(now.getFullYear() - 1, 11, 31)
+        }
+      };
+      break;
+  }
+
+  // Build the where condition
+  const where: Prisma.StockEtatDeBesoinWhereInput = {
+    // Base filters
+    ...dateFilter,
+    ...(params?.categoryId && { categoryId: params.categoryId }),
+    // Role-based filtering
+      employee: {
+        userId: params?.userId
+      },
     // Search conditions
     ...(params?.search ? {
       OR: [

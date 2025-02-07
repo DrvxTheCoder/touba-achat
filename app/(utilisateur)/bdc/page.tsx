@@ -287,7 +287,7 @@ export default function BDCPage() {
 
         </div>
           <Card>
-            <CardContent className="pt-5">
+            <CardContent className="pt-5 p-1 md:p-4">
               <Table>
                 <TableHeader className="bg-muted rounded-lg">
                   <TableRow className="rounded-lg">

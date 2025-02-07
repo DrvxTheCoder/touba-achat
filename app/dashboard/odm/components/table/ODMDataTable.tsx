@@ -24,20 +24,28 @@ interface ODM {
   endDate: string;
   status: string;
   totalCost?: number;
+  createdAt: string;
   creator: {
     name: string,
     email: string,
 } 
 }
 
-export const ODMDataTable: React.FC = () => {
+interface ODMDataTableProps {
+  timeRange: string;
+  onTimeRangeChange: (value: string) => void;
+}
+
+export const ODMDataTable: React.FC<ODMDataTableProps> = ({ 
+  timeRange, 
+  onTimeRangeChange 
+}) => {
   const [odms, setOdms] = useState<ODM[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [timeRange, setTimeRange] = useState('this-month');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const formatDate = (dateString: string) => {
@@ -89,6 +97,7 @@ export const ODMDataTable: React.FC = () => {
     const exportData = odms.map(odm => ({
         'ID': odm.odmId,
         'Titre': odm.title,
+        'Date': odm.createdAt,
         'Auteur': odm.creator.name,
         'Statut': translateStatus(odm.status),
         'Période': `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`,
@@ -116,7 +125,7 @@ export const ODMDataTable: React.FC = () => {
     <div>
       {/* Table Controls */}
       <div className="flex items-center mb-4">
-        <Select value={timeRange} onValueChange={setTimeRange}>
+        <Select value={timeRange} onValueChange={onTimeRangeChange}>
             <SelectTrigger className="w-fit h-7">
                 <SelectValue placeholder="Sélectionner une période" />
             </SelectTrigger>
@@ -168,7 +177,7 @@ export const ODMDataTable: React.FC = () => {
 
       {/* ODM Datatable */}
       <Card>
-        <CardContent className="pt-5">
+        <CardContent className="pt-5 p-1 md:p-4">
           <Table>
             <TableHeader className="bg-muted">
               <TableRow className="rounded-lg border-0">

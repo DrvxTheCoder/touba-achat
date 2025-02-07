@@ -25,6 +25,7 @@ export const useEDBs = (
   const [paginatedData, setPaginatedData] = useState<PaginatedEDBs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEDB, setSelectedEDB] = useState<EDB | null>(null);
 
   const fetchEDBs = useCallback(async () => {
     setIsLoading(true);
@@ -48,6 +49,7 @@ export const useEDBs = (
       console.error(err);
     } finally {
       setIsLoading(false);
+      setSelectedEDB(null);
     }
   }, [page, pageSize, searchTerm, statusFilter, userInfo.role, timeRange]); // Add timeRange to dependencies
 
@@ -55,5 +57,5 @@ export const useEDBs = (
     fetchEDBs();
   }, [fetchEDBs]);
 
-  return { paginatedData, isLoading, error, refetch: fetchEDBs };
+  return { paginatedData, isLoading, error, refetch: fetchEDBs, selectedEDB, setSelectedEDB };
 };

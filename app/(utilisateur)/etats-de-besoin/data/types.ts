@@ -61,6 +61,7 @@ export type EDBStatus =
     }>;
     finalSupplier: FinalSupplier | null;
     rejectionReason: string | undefined;
+    itApprovalRequired: boolean;
   };
 
   export type EDBEventType = 

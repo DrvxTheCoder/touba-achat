@@ -256,6 +256,7 @@ export async function GET(request: Request) {
         chosenBy: edb.finalSupplier.chosenBy,
       } : null,
       rejectionReason: edb.rejectionReason,
+      itApprovalRequired: edb.itApprovalRequired
     }));
 
     return NextResponse.json({

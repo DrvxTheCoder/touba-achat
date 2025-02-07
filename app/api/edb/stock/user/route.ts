@@ -1,6 +1,6 @@
 // app/api/edb/stock/user/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createUserStockEDB, getStockEDBs } from '../utils/utils';
+import { createUserStockEDB, getStockEDBs, getUserStockEDBs } from '../utils/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { z } from 'zod';
@@ -70,12 +70,11 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('category');
 
-    const result = await getStockEDBs({
+    const result = await getUserStockEDBs({
       page,
       pageSize,
       search,
       categoryId: categoryId ? parseInt(categoryId) : undefined,
-      userRole: session.user.role as Role,
       userId: parseInt(session.user.id)
     });
 

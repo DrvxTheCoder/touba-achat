@@ -354,7 +354,9 @@ export async function createEDB(
 
   // Determine initial status based on the user's role
   let initialStatus: EDBStatus = 'SUBMITTED';
-  if (user.role === 'RESPONSABLE') {
+  if (user.role === 'MAGASINIER') {
+    initialStatus = 'SUBMITTED';
+  } else if (user.role === 'RESPONSABLE') {
     initialStatus = 'APPROVED_RESPONSABLE';
   } else if (user.role === 'DIRECTEUR') {
     initialStatus = 'APPROVED_DIRECTEUR';
@@ -362,7 +364,7 @@ export async function createEDB(
     initialStatus = 'APPROVED_DIRECTEUR';
   } else if (user.role === 'DIRECTEUR_GENERAL') {
     initialStatus = 'APPROVED_DG';
-  }
+  } 
 
   const newEDB = await prisma.etatDeBesoin.create({
     data: {
@@ -570,6 +572,34 @@ export async function finalApproveEDB(
   );
 
   await sendEDBNotification(updatedEDB, 'FINAL_APPROVAL', userId);
+
+  return updatedEDB;
+}
+
+export async function setEdbAsIT(
+  edbId: number,
+  userId: number
+): Promise<EtatDeBesoin> {
+  const updatedEDB = await prisma.etatDeBesoin.update({
+    where: { id: edbId },
+    data: { 
+      itApprovalRequired: true
+    },
+  });
+
+  return updatedEDB;
+}
+
+export async function undoSetEdbAsIT(
+  edbId: number,
+  userId: number
+): Promise<EtatDeBesoin> {
+  const updatedEDB = await prisma.etatDeBesoin.update({
+    where: { id: edbId },
+    data: { 
+      itApprovalRequired: false
+    },
+  });
 
   return updatedEDB;
 }

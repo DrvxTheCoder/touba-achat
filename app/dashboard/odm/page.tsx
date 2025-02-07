@@ -9,8 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/components
 import { ODMRHForm } from "./components/ODMRHForm"
 import { ODMSimpleForm } from "./components/ODMSimpleForm"
 import { ODMDataTable } from "./components/table/ODMDataTable"
-import { ODMMetrics } from "./components/ODMMetricCards"
 import { OpenInNewWindowIcon } from "@radix-ui/react-icons"
+import ODMMetricsCard from "./components/ODMMetricCards"
 import clsx from "clsx"
 import router from "next/router"
 import {toast} from 'sonner'
@@ -22,7 +22,8 @@ export default function OrdresDeMissions() {
     const { data: session } = useSession()
     const userRole = session?.user?.role
     const [isDialogOpen, setIsDialogOpen] = useState(false)
-    const [isODMFormLoading, setIsODMFormLoading] = useState(false)
+    const [isODMFormLoading, setIsODMFormLoading] = useState(false);
+    const [timeRange, setTimeRange] = useState('this-month');
 
     const isResponsable = userRole === 'RESPONSABLE'
     const isRH = userRole === 'RH'
@@ -103,10 +104,13 @@ export default function OrdresDeMissions() {
           <div className={clsx("", {
             "grid flex-1 items-start md:gap-8 lg:grid-cols-3 xl:grid-cols-3 mb-8": !isRH
           })}>
-            <div className={`grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2`}>
-              {!isResponsable && <ODMMetrics />}
-              <ODMDataTable />
-            </div>
+          <div className="grid auto-rows-max items-start gap-4 md:gap-4 lg:col-span-2">
+            {!isResponsable && <ODMMetricsCard timeRange={timeRange} />}
+            <ODMDataTable 
+              timeRange={timeRange}
+              onTimeRangeChange={setTimeRange}
+            />
+          </div>
 
             {!isRH && (
               <div>

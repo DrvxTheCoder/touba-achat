@@ -52,8 +52,8 @@ export const ODMTableRow: React.FC<ODMTableRowProps> = ({ odm }) => {
         <div className="hidden text-xs text-muted-foreground md:inline">
           {odm.creator?.name}
         </div>
-        <div className="text-xs md:font-medium">
-          <Link className="hover:underline" href={`/dashboard/odm/${odm.odmId}`}>
+        <div>
+          <Link className="text-[0.6rem] md:text-xs md:font-medium hover:underline" href={`/dashboard/odm/${odm.odmId}`}>
           #{odm.odmId}
           </Link>
         </div>

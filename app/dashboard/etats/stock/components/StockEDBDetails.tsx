@@ -148,13 +148,12 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
   return (
     <Card className="rounded-2xl">
       <CardHeader className="space-y-1 border-b">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl">#{stockEdb.edbId}</CardTitle>
+        <div className="flex flex-col md:flex-row items-center justify-between ">
+          <CardTitle className="text-lg">#{stockEdb.edbId}</CardTitle>
           <div className="flex items-center gap-2">
             <StatusBadge status={stockEdb.status} />
-
             <StockEDBPDFDialog stockEdb={stockEdb} />
-            
+
             {isConverted && stockEdb.convertedEdb && (
               <EDBTimelineDialog 
                 edb={convertToTimelineFormat(stockEdb.convertedEdb)!}
@@ -200,7 +199,7 @@ export function StockEDBDetails({ stockEdb, onUpdate }: StockEDBDetailsProps) {
       <CardContent className="space-y-4 pt-4">
         <div>
           <h3 className="font-semibold mb-2">Informations générales</h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
             <div className="text-muted-foreground">Employé:</div>
             <div>{stockEdb.employee?.name || stockEdb.externalEmployeeName || 'N/A'} {!stockEdb.employee?.id && ("- (Non-enregistré)")}</div>
             <div className="text-muted-foreground">Département:</div>

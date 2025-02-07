@@ -23,17 +23,17 @@ export const EDBTableRow: React.FC<EDBTableRowProps> = ({ edb, onRowClick, isSel
   return (
     <TableRow 
       onClick={() => onRowClick(edb)} 
-      className={`cursor-pointer hover:bg-muted/60  ${isSelected ? 'bg-muted/60' : ''}`}
+      className={`rounded-lg cursor-pointer hover:bg-muted/60 ${isSelected ? 'bg-muted/60' : ''}`}
     >
-      <TableCell>
-        <Link href={`/dashboard/etats/${displayId}`}><div className="text-xs md:font-medium hover:underline"># {displayId}</div></Link>
+      <TableCell className='rounded-l-lg'>
+        <Link href={`/dashboard/etats/${displayId}`}><div className="text-[0.6rem] md:text-xs hover:underline"># {displayId}</div></Link>
         <div className="hidden text-xs text-muted-foreground md:inline">
           {displayName}
         </div>
       </TableCell>
       <TableCell className="hidden sm:table-cell">{edb.category}</TableCell>
-      <TableCell className="text-right md:text-left ">
-        <StatusBadge status={edb.status as EDBStatus} textSize="tiny" />
+      <TableCell className="text-left ">
+        <StatusBadge status={edb.status as EDBStatus} />
       </TableCell>
       <TableCell className="hidden md:table-cell">{edb.department}</TableCell>
       <TableCell className="hidden sm:table-cell">

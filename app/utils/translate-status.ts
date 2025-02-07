@@ -19,6 +19,8 @@ export const translateStatus = (status: string): string => {
       'REJECTED': 'Rejeté',
       'FINAL_APPROVAL': 'Approbation finale',
       'COMPLETED': 'Traité',
+      'DELIVERED': 'Livré',
+      'AWAITING_FINANCE_APPROVAL': 'Traité',
     };
   
     return statusTranslations[status] || status;
