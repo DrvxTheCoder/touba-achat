@@ -178,7 +178,7 @@ const DashboardMetrics = () => {
             action={<Link href={'/dashboard/etats'}><Button variant={"outline"} className="h-8"> Gerer </Button></Link>}
           />
           <MetricCard
-            title="ODMs Actifs"
+            title="Total ODMs"
             value={metrics.activeOdms.total}
             description={`${Math.ceil(metrics.activeOdms.percentageChange)}% sur le mois dernier`}
             icon={<LuggageIcon className="h-8 w-8 text-muted-foreground" />}

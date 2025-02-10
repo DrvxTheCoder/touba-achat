@@ -83,7 +83,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     switch (bdc.status) {
       case "SUBMITTED":
       case "APPROVED_RESPONSABLE":
-        return ["DIRECTEUR", "DIRECTEUR_GENERAL", "DOG"].includes(userRole);
+        return ["DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DCM", "DRH", "DAF", "ADMIN"].includes(userRole);
       case "APPROVED_DIRECTEUR":
         return userRole === "DAF";
       default:
