@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
 
     let baseWhere: any = {
       createdAt: dateRange,
+      // status: { not: ODMStatus.REJECTED },
     };
 
     if (!hasFullAccess(role)) {
@@ -98,6 +99,7 @@ export async function GET(req: NextRequest) {
     const totalAmount = await prisma.ordreDeMission.aggregate({
       where: {
         ...baseWhere,
+        status: { not: ODMStatus.REJECTED },
         totalCost: { not: null },
       },
       _sum: {
