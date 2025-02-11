@@ -86,6 +86,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('category');
     const timeRange = searchParams.get('timeRange') || 'this-month';
+    const status = searchParams.get('status') || undefined;
 
     const result = await getStockEDBs({
       page,
@@ -94,7 +95,8 @@ export async function GET(req: NextRequest) {
       categoryId: categoryId ? parseInt(categoryId) : undefined,
       userRole: session.user.role as Role,
       userId: parseInt(session.user.id),
-      timeRange
+      timeRange,
+      status
     });
 
     return NextResponse.json(result);

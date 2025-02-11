@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { BDCStatus } from "@prisma/client";
 import { StatusBadge } from "@/app/dashboard/etats/components/StatusBadge";
+import Link from "next/link";
 
 interface BDCTableRowProps {
   bdc: BDC;
@@ -74,7 +75,7 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
         onClick={onClick}
       >
         <TableCell className="font-medium">
-          <div className="text-xs md:font-medium"># {bdc?.bdcId}</div>
+          <Link href={`/bdc?bdcId=${bdc?.bdcId}`}><div className="text-[0.6rem] md:text-xs hover:underline"># {bdc?.bdcId}</div></Link>
           <div className="hidden text-xs text-muted-foreground md:inline">
             {bdc?.creator.name}
           </div>

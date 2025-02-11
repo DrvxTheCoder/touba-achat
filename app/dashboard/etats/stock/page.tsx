@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, ChevronLeft, ChevronRight, LayoutListIcon, ListFilter, Package2, RefreshCwIcon, TagIcon } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, FilterIcon, LayoutListIcon, ListFilter, Package2, RefreshCwIcon, TagIcon } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SpinnerCircular } from "spinners-react";
@@ -105,14 +105,33 @@ export default function StockEDBPage() {
     const [total, setTotal] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
     const [timeRange, setTimeRange] = useState('this-month');
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [categories, setCategories] = useState<Category[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+    const [isTimeOptionSelected, setIsTimeOptionSelected] = useState(false);
+    const [isCatOptionSelected, setIsCatOptionSelected] = useState(false);
+    const [isStatusOptionSelected, setIsStatusOptionSelected] = useState(false);
 
   // Check if user has required role
   const hasAccess = session?.user?.role && ['ADMIN', 'MAGASINIER', 'DIRECTEUR_GENERAL'].includes(session.user.role);
+
+    const handleTimeRangeChange = (value: React.SetStateAction<string>) => {
+      setTimeRange(value);
+      setIsTimeOptionSelected(value !== '' && value !== 'this-month');
+    };
+  
+    const handleCategoryFilterChange = (value: React.SetStateAction<string>) => {
+      setCategoryFilter(value);
+      setIsCatOptionSelected(value !== '' && value !== 'all');
+    };
+  
+    const handleStatusFilterChange = (value: React.SetStateAction<string>) => {
+      setStatusFilter(value);
+      setIsStatusOptionSelected(value !== '' && value !== 'ALL');
+    }
 
   useEffect(() => {
     if (!hasAccess) return;
@@ -151,6 +170,7 @@ export default function StockEDBPage() {
         search: searchTerm,
         category: categoryFilter,
         timeRange: timeRange,
+        status: statusFilter,
       });
 
       const response = await fetch(`/api/edb/stock?${queryParams}`);
@@ -188,7 +208,7 @@ export default function StockEDBPage() {
   useEffect(() => {
     if (!hasAccess) return;
     fetchStockEDBs();
-  }, [hasAccess, page, searchTerm, categoryFilter, timeRange]);
+  }, [hasAccess, page, searchTerm, categoryFilter, timeRange, statusFilter]);
 
   const handleStockEdbSubmit = async (data: any) => {
     try {
@@ -286,8 +306,8 @@ export default function StockEDBPage() {
                   className="h-10 w-sm lg:max-w-sm"
                 />
               <div className="flex items-center space-x-2">
-              <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="gap-2">
+              <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+                <SelectTrigger className={`w-fit h-10 ${isTimeOptionSelected ? 'bg-primary text-white' : ''}`}>
                 <Calendar className="h-4 w-4" />
                   {/* <SelectValue placeholder="Période" className="hidden" /> */}
                 </SelectTrigger>
@@ -299,8 +319,20 @@ export default function StockEDBPage() {
                   <SelectItem value="last-year">Année dernière</SelectItem>
                 </SelectContent>
               </Select>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="space-x-1">
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+                <SelectTrigger className={`w-fit h-10 ${isStatusOptionSelected ? 'bg-primary text-white' : ''}`}>
+                <FilterIcon className="h-4 w-4" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Tous</SelectItem>
+                  <SelectItem value="SUBMITTED">Soumis</SelectItem>
+                  <SelectItem value="DELIVERED">Livré</SelectItem>
+                  <SelectItem value="PARTIALLY_DELIVERED">Livré (Reste manquant)</SelectItem>
+                  <SelectItem value="CONVERTED">Converti</SelectItem>
+                </SelectContent>
+              </Select>
+                <Select value={categoryFilter} onValueChange={handleCategoryFilterChange}>
+                  <SelectTrigger className={`w-fit h-10 ${isCatOptionSelected ? 'bg-primary text-white' : ''}`}>
                   <TagIcon className="h-4 w-4" />
                     {/* <SelectValue placeholder="Catégories" /> */}
                   </SelectTrigger>

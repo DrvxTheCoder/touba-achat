@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, ChevronLeft, ChevronRight, RefreshCw, RefreshCwIcon } from "lucide-react";
+import { Building2Icon, Calendar, ChevronLeft, ChevronRight, FilterIcon, RefreshCw, RefreshCwIcon } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { SpinnerCircular } from "spinners-react";
 import { toast } from "sonner";
@@ -44,13 +44,16 @@ export default function BDCPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [timeRange, setTimeRange] = useState('this-month');
+  const [timeRange, setTimeRange] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [departments, setDepartments] = useState<Department[]>([]);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [modalBDC, setModalBDC] = useState<BDC | null>(null);
+  const [isTimeOptionSelected, setIsTimeOptionSelected] = useState(false);
+  const [isDeptOptionSelected, setIsDeptOptionSelected] = useState(false);
+  const [isStatusOptionSelected, setIsStatusOptionSelected] = useState(false);
 
   const allowedRoles = [
     "ADMIN",
@@ -58,6 +61,21 @@ export default function BDCPage() {
     "DAF",
     "MAGASINIER",
   ];
+
+  const handleTimeRangeChange = (value: React.SetStateAction<string>) => {
+    setTimeRange(value);
+    setIsTimeOptionSelected(value !== '' && value !== 'this-month');
+  };
+
+  const handleDepartmentFilterChange = (value: React.SetStateAction<string>) => {
+    setDepartmentFilter(value);
+    setIsDeptOptionSelected(value !== '' && value !== 'all');
+  };
+
+  const handleStatusFilterChange = (value: React.SetStateAction<string>) => {
+    setStatusFilter(value);
+    setIsStatusOptionSelected(value !== '' && value !== 'all');
+  }
 
 
   useEffect(() => {
@@ -237,9 +255,9 @@ export default function BDCPage() {
             className="h-10 w-sm lg:max-w-sm"
           />
           <div className="flex flex-row gap-2 items-center">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-fit h-10">
-              <SelectValue placeholder="Période" />
+          <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+            <SelectTrigger className={`w-fit h-10 ${isTimeOptionSelected ? 'bg-primary text-white' : ''}`}>
+              <Calendar className="h-4 w-4" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="this-month">Ce mois</SelectItem>
@@ -250,9 +268,9 @@ export default function BDCPage() {
             </SelectContent>
           </Select>
           {allowedRoles.includes(session.user.role) && (
-            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="w-20 h-10">
-                <SelectValue placeholder="Départements" />
+            <Select value={departmentFilter} onValueChange={handleDepartmentFilterChange}>
+              <SelectTrigger className={`w-fit h-10 ${isDeptOptionSelected ? 'bg-primary text-white' : ''}`}>
+                <Building2Icon className="h-4 w-4" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Départements</SelectItem>
@@ -269,15 +287,14 @@ export default function BDCPage() {
           )}
 
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-20 h-10">
-              <SelectValue placeholder="Statut" />
+          <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+            <SelectTrigger className={`w-fit h-10 ${isStatusOptionSelected ? 'bg-primary text-white' : ''}`}>
+              <FilterIcon className="h-4 w-4" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tout les statuts</SelectItem>
-              <SelectItem value="DRAFT">Brouillon</SelectItem>
               <SelectItem value="SUBMITTED">Soumis</SelectItem>
-              <SelectItem value="APPROVED">Approuvé</SelectItem>
+              <SelectItem value="APPROVED_DIRECTEUR">Approuvé</SelectItem>
               <SelectItem value="APPROVED_DAF">Approuvé DAF</SelectItem>
               <SelectItem value="REJECTED">Rejeté</SelectItem>
               <SelectItem value="PRINTED">Décaissé</SelectItem>

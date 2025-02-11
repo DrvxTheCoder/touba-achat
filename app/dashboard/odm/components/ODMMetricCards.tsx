@@ -54,6 +54,9 @@ export default function ODMMetricsCard({ timeRange }: ODMMetricsProps) {
         <div className='md:w-fit'>
           <LoadingCard isLoadingTitle="Chargement des métriques..."/>
         </div>
+        <div className='md:w-fit'>
+          <LoadingCard isLoadingTitle="Chargement des métriques..."/>
+        </div>
         <div className="w-full grid gap-4 md:grid-cols-3">
         <LoadingCard isLoadingTitle="Chargement des métriques..." />
         <LoadingCard isLoadingTitle="Chargement des métriques..." />
@@ -88,6 +91,13 @@ export default function ODMMetricsCard({ timeRange }: ODMMetricsProps) {
     <SimpleMetricCard
         title="Total"
         value={metrics.total}
+        description={`${timeRangeLabels[timeRange] || 'Sur la période'}`}
+      />
+    </div>
+    <div className='md:w-fit'>
+    <SimpleMetricCard
+        title="Traités"
+        value={metrics.completed}
         description={`${timeRangeLabels[timeRange] || 'Sur la période'}`}
       />
     </div>

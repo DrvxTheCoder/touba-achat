@@ -90,7 +90,7 @@ export const SimpleMetricCard = ({ title, value, description }: MetricCardProps)
           <p className="mt-1 text-2xl font-bold leading-6">
             {value}
           </p>
-          <p className="text-xs text-muted-foreground mt-1 w-fit text-center items-center justify-center">
+          <p className="text-xs text-muted-foreground mt-1 w-fit text-center items-center justify-center md:text-nowrap">
             {description}
           </p>
         </div>

@@ -224,6 +224,7 @@ export async function getStockEDBs(params?: {
   userRole?: Role;
   userId?: number;
   timeRange?: string;
+  status?: string;
 }) {
   const skip = params?.page && params?.pageSize ? (params.page - 1) * params.pageSize : undefined;
   const take = params?.pageSize;
@@ -278,6 +279,7 @@ export async function getStockEDBs(params?: {
   const where: Prisma.StockEtatDeBesoinWhereInput = {
     // Base filters
     ...dateFilter,
+    ...(params?.status && params.status !== 'ALL' && { status: params.status as StockEDBStatus }),
     ...(params?.categoryId && { categoryId: params.categoryId }),
     // Role-based filtering
     ...(!UNRESTRICTED_ROLES.includes(params?.userRole as typeof UNRESTRICTED_ROLES[number]) && {
