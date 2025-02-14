@@ -103,7 +103,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
 
   const canReject = (userRole?: string | null) => {
     if (!userRole) return false;
-    return ["RESPONSABLE", "DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DAF"].includes(userRole) &&
+    return ["DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DAF"].includes(userRole) &&
            !["PRINTED", "REJECTED"].includes(bdc.status);
   };
   
