@@ -21,19 +21,71 @@ type CreateBDCInput = {
     userCreatorId: number;
   };
 
-async function generateBDCId(): Promise<string> {
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
-  const day = new Date().getDay();
-  const count = await prisma.bonDeCaisse.count({
-    where: {
-      bdcId: {
-        startsWith: `BDC${currentYear}${currentMonth}`,
+  async function getLatestBDCNumber(): Promise<number> {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const day = new Date().getDate().toString().padStart(2, '0');
+    const prefix = `BDC${currentYear}${currentMonth}${day}`;
+  
+    const latestBDC = await prisma.bonDeCaisse.findFirst({
+      where: {
+        bdcId: {
+          startsWith: prefix,
+        },
       },
-    },
-  });
-  return `BDC${currentYear}${currentMonth}${day}-${(count + 1).toString().padStart(3, '0')}`;
-}
+      orderBy: {
+        bdcId: 'desc',
+      },
+      select: {
+        bdcId: true,
+      },
+    });
+  
+    if (!latestBDC) {
+      return 0;
+    }
+  
+    const number = parseInt(latestBDC.bdcId.split('-')[1], 10);
+    return isNaN(number) ? 0 : number;
+  }
+  
+  async function generateBDCId(retryCount = 0): Promise<string> {
+    try {
+      const currentYear = new Date().getFullYear();
+      const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+      const day = new Date().getDate().toString().padStart(2, '0');
+      
+      const latestNumber = await getLatestBDCNumber();
+      const nextNumber = latestNumber + 1;
+      
+      const bdcId = `BDC${currentYear}${currentMonth}${day}-${nextNumber.toString().padStart(3, '0')}`;
+  
+      // Verify this ID doesn't already exist
+      const existing = await prisma.bonDeCaisse.findUnique({
+        where: {
+          bdcId: bdcId,
+        },
+      });
+  
+      if (existing && retryCount < 3) {
+        // If ID exists, retry with incremented number
+        console.warn(`BDC ID ${bdcId} already exists, retrying...`);
+        return generateBDCId(retryCount + 1);
+      } else if (retryCount >= 3) {
+        throw new Error("Impossible de générer un ID unique après 3 tentatives");
+      }
+  
+      return bdcId;
+    } catch (error) {
+      if (retryCount < 3) {
+        console.warn(`Erreur lors de la génération de l'ID, nouvelle tentative ${retryCount + 1}/3`);
+        return generateBDCId(retryCount + 1);
+      }
+      throw error;
+    }
+  }
+  
+  export { generateBDCId };
 
 async function createNotification(
   tx: any,
@@ -75,6 +127,8 @@ async function logBDCEvent(
       },
     });
   }
+
+  
 
   export async function createBDC(input: CreateBDCInput) {
     const totalAmount = input.description.reduce((sum, item) => sum + item.amount, 0);

@@ -103,8 +103,9 @@ const styles = StyleSheet.create({
     fontSize: 8,
   },
   itemDescription: {
-    fontSize: 10,
+    fontSize: 8,
     marginTop: 2,
+    flexWrap: 'wrap',
   },
   itemDetails: {
     fontSize: 10,
