@@ -48,18 +48,20 @@ export async function GET(req: Request) {
     // Add time range filtering
     switch (timeRange) {
       case 'today':
-        return {
+        where.createdAt = {
           gte: today,
           lte: now
         };
+        break;
         
       case 'this-week': {
         const monday = new Date(today);
         monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-        return {
+        where.createdAt = {
           gte: monday,
           lte: now
         };
+        break;
       }
       case 'this-month':
         where.createdAt = {

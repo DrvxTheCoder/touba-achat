@@ -43,7 +43,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         return NextResponse.json(updatedODM);
     } else {
       // Regular approval process
-      if (!['DIRECTEUR', 'DIRECTEUR_GENERAL', 'ADMIN'].includes(role)) {
+      if (!['DIRECTEUR', 'DIRECTEUR_GENERAL', 'ADMIN', 'DAF', 'DOG', 'DCM', 'DRH'].includes(role)) {
         return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
       }
 

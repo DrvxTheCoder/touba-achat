@@ -216,7 +216,7 @@ export async function approveODM(
   let newStatus: ODMStatus;
   let eventType: ODMEventType;
 
-  if (userRole === 'DIRECTEUR' && odm.status === 'SUBMITTED') {
+  if (userRole === 'DIRECTEUR' || userRole === 'DAF' || userRole === 'DRH' || userRole === 'DOG' || userRole === 'DCM' && odm.status === 'SUBMITTED') {
     newStatus = 'AWAITING_RH_PROCESSING';
     eventType = ODMEventType.AWAITING_RH_PROCESSING;
   } 
