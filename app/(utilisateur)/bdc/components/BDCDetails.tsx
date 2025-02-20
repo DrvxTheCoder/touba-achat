@@ -105,7 +105,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     if (!userRole) return false;
     return ["DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DAF"].includes(userRole) &&
            !["PRINTED", "REJECTED"].includes(bdc.status);
-  };
+  }; 
   
   const canDelete = (userRole?: string | null) => {
     if (!userRole) return false;

@@ -130,11 +130,13 @@ export const ODMDataTable: React.FC<ODMDataTableProps> = ({
                 <SelectValue placeholder="Sélectionner une période" />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="this-month">Ce mois</SelectItem>
-                <SelectItem value="last-month">Mois dernier</SelectItem>
-                <SelectItem value="last-3-months">Trimestre</SelectItem>
-                <SelectItem value="this-year">Cette année</SelectItem>
-                <SelectItem value="last-year">Année dernière</SelectItem>
+              {/* <SelectItem value="today">Aujourdhui</SelectItem>
+              <SelectItem value="this-week">Cette semaine</SelectItem> */}
+              <SelectItem value="this-month">Ce mois</SelectItem>
+              <SelectItem value="last-month">Mois dernier</SelectItem>
+              <SelectItem value="last-3-months">Trimestre</SelectItem>
+              <SelectItem value="this-year">Cette année</SelectItem>
+              <SelectItem value="last-year">Année dernière</SelectItem>
             </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-2">

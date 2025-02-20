@@ -98,7 +98,6 @@ export default function ODMMetricsCard({ timeRange }: ODMMetricsProps) {
     <SimpleMetricCard
         title="Traités"
         value={metrics.completed}
-        description={`${timeRangeLabels[timeRange] || 'Sur la période'}`}
       />
     </div>
     <div className="w-full grid gap-4 md:grid-cols-3">

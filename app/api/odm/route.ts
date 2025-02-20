@@ -40,12 +40,27 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const search = searchParams.get('search') || '';
     const timeRange = searchParams.get('timeRange') || 'this-month';
-
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
     let where: any = status ? { status } : {};
 
     // Add time range filtering
-    const now = new Date();
     switch (timeRange) {
+      case 'today':
+        return {
+          gte: today,
+          lte: now
+        };
+        
+      case 'this-week': {
+        const monday = new Date(today);
+        monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        return {
+          gte: monday,
+          lte: now
+        };
+      }
       case 'this-month':
         where.createdAt = {
           gte: new Date(now.getFullYear(), now.getMonth(), 1),

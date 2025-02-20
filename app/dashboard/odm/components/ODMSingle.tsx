@@ -130,7 +130,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
   const missionCostTotal = odm.missionCostPerDay * days;
 
  
-  const isAuthorized = userRole === "DIRECTEUR" || userRole === "DIRECTEUR_GENERAL" || userRole === "ADMIN";
+  const isAuthorized = userRole === "DIRECTEUR" || userRole === "DIRECTEUR_GENERAL" || userRole === "ADMIN" || userRole === "DAF" || userRole === "DOG" || userRole === "DCM" || userRole === "DRH";
   const canValidate = odm.status === 'SUBMITTED';
   const canProcess = userRole === 'RH' && odm.status === 'RH_PROCESSING';
   const canEdit = userRole === 'RH' && isProcessed;

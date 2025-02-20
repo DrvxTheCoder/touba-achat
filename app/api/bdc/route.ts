@@ -320,10 +320,25 @@ export async function GET(req: NextRequest) {
 // Add this helper function
 function getTimeRangeFilter(timeRange: string) {
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfYear = new Date(now.getFullYear(), 0, 1);
 
   switch (timeRange) {
+    case 'today':
+      return {
+        gte: today,
+        lte: now
+      };
+      
+    case 'this-week': {
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+      return {
+        gte: monday,
+        lte: now
+      };
+    }
     case 'this-month':
       return { gte: startOfMonth };
     case 'last-month':

@@ -260,6 +260,8 @@ export default function BDCPage() {
               <Calendar className="h-4 w-4" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="today">Aujourdhui</SelectItem>
+              <SelectItem value="this-week">Cette semaine</SelectItem>
               <SelectItem value="this-month">Ce mois</SelectItem>
               <SelectItem value="last-month">Mois dernier</SelectItem>
               <SelectItem value="last-3-months">Trimestre</SelectItem>

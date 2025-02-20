@@ -3,6 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { NotificationType } from '@prisma/client';
 
+
+// Singleton state
+let globalState = {
+  notifications: [] as CustomNotification[],
+  previousNotifications: [] as CustomNotification[],
+  subscribers: new Set<(notifications: CustomNotification[]) => void>(),
+};
+
 export type CustomNotification = {
   id: number;
   message: string;
@@ -13,11 +21,31 @@ export type CustomNotification = {
   ordreDeMissionId: number | null;
 };
 
-// Singleton state
-let globalState = {
-  notifications: [] as CustomNotification[],
-  previousNotifications: [] as CustomNotification[],
-  subscribers: new Set<(notifications: CustomNotification[]) => void>(),
+const extractDocumentId = (message: string): { type: 'edb' | 'odm' | 'bdc' | null, id: string | null } => {
+  const edbMatch = message.match(/EDB-[A-Z0-9]+/);
+  const odmMatch = message.match(/ODM-[A-Z0-9]+/);
+  const bdcMatch = message.match(/BDC\d{4}\d{1}\d{1}-\d{3}/);
+
+  if (edbMatch) return { type: 'edb', id: edbMatch[0] };
+  if (odmMatch) return { type: 'odm', id: odmMatch[0] };
+  if (bdcMatch) return { type: 'bdc', id: bdcMatch[0] };
+  
+  return { type: null, id: null };
+};
+
+const generateDocumentUrl = (type: 'edb' | 'odm' | 'bdc' | null, id: string | null): string => {
+  if (!type || !id) return '';
+  
+  switch (type) {
+    case 'edb':
+      return `/dashboard/etats/${id}`;
+    case 'odm':
+      return `/dashboard/odm/${id}`;
+    case 'bdc':
+      return `/bdc?bdcId=${id}`;
+    default:
+      return '';
+  }
 };
 
 // Singleton audio instance
@@ -40,9 +68,20 @@ async function fetchNotifications() {
       audioElement?.play().catch(console.error);
       
       newNotifications.forEach(notification => {
+        const { type, id } = extractDocumentId(notification.message);
+        const url = generateDocumentUrl(type, id);
+
         toast("Nouvelle notification", {
           description: notification.message,
-          duration: 5000
+          duration: 5000,
+          action: {
+            label: "Voir",
+            onClick: () => {
+              // Mark as read
+              fetch(`/api/notifications/${notification.id}`, { method: 'PUT' });
+              window.location.href = url;
+            },
+          },
         });
       });
     }
@@ -54,6 +93,7 @@ async function fetchNotifications() {
     console.error('Failed to fetch notifications:', error);
   }
 }
+
 
 // Start polling immediately
 let pollInterval: NodeJS.Timeout | null = null;
