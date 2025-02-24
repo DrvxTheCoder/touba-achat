@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
     const pageSize = parseInt(searchParams.get('pageSize') || '5');
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('category');
+    const department = searchParams.get('department') || null;
     const timeRange = searchParams.get('timeRange') || 'this-month';
     const status = searchParams.get('status') || undefined;
 
@@ -96,7 +97,8 @@ export async function GET(req: NextRequest) {
       userRole: session.user.role as Role,
       userId: parseInt(session.user.id),
       timeRange,
-      status
+      status,
+      department: department ? parseInt(department) : undefined,
     });
 
     return NextResponse.json(result);

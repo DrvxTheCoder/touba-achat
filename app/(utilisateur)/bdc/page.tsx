@@ -461,7 +461,7 @@ export default function BDCPage() {
           if (!open) handleCloseModal();
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-8">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto px-8 p-2">
           {modalBDC && (
             <BDCDetails 
               bdc={modalBDC}

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, ChevronLeft, ChevronRight, FilterIcon, LayoutListIcon, ListFilter, Package2, RefreshCwIcon, TagIcon } from "lucide-react";
+import { Building2Icon, Calendar, ChevronLeft, ChevronRight, FilterIcon, LayoutListIcon, ListFilter, Package2, RefreshCwIcon, TagIcon } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SpinnerCircular } from "spinners-react";
@@ -110,6 +110,8 @@ export default function StockEDBPage() {
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [categories, setCategories] = useState<Category[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
+    const [departmentFilter, setDepartmentFilter] = useState("all");
+    const [isDeptOptionSelected, setIsDeptOptionSelected] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
     const [isTimeOptionSelected, setIsTimeOptionSelected] = useState(false);
     const [isCatOptionSelected, setIsCatOptionSelected] = useState(false);
@@ -126,6 +128,11 @@ export default function StockEDBPage() {
     const handleCategoryFilterChange = (value: React.SetStateAction<string>) => {
       setCategoryFilter(value);
       setIsCatOptionSelected(value !== '' && value !== 'all');
+    };
+
+    const handleDepartmentFilterChange = (value: React.SetStateAction<string>) => {
+      setDepartmentFilter(value);
+      setIsDeptOptionSelected(value !== '' && value !== 'all');
     };
   
     const handleStatusFilterChange = (value: React.SetStateAction<string>) => {
@@ -171,6 +178,7 @@ export default function StockEDBPage() {
         category: categoryFilter,
         timeRange: timeRange,
         status: statusFilter,
+        department: departmentFilter,
       });
 
       const response = await fetch(`/api/edb/stock?${queryParams}`);
@@ -208,7 +216,7 @@ export default function StockEDBPage() {
   useEffect(() => {
     if (!hasAccess) return;
     fetchStockEDBs();
-  }, [hasAccess, page, searchTerm, categoryFilter, timeRange, statusFilter]);
+  }, [hasAccess, page, searchTerm, categoryFilter, timeRange, statusFilter, departmentFilter]);
 
   const handleStockEdbSubmit = async (data: any) => {
     try {
@@ -298,16 +306,16 @@ export default function StockEDBPage() {
 
         <div className="grid flex-1 gap-4 lg:grid-cols-3 xl:grid-cols-3">
           <div className="lg:col-span-2 md:col-span-4 space-y-4">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-2 space-y-2">
             <Input 
                   placeholder="Recherche..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-10 w-sm lg:max-w-sm"
+                  className="h-8 w-sm lg:max-w-sm"
                 />
               <div className="flex items-center space-x-2">
               <Select value={timeRange} onValueChange={handleTimeRangeChange}>
-                <SelectTrigger className={`w-fit h-10 ${isTimeOptionSelected ? 'bg-primary text-white' : ''}`}>
+                <SelectTrigger className={`w-fit h-8 ${isTimeOptionSelected ? 'bg-primary text-white' : ''}`}>
                 <Calendar className="h-4 w-4" />
                   {/* <SelectValue placeholder="Période" className="hidden" /> */}
                 </SelectTrigger>
@@ -320,7 +328,7 @@ export default function StockEDBPage() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-                <SelectTrigger className={`w-fit h-10 ${isStatusOptionSelected ? 'bg-primary text-white' : ''}`}>
+                <SelectTrigger className={`w-fit h-8 ${isStatusOptionSelected ? 'bg-primary text-white' : ''}`}>
                 <FilterIcon className="h-4 w-4" />
                 </SelectTrigger>
                 <SelectContent>
@@ -331,24 +339,42 @@ export default function StockEDBPage() {
                   <SelectItem value="CONVERTED">Converti</SelectItem>
                 </SelectContent>
               </Select>
-                <Select value={categoryFilter} onValueChange={handleCategoryFilterChange}>
-                  <SelectTrigger className={`w-fit h-10 ${isCatOptionSelected ? 'bg-primary text-white' : ''}`}>
-                  <TagIcon className="h-4 w-4" />
-                    {/* <SelectValue placeholder="Catégories" /> */}
+              <Select value={categoryFilter} onValueChange={handleCategoryFilterChange}>
+                <SelectTrigger className={`w-fit h-8 ${isCatOptionSelected ? 'bg-primary text-white' : ''}`}>
+                <TagIcon className="h-4 w-4" />
+                  {/* <SelectValue placeholder="Catégories" /> */}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Toute les catégorie</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem 
+                      key={category.id}
+                      value={category.id.toString()}
+                      onSelect={() => setCategoryFilter(category.id.toString())}
+                    >
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hasAccess && (
+                <Select value={departmentFilter} onValueChange={handleDepartmentFilterChange}>
+                  <SelectTrigger className={`w-fit h-8 ${isDeptOptionSelected ? 'bg-primary text-white' : ''}`}>
+                    <Building2Icon className="h-4 w-4" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>Toute les catégorie</SelectItem>
-                    {categories.map((category) => (
+                    <SelectItem value="all">Départements</SelectItem>
+                    {departments.map((department) => (
                       <SelectItem 
-                        key={category.id}
-                        value={category.id.toString()}
-                        onSelect={() => setCategoryFilter(category.id.toString())}
+                        key={department.id}
+                        value={department.id.toString()}
                       >
-                        {category.name}
+                        {department.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              )}
               </div>
             </div>
             <Card className="rounded-2xl">

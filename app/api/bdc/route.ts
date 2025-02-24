@@ -149,7 +149,7 @@ export async function PUT(req: NextRequest) {
       case "print": {
         const hasCashierAccess = user.access.includes('CASHIER');
         const isAllowedRole = ['DIRECTEUR_GENERAL', 'DAF', 'ADMIN', 'MAGASINIER'].includes(user.role as Role);
-        if (!hasCashierAccess || !isAllowedRole) {
+        if (!hasCashierAccess && !isAllowedRole) {
           return NextResponse.json({ error: "Action non autorisée" }, { status: 403 });
         }
         const printedBdc = await markBDCAsPrinted(bdcIdNum, user.id);

@@ -6,13 +6,14 @@ import { BDC } from "../types/bdc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Printer, FileCheck, FileX, CheckCircle, BanIcon, Trash2 } from "lucide-react";
+import { Printer, FileCheck, FileX, CheckCircle, BanIcon, Trash2, AlertCircle, AlertTriangle, CoinsIcon, HandCoinsIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -49,15 +50,15 @@ interface BDCDetailsProps {
 }
 
 function formatDate(date: Date | string) {
-    if (!(date instanceof Date) && typeof date !== 'string') {
-      return 'Invalid Date';
-    }
-    return new Date(date).toLocaleString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  if (!(date instanceof Date) && typeof date !== 'string') {
+    return 'Invalid Date';
   }
+  return new Date(date).toLocaleString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
 
 const rejectFormSchema = z.object({
   reason: z.string().min(1, "La raison du rejet est requise"),
@@ -68,8 +69,11 @@ type RejectFormData = z.infer<typeof rejectFormSchema>;
 export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
   const { data: session } = useSession();
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isApproveDafDialogOpen, setIsApproveDafDialogOpen] = useState(false);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<RejectFormData>({
     resolver: zodResolver(rejectFormSchema),
@@ -78,12 +82,50 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     },
   });
 
+  // Check if user is from DAF department
+  const isDafDepartment = bdc.department.name === "Direction Administrative et Financière";
+  
+  // Check if user has admin or DG role (they can approve any department's BDCs)
+  const hasOverrideRole = session?.user?.role === "DIRECTEUR_GENERAL" || session?.user?.role === "ADMIN";
+  
+  // Check if user is a director from the same department as the BDC
+  const isDirectorOfSameDept = (userRole?: string | null, departmentName?: string) => {
+    if (!userRole || !departmentName) return false;
+    
+    // If user is DAF, they can approve DAF department BDCs
+    if (userRole === "DAF" && departmentName === "Direction Administrative et Financière") {
+      return true;
+    }
+
+    if (userRole === "DOG" && departmentName === "Direction Opération Gaz") {
+      return true;
+    }
+
+    if (userRole === "DCM" && departmentName === "Direction Commerciale et Marketing") {
+      return true;
+    }
+
+    if (userRole === "DRH" && departmentName === "Direction Ressources Humaines") {
+      return true;
+    }
+    if (userRole === "DIRECTEUR") {
+      return true;
+    }
+    return false;
+  };
+
   const canApprove = (userRole?: string | null) => {
     if (!userRole) return false;
+    
     switch (bdc.status) {
       case "SUBMITTED":
       case "APPROVED_RESPONSABLE":
-        return ["DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DCM", "DRH", "DAF", "ADMIN"].includes(userRole);
+        // Admin and DG can approve any BDC
+        if (hasOverrideRole) return true;
+        
+        // Directors can only approve their department's BDCs
+        return isDirectorOfSameDept(userRole, bdc.department.name);
+        
       case "APPROVED_DIRECTEUR":
         return userRole === "DAF";
       default:
@@ -103,9 +145,22 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
 
   const canReject = (userRole?: string | null) => {
     if (!userRole) return false;
-    return ["DIRECTEUR", "DIRECTEUR_GENERAL", "DOG", "DAF"].includes(userRole) &&
+    
+    // Admin and DG can reject any BDC
+    if (["DIRECTEUR_GENERAL", "ADMIN"].includes(userRole)) {
+      return !["PRINTED", "REJECTED"].includes(bdc.status);
+    }
+    
+    // DAF can reject any BDC in APPROVED_DIRECTEUR status
+    if (userRole === "DAF" && bdc.status === "APPROVED_DIRECTEUR") {
+      return true;
+    }
+    
+    // Directors can only reject their department's BDCs
+    return ["DIRECTEUR", "DOG", "DCM", "DRH", "DAF"].includes(userRole) &&
+           isDirectorOfSameDept(userRole, bdc.department.name) &&
            !["PRINTED", "REJECTED"].includes(bdc.status);
-  }; 
+  };
   
   const canDelete = (userRole?: string | null) => {
     if (!userRole) return false;
@@ -113,8 +168,6 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
   }
 
   const canPrint = (userRole?: Role, userAccesses?: Access[]) => {
-  
-
     // Check for allowed roles
     const isAllowedRole = ["DAF", "ADMIN", "DIRECTEUR_GENERAL", "MAGASINIER"].includes(userRole as string);
     
@@ -152,6 +205,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
         description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'approbation"
       });
     } finally {
+      setIsApproveDialogOpen(false);
       setIsLoading(false);
     }
   };
@@ -178,6 +232,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
         description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'approbation DAF"
       });
     } finally {
+      setIsApproveDafDialogOpen(false);
       setIsLoading(false);
     }
   };
@@ -224,7 +279,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Erreur lors de l\'impression');
+        throw new Error(error.error || 'Erreur lors de l\'impression');
       }
 
       toast.success("Succès", {
@@ -237,34 +292,42 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
         description: error instanceof Error ? error.message : "Une erreur est survenue lors de la préparation pour impression"
       });
     } finally {
+      setIsPrintDialogOpen(false);
       setIsLoading(false);
     }
   };
 
-// Add delete handler
-const handleDelete = async () => {
- try {
-   setIsLoading(true);
-   const response = await fetch(`/api/bdc?id=${bdc.id}`, {
-     method: 'DELETE',
-   });
+  // Add delete handler
+  const handleDelete = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/bdc?id=${bdc.id}`, {
+        method: 'DELETE',
+      });
 
-   if (!response.ok) {
-     const error = await response.json();
-     throw new Error(error.message || 'Erreur lors de la suppression');
-   }
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erreur lors de la suppression');
+      }
 
-   toast.success("BDC supprimé avec succès");
-   await onRefresh();
- } catch (error) {
-   toast.error("Erreur", {
-     description: error instanceof Error ? error.message : "Une erreur est survenue lors de la suppression"
-   });
- } finally {
-   setIsDeleteDialogOpen(false);
-   setIsLoading(false);
- }
-};
+      toast.success("BDC supprimé avec succès");
+      await onRefresh();
+    } catch (error) {
+      toast.error("Erreur", {
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors de la suppression"
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setIsLoading(false);
+    }
+  };
+
+  // Determine if we should show the "Approval requires director" button
+  const showDirectorRequiredButton = 
+    session?.user?.role === "DAF" && 
+    !isDafDepartment && 
+    ["SUBMITTED", "APPROVED_RESPONSABLE"].includes(bdc.status) &&
+    !hasOverrideRole;
 
   return (
     <>
@@ -314,6 +377,12 @@ const handleDelete = async () => {
                       <p>{bdc.printedBy?.name}</p>
                     </div>
                   )}
+                  {bdc.status === "REJECTED" && bdc.auditLogs && bdc.auditLogs.length > 0 && (
+                    <div>
+                      <p className="font-extrabold text-destructive">Rejeté par:</p>
+                      <p>{bdc.auditLogs.find(log => log.eventType === "REJECTED")?.user?.id || "Inconnu"}</p>
+                    </div>
+                  )}  
                 </div>
               </div>
 
@@ -353,8 +422,8 @@ const handleDelete = async () => {
 
             <Separator />
 
-                          {/* Expense Items */}
-                          <div>
+              {/* Expense Items */}
+              <div>
                 <h3 className="font-semibold mb-2">Articles et Montants</h3>
                 <Table>
                   <TableHeader>
@@ -402,7 +471,7 @@ const handleDelete = async () => {
               <div className="flex flex-row gap-2">
                 {canApprove(session?.user?.role) && bdc.status !== 'APPROVED_DIRECTEUR' && (
                   <Button
-                    onClick={handleApprove}
+                    onClick={() => setIsApproveDialogOpen(true)}
                     disabled={isLoading}
                     variant="outline"
                     className="text-primary h-8 gap-1"
@@ -411,30 +480,51 @@ const handleDelete = async () => {
                     Approuver
                   </Button>
                 )}
+                
+                {/* Show disabled button for DAF users viewing BDCs from other departments */}
+                {showDirectorRequiredButton && (
+                  <Button
+                    disabled={true}
+                    variant="outline"
+                    className="h-8 gap-1"
+                  >
+                    <AlertCircle className="mr-2 h-4 w-4" />
+                    Approbation Direction Requise
+                  </Button>
+                )}
+                
                 {canApproveDAF(session?.user?.role) && bdc.status === 'APPROVED_DIRECTEUR' && (
                   <Button
-                    onClick={handleApproveDAF}
+                    onClick={() => setIsApproveDafDialogOpen(true)}
                     disabled={isLoading}
+                    className="text-primary gap-1 h-8"
                     variant="outline"
-                    className="text-primary gap-1"
                   >
-                    <CheckCircle className="mr-2 h-4 w-4" />
+                    <HandCoinsIcon className="mr-2 h-4 w-4" />
                     Approuver (DAF)
                   </Button>
                 )}
-                {canReject(session?.user?.role) && (
+                {canReject(session?.user?.role) && (bdc.status !== 'APPROVED_DAF') && (
                   <Button
                     onClick={() => setIsRejectDialogOpen(true)}
                     disabled={isLoading}
                     variant="outline"
-                    className="text-destructive gap-1"
+                    className="text-destructive gap-1 h-8"
                   >
                     <BanIcon className="mr-2 h-4 w-4" />
                     Rejeter
                   </Button>
                 )}
                 {canPrint(session?.user?.role, session?.user?.access) && (
-                  <PrintBDCButton bdcId={bdc.id} onPrintComplete={onRefresh} />
+                  <Button
+                    onClick={() => setIsPrintDialogOpen(true)}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="gap-1 h-8"
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Imprimer
+                  </Button>
                 )}
               </div>
               
@@ -444,45 +534,148 @@ const handleDelete = async () => {
                     onClick={() => setIsDeleteDialogOpen(true)}
                     disabled={isLoading}
                     variant="destructive"
+                    className="h-8"
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
-
-                <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                    <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Supprimer le bon de caisse</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-3">
-                        <p>Êtes-vous sûr de vouloir supprimer ce bon de caisse ? Cette action est irréversible.</p>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setIsDeleteDialogOpen(false)}
-                        disabled={isLoading}
-                        >
-                        Annuler
-                        </Button>
-                        <Button
-                        onClick={handleDelete}
-                        disabled={isLoading}
-                        variant="destructive"
-                        >
-                        Supprimer
-                        {isLoading && (<Icons.spinner className="ml-2 h-4 w-4 animate-spin" />)}
-                        </Button>
-                    </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-                </div>
-                )}
-              
-
+              </div>
+              )}
             </div>
         </CardContent>
       </Card>
+
+      {/* Approve Dialog */}
+      <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approuver le bon de caisse</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir approuver ce bon de caisse?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 p-3 rounded-lg w-full border border-dashed">
+            <p className="text-sm font-bold">Employé: <text className="font-normal">{bdc.creator.name}</text></p>
+            <p className="text-sm font-bold">Montant total: <text className="font-normal">XOF {bdc.totalAmount}</text></p>
+            <p className="text-sm font-bold">Département: <text className="font-normal">{bdc.department.name}</text></p>
+          </div>
+          <DialogFooter>
+
+            <div className="w-full flex flex-row justify-between items-center">
+            <p className="text-muted-foreground flex flex-row gap-1 items-center font-medium"> 
+              <AlertTriangle className="h-3 w-3" />
+              <small>Action irréversible</small>
+            </p>
+              <div className="flex flex-row gap-2">
+                <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsApproveDialogOpen(false)}
+                disabled={isLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleApprove}
+                disabled={isLoading}
+                variant="default"
+              >
+                Confirmer
+                {isLoading && (<Icons.spinner className="ml-2 h-4 w-4 animate-spin" />)}
+              </Button>
+              </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve DAF Dialog */}
+      <Dialog open={isApproveDafDialogOpen} onOpenChange={setIsApproveDafDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approuver le bon de caisse (DAF)</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir approuver ce bon de caisse en tant que DAF ? Cette action permettra de décaisser les fonds.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 p-3 rounded-lg w-full border border-dashed">
+            <p className="text-sm font-bold">Employé: <text className="font-normal">{bdc.creator.name}</text></p>
+            <p className="text-sm font-bold">Montant total: <text className="font-normal">XOF {bdc.totalAmount}</text></p>
+            <p className="text-sm font-bold">Département: <text className="font-normal">{bdc.department.name}</text></p>
+          </div>
+          <DialogFooter>
+
+            <div className="w-full flex flex-row justify-between items-center">
+            <p className="text-muted-foreground flex flex-row gap-1 items-center font-medium"> 
+              <AlertTriangle className="h-3 w-3" />
+              <small>Action irréversible</small>
+            </p>
+              <div className="flex flex-row gap-2">
+                <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsApproveDafDialogOpen(false)}
+                disabled={isLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleApproveDAF}
+                disabled={isLoading}
+                variant="default"
+              >
+                Confirmer
+                {isLoading && (<Icons.spinner className="ml-2 h-4 w-4 animate-spin" />)}
+              </Button>
+              </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Dialog */}
+      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Impression BDC</DialogTitle>
+            <DialogDescription>
+              Confirmez-vous l&apos;impression / décaissement du BDC? 
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 p-3 rounded-lg w-full border border-dashed">
+            <p className="text-sm font-bold">Employé: <text className="font-normal">{bdc.creator.name}</text></p>
+            <p className="text-sm font-bold">Total: <text className="font-normal">XOF {bdc.totalAmount}</text></p>
+            <p className="text-sm font-bold">Département: <text className="font-normal">{bdc.department.name}</text></p>
+            <p className="text-sm font-bold">Approuvé par: <text className="font-normal">{bdc.approver?.name}</text></p>
+            <p className="text-sm font-bold">Approbation DAF: <text className="font-normal">{bdc.approverDAF?.name}</text></p>
+          </div>
+          <DialogFooter>
+            <div className="w-full flex flex-row justify-between items-center">
+            <p className="text-muted-foreground flex flex-row gap-1 items-center font-medium"> 
+              <AlertTriangle className="h-3 w-3" />
+              <small>Action irréversible</small>
+            </p>
+              <div className="flex flex-row gap-2">
+                <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsPrintDialogOpen(false)}
+                disabled={isLoading}
+              >
+                Annuler
+              </Button>
+              <PrintBDCButton 
+                  bdcId={bdc.id}
+                  disabled={isLoading}
+                  onPrintComplete={() => {
+                  setIsPrintDialogOpen(false);
+                  onRefresh();
+                }} />
+              </div>
+            </div>
+
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reject Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
@@ -524,10 +717,41 @@ const handleDelete = async () => {
                   variant="destructive"
                 >
                   Rejeter
+                  {isLoading && (<Icons.spinner className="ml-2 h-4 w-4 animate-spin" />)}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le bon de caisse</DialogTitle>
+          </DialogHeader>
+          <div className="py-3">
+            <p>Êtes-vous sûr de vouloir supprimer ce bon de caisse ? Cette action est irréversible.</p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleDelete}
+              disabled={isLoading}
+              variant="destructive"
+            >
+              Supprimer
+              {isLoading && (<Icons.spinner className="ml-2 h-4 w-4 animate-spin" />)}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

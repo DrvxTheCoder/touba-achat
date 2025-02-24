@@ -367,6 +367,7 @@ export async function approveBDC(
       case Role.DRH:
       case Role.DCM:
       case Role.DAF:
+      case Role.ADMIN:
         newStatus = BDCStatus.APPROVED_DIRECTEUR;
         notificationType = NotificationType.BDC_APPROVED_DIRECTOR;
         eventType = BDCEventType.APPROVED_DIRECTEUR;

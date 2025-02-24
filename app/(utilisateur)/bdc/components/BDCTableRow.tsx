@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { BDCStatus } from "@prisma/client";
 import { StatusBadge } from "@/app/dashboard/etats/components/StatusBadge";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
 
 interface BDCTableRowProps {
   bdc: BDC;
@@ -80,7 +82,7 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
             {bdc?.creator.name}
           </div>
         </TableCell>
-        <TableCell className="sm:table-cell">
+        <TableCell className="hidden sm:table-cell">
           {truncatedTitle || 'N/A'}
         </TableCell>
         <TableCell className="hidden sm:table-cell">
@@ -91,6 +93,9 @@ export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
         </TableCell>
         <TableCell className="text-right sm:table-cell">
           <StatusBadge status={bdc?.status} />
+        </TableCell>
+        <TableCell className="text-xs md:hidden sm:table-cell text-right">
+          <Button variant={'outline'} size={'icon'}><Link href={`/bdc?bdcId=${bdc.bdcId}`}><OpenInNewWindowIcon className='h-4 w-4'/></Link></Button>
         </TableCell>
       </TableRow>
     );

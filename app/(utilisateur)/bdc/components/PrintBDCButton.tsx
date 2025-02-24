@@ -8,9 +8,10 @@ import { toast } from 'sonner';
 interface PrintBDCButtonProps {
   bdcId: number;
   onPrintComplete?: () => void;
+  disabled?: boolean;
 }
 
-export const PrintBDCButton = ({ bdcId, onPrintComplete }: PrintBDCButtonProps) => {
+export const PrintBDCButton = ({ bdcId, onPrintComplete, disabled }: PrintBDCButtonProps) => {
   const [isPrinting, setIsPrinting] = useState(false);
 
   const handlePrint = async () => {
@@ -61,7 +62,7 @@ export const PrintBDCButton = ({ bdcId, onPrintComplete }: PrintBDCButtonProps) 
   return (
     <Button
       onClick={handlePrint}
-      disabled={isPrinting}
+      disabled={isPrinting || disabled}
       className="gap-2"
       variant="outline"
     >
