@@ -227,6 +227,7 @@ model User {
   createdBdcs           BonDeCaisse[] @relation("BDCUserCreator")
   approvedBdcs          BonDeCaisse[] @relation("BDCApprover")
   approvedDAFBdcs       BonDeCaisse[] @relation("BDCApproverDAF")
+  rejectedBdcs          BonDeCaisse[] @relation("BDCRejector")
   printedBdcs           BonDeCaisse[] @relation("BDCPrinter")
   bdcAuditLogs          BonDeCaisseAuditLog[]
 }
@@ -441,6 +442,8 @@ model BonDeCaisse {
   userCreator     User            @relation("BDCUserCreator", fields: [userCreatorId], references: [id])
   approverId      Int?
   approver        User?           @relation("BDCApprover", fields: [approverId], references: [id])
+  rejectorId      Int?
+  rejector        User?           @relation("BDCRejector", fields: [rejectorId], references: [id])
   approverDAFId   Int?
   approverDAF     User?           @relation("BDCApproverDAF", fields: [approverDAFId], references: [id])
   printedById     Int?

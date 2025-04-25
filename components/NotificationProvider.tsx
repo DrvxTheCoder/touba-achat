@@ -44,14 +44,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     console.log('Adding notification:', notification);
     setNotifications(prev => [notification, ...prev]);
     toast(notification.message, {
-      duration: 5000,
-      action: {
-        label: 'Voir',
-        onClick: () => {
-          // Navigate to the relevant page based on entityType and entityId
-          // You'll need to implement this navigation logic
-        },
-      },
+      duration: 3000,
+      // action: {
+      //   label: 'Voir',
+      //   onClick: () => {
+      //     // Navigate to the relevant page based on entityType and entityId
+      //     // You'll need to implement this navigation logic
+      //   },
+      // },
     });
   }, []);
 

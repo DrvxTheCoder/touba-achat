@@ -295,6 +295,7 @@ export async function GET(req: NextRequest) {
           department: true,
           creator: true,
           approver: true,
+          rejector: true,
           approverDAF: true,
           printedBy: true,
           auditLogs: true,
