@@ -103,7 +103,7 @@ export async function createODM(
 
   // Determine initial status based on the user's role
   let initialStatus: ODMStatus = 'SUBMITTED';
-  if (user.role === 'DIRECTEUR' || user.role === 'DIRECTEUR_GENERAL' || user.access.includes('APPROVE_ODM' as Access)) {
+  if (user.role === 'DIRECTEUR' || user.role === 'DAF' || user.role === 'DRH' || user.role === 'DCM' || user.role === 'DOG' || user.role === 'DIRECTEUR_GENERAL' || user.access.includes('APPROVE_ODM' as Access)) {
     initialStatus = 'AWAITING_RH_PROCESSING';
   }
 
