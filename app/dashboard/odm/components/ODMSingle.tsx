@@ -134,7 +134,10 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
   const canValidate = odm.status === 'SUBMITTED';
   const canProcess = userRole === 'RH' && odm.status === 'RH_PROCESSING';
   const canEdit = userRole === 'RH' && isProcessed;
-  const isRHDirector = userRole === "DIRECTEUR" && userDepartment === "Direction Ressources Humaines";
+  const isRHDirector = (
+    (userRole === "DIRECTEUR" && userDepartment === "Direction Ressources Humaines") ||
+    userRole === "DRH"
+  );
   const canValidateAsRHDirector = isRHDirector && odm.status === 'AWAITING_RH_PROCESSING';
   const cannotValidateAsRHDirector = isRHDirector && odm.department?.name !== "Direction Ressources Humaines";
 
