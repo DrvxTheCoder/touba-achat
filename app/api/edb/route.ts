@@ -63,6 +63,12 @@ function getDateRange(timeRange: string): { gte: Date; lte: Date } {
         gte: new Date(now.getFullYear() - 1, 0, 1),
         lte: new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
       };
+
+    case 'alltime':
+      return {
+        gte: new Date(2000, 0, 1),
+        lte: new Date(2100, 0, 1),
+      };
       
     default:
       return {

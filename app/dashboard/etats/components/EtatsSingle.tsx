@@ -877,7 +877,7 @@ const statusMapping = {
                   </Popover>
                   </ul>
                   <span className="font-semibold">Références Techniques</span>
-                  <span className="text-muted-foreground">Non-renseigné</span>
+                  <span className="text-muted-foreground">{edb.references || "Non-renseigné" }</span>
                   <Separator className="my-2" />
                   <ul className="grid gap-3">
                     <li className="flex items-center justify-between font-semibold">
