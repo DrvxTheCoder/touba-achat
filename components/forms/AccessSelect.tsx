@@ -17,7 +17,16 @@ const accessOptions: { value: Access; label: string }[] = [
   { value: 'RH_APPROVE', label: 'Approbation RH' },
   { value: 'RH_PROCESS', label: 'Traitement ODM' },
   { value: 'CASHIER', label: 'Caisse' },
+  { value: 'CREATE_PRODUCTION_INVENTORY', label: 'Création inventaire'},
+  { value: 'VIEW_PRODUCTION_DASHBOARD', label: 'Voir tableau de bord production'},
+  { value: 'VALIDATE_PRODUCTION_INVENTORY', label: 'Valider inventaire'},
+  { value: 'EXPORT_PRODUCTION_REPORTS', label: 'Exporter rapports production'},
 ]
+
+  // CREATE_PRODUCTION_INVENTORY
+  // VIEW_PRODUCTION_DASHBOARD
+  // VALIDATE_PRODUCTION_INVENTORY
+  // EXPORT_PRODUCTION_REPORTS
 
 interface AccessSelectProps {
   value?: Access[];

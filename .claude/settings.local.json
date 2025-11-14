@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma generate:*)",
+      "Bash(node scripts/add-production-permissions.js:*)",
+      "Bash(dir \"c:\\Users\\TOUBA OIL\\Documents\\Service Informatique\\dev\\touba-achat\\app\\dashboard\\production\\components\")",
+      "Bash(dir \"c:\\Users\\TOUBA OIL\\Documents\\Service Informatique\\dev\\touba-achat\\app\\dashboard\\production\" /s /b)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(dir:*)",
+      "Bash(echo:*)",
+      "Bash(npx prisma db:*)",
+      "Bash(cat:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "Bash(git stash:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

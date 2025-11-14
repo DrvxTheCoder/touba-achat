@@ -5,7 +5,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles"
 import clsx from "clsx";
 import CustomLogoSVG from "@/components/logos/CustomLogoSVG";
-import { Home, Package, ShoppingCart, Users, SettingsIcon, LogOut, LayoutGrid, LuggageIcon, HomeIcon } from "lucide-react";
+import { Home, Package, ShoppingCart, Users, SettingsIcon, LogOut, LayoutGrid, LuggageIcon, HomeIcon, FactoryIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -15,11 +15,24 @@ export default function Sidebar(){
     const { data: session } = useSession();
     const { hasReadAccess, hasWriteAccess } = useAllowedRoles();
 
-    const links = hasReadAccess ? [
+    // Check if user has production access
+    const hasProductionAccess = session?.user?.access?.includes('VIEW_PRODUCTION_DASHBOARD') ||
+                                session?.user?.access?.includes('CREATE_PRODUCTION_INVENTORY');
+
+    const baseLinks = [
         { href: "/dashboard", icon: LayoutGrid, label: "Dashboard", badgeCount: 0 },
         { href: "/acceuil", icon: HomeIcon, label: "Accueil", badgeCount: 0 },
         { href: "/dashboard/etats", icon: Package, label: "États de Besoins", badgeCount: 0 },
         { href: "/dashboard/odm", icon: LuggageIcon, label: "Ordres de Missions", badgeCount: 0 },
+    ];
+
+    // Add production link only if user has access
+    if (hasProductionAccess) {
+        baseLinks.push({ href: "/dashboard/production", icon: FactoryIcon, label: "Production", badgeCount: 0 });
+    }
+
+    const links = hasReadAccess ? [
+        ...baseLinks,
         { href: "/dashboard/employes", icon: Users, label: "Employés", badgeCount: 0 },
         // { href: "/dashboard/parametres", icon: SettingsIcon, label: "Paramètres", badgeCount: 0 }
     ] : [

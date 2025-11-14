@@ -52,7 +52,7 @@ const employeeFormSchema = z
     confirmPassword: z.string().min(6, {
       message: "Le mot de passe de confirmation doit comporter au moins 6 caractères.",
     }),
-    access: z.array(z.enum(['APPROVE_EDB', 'ATTACH_DOCUMENTS', 'CHOOSE_SUPPLIER', 'IT_APPROVAL', 'FINAL_APPROVAL', 'RH_APPROVE', 'RH_PROCESS'])),
+    access: z.array(z.enum(['APPROVE_EDB', 'ATTACH_DOCUMENTS', 'CHOOSE_SUPPLIER', 'IT_APPROVAL', 'FINAL_APPROVAL', 'RH_APPROVE', 'RH_PROCESS', 'CASHIER', 'APPROVE_ODM', 'APPROVE_BDC', 'CREATE_PRODUCTION_INVENTORY', 'VIEW_PRODUCTION_DASHBOARD', 'VALIDATE_PRODUCTION_INVENTORY', 'EXPORT_PRODUCTION_REPORTS'])).optional(),
     role: z.string({ message: "Veuillez sélectionner un rôle." }).min(1, { message: "Veuillez sélectionner un rôle." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
