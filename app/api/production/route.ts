@@ -8,6 +8,7 @@ import { z } from 'zod';
 const createInventorySchema = z.object({
   date: z.string().datetime(),
   stockInitialPhysique: z.number().min(0),
+  productionCenterId: z.number().int().positive().optional(),
 });
 
 // POST - Démarrer une nouvelle journée de production
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
       data: {
         date,
         stockInitialPhysique: data.stockInitialPhysique,
+        productionCenterId: data.productionCenterId || null,
         startedById: parseInt(session.user.id),
         status: 'EN_COURS',
         tempsTotal: 0,
@@ -60,6 +62,12 @@ export async function POST(req: NextRequest) {
         tempsUtile: 0,
       },
       include: {
+        productionCenter: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         startedBy: {
           select: {
             id: true,

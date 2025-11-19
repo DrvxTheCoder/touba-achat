@@ -11,10 +11,11 @@ const BOTTLE_WEIGHTS = {
   B6: 6,
   B9: 9,
   B12_5: 12.5,
+  B12_5K: 12.5,
   B38: 38
 };
 
-type BottleType = 'B2_7' | 'B6' | 'B9' | 'B12_5' | 'B38';
+type BottleType = 'B2_7' | 'B6' | 'B9' | 'B12_5' | 'B12_5K' | 'B38';
 
 interface Bottle {
   type: BottleType;
@@ -23,7 +24,7 @@ interface Bottle {
 
 // Schéma de validation pour les sphères
 const sphereInputSchema = z.object({
-  name: z.enum(['D100', 'SO2', 'SO3']),
+  name: z.string().min(1), // Accept any reservoir name (D100, SO2, SO3, RO1, RO2, etc.)
   hauteur: z.number().min(0).max(30000),
   temperature: z.number().min(15.0).max(32.9),
   volumeLiquide: z.number().min(0),
@@ -85,7 +86,7 @@ export async function POST(
         cumulSortie += tonnage;
       }
 
-      // Créer les sphères avec validation et calculs automatiques
+      // Créer les réservoirs avec validation et calculs automatiques
       let stockFinalPhysique = 0;
       for (const sphereInput of data.spheres) {
         // Valider le schéma Zod
@@ -101,7 +102,7 @@ export async function POST(
         const calculatedSphere = calculateSphereData(parsedSphere as SphereInputData);
 
         // Créer dans la DB avec toutes les valeurs (5 inputs + 6 calculées)
-        await tx.sphere.create({
+        await tx.reservoir.create({
           data: {
             inventoryId,
             name: calculatedSphere.name,
@@ -168,7 +169,7 @@ export async function POST(
         },
         include: {
           bottles: true,
-          spheres: true,
+          reservoirs: true,
           arrets: true
         }
       });

@@ -9,7 +9,11 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
-export function ProductionStart() {
+interface ProductionStartProps {
+  selectedCenterId?: number;
+}
+
+export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
   const [date, setDate] = useState<Date>(new Date());
   const [stockInitial, setStockInitial] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -54,6 +58,13 @@ export function ProductionStart() {
   }, [date]);
 
   const handleStart = async () => {
+    if (!selectedCenterId) {
+      toast.error('Centre de production requis', {
+        description: 'Veuillez sélectionner un centre de production'
+      });
+      return;
+    }
+
     if (!stockInitial || parseFloat(stockInitial) < 0) {
       toast.error('Stock initial requis', {
         description: 'Veuillez saisir le stock initial physique'
@@ -68,7 +79,8 @@ export function ProductionStart() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: date.toISOString(),
-          stockInitialPhysique: parseFloat(stockInitial)
+          stockInitialPhysique: parseFloat(stockInitial),
+          productionCenterId: selectedCenterId || null
         })
       });
 
@@ -107,6 +119,11 @@ export function ProductionStart() {
         <CardDescription>
           Créer la fiche de production pour la journée sélectionnée
         </CardDescription>
+        {!selectedCenterId && (
+          <div className="mt-2 text-sm text-orange-600 dark:text-orange-400">
+            ⚠️ Veuillez sélectionner un centre de production
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-center">

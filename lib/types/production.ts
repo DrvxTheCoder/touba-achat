@@ -1,6 +1,6 @@
 // lib/types/production.ts
 
-import { ProductionStatus, ArretType, BottleType, SphereType } from '@prisma/client';
+import { ProductionStatus, ArretType, BottleType, ReservoirType } from '@prisma/client';
 
 export interface ProductionArret {
   id: number;
@@ -26,29 +26,19 @@ export interface BottleProduction {
   tonnage: number;
 }
 
-export interface Sphere {
+export interface Reservoir {
   id: number;
   inventoryId: number;
-  name: SphereType;
-  // 5 input fields
+  name: ReservoirType;
   hauteur: number;
-  temperature: number;
-  volumeLiquide: number;
-  pressionInterne: number;
-  densiteA15C: number;
-  // 6 calculated fields
-  facteurCorrectionLiquide?: number | null;
-  facteurCorrectionVapeur?: number | null;
-  densiteAmbiante?: number | null;
-  poidsLiquide?: number | null;
-  poidsGaz?: number | null;
-  poidsTotal?: number | null;
+  poids: number;
 }
 
 export interface ProductionInventory {
   id: number;
   date: Date | string;
   status: ProductionStatus;
+  productionCenterId?: number | null;
   startedAt: Date | string;
   startedById: number;
   completedAt?: Date | string | null;
@@ -99,7 +89,8 @@ export interface ProductionInventory {
   } | null;
   arrets?: ProductionArret[];
   bottles?: BottleProduction[];
-  spheres?: Sphere[];
+  reservoirs?: Reservoir[];
+
 }
 
 export interface DashboardKPIs {
@@ -153,7 +144,7 @@ export interface CompleteInventoryData {
     quantity: number;
   }>;
   spheres: Array<{
-    name: SphereType;
+    name: string;
     hauteur: number;
     temperature: number;
     volumeLiquide: number;
@@ -168,7 +159,9 @@ export const BOTTLE_TYPES: Record<BottleType, string> = {
   B6: 'B6kg',
   B9: 'B9kg',
   B12_5: 'B12.5kg',
-  B38: 'B38kg'
+  B12_5K: 'B12.5kg (Kheuweul)',
+  B38: 'B38kg',
+  
 };
 
 export const BOTTLE_WEIGHTS: Record<BottleType, number> = {
@@ -177,6 +170,7 @@ export const BOTTLE_WEIGHTS: Record<BottleType, number> = {
   B9: 9,
   B12_5: 12.5,
   B38: 38,
+  B12_5K: 12.5
 };
 
 export const ARRET_TYPES: Record<ArretType, string> = {
@@ -198,10 +192,10 @@ export const STATUS_COLORS: Record<ProductionStatus, string> = {
   ARCHIVE: 'bg-gray-100 text-gray-800',
 };
 
-export const SPHERE_LABELS: Record<SphereType, string> = {
-  SO2: 'SO2',
-  SO3: 'SO3',
-  D100: 'D100',
+export const SPHERE_LABELS: Record<ReservoirType, string> = {
+  SPHERE: 'Sphère',
+  CIGARE: 'Cigare',
+  AUTRE: 'Autre',
 };
 
 // Utilitaires de calcul

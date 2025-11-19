@@ -19,6 +19,9 @@ export async function GET(req: NextRequest) {
     const inventory = await prisma.productionInventory.findUnique({
       where: { date: today },
       include: {
+        productionCenter: {
+          select: { id: true, name: true }
+        },
         startedBy: {
           select: { id: true, name: true, email: true }
         },
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest) {
           }
         },
         bottles: { orderBy: { type: 'asc' } },
-        spheres: { orderBy: { name: 'asc' } }
+        reservoirs: { orderBy: { name: 'asc' } }
       }
     });
 
