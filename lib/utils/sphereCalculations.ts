@@ -151,10 +151,10 @@ export function validateSphereInput(input: SphereInputData): string[] {
     errors.push('La pression interne semble anormalement élevée (> 20 bar)');
   }
 
-  // Validation de la densité à 15°C
-  if (input.densiteA15C < 0.4 || input.densiteA15C > 0.6) {
-    errors.push('La densité à 15°C doit être entre 0.4 et 0.6 (valeur typique: 0.508)');
-  }
+  // // Validation de la densité à 15°C
+  // if (input.densiteA15C < 0.4 || input.densiteA15C > 0.6) {
+  //   errors.push('La densité à 15°C doit être entre 0.4 et 0.6 (valeur typique: 0.508)');
+  // }
 
   return errors;
 }

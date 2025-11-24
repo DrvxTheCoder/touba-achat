@@ -602,7 +602,7 @@ model Reservoir {
   temperature           Float                @default(20)    // en °C (15.1 - 35.3)
   volumeLiquide         Float                @default(0)     // en m³
   pressionInterne       Float                @default(0)     // en bar
-  densiteA15C           Float                @default(0.508) // densité à 15°C (typiquement 0.508)
+  densiteA15C           Float                @default(0) // densité à 15°C (typiquement 0.508)
 
   // 6 champs calculés automatiquement
   facteurCorrectionLiquide Float?

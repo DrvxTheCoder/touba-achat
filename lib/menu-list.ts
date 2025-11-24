@@ -94,6 +94,57 @@ export function getAdminMenuList(pathname: string): Group[] {
   ];
 }
 
+export function getManagementMenuList(pathname: string): Group[] {
+  return [
+    {
+      menus: [
+        // {
+        //   href: "/dashboard",
+        //   label: "Dashboard",
+        //   active: pathname === "/dashboard",
+        //   icon: LayoutGrid,
+        //   submenus: []
+        // },
+        {
+          href: "/acceuil",
+          label: "Accueil",
+          active: pathname.includes("/acceuil"),
+          icon: Home,
+          submenus: []
+        },
+        {
+          href: "/dashboard/etats",
+          label: "États de Besoins",
+          active: ["/dashboard/etats", "/etats-de-besoin", "/dashboard/etats/stock", "/dashboard/etats/EDB-"].includes(pathname),
+          icon: Package,
+          submenus: []
+        },
+        {
+          href: "/dashboard/odm",
+          label: "Ordres de Mission",
+          active: pathname.includes("/dashboard/odm"),
+          icon: Luggage,
+          submenus: []
+        },
+        {
+          href: "/dashboard/production",
+          label: "Production",
+          active: pathname.includes("/dashboard/production"),
+          icon: Factory,
+          submenus: []
+        },
+        {
+          href: "/bdc",
+          label: "Bons de caisse",
+          active: pathname.includes("/bdc"),
+          icon: HandCoins,
+          submenus: []
+        }
+      ]
+    },
+  ];
+}
+
 export function getMagasinierMenuList(pathname: string): Group[] {
   return [
     {

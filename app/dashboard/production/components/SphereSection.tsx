@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, Info, Calculator } from 'lucide-react';
 import { SPHERE_LABELS } from '@/lib/types/production';
-import { SphereType } from '@prisma/client';
+import { ReservoirType } from '@prisma/client';
 import { calculateSphereData, validateSphereInput, SphereInputData, SPHERE_CAPACITIES, calculateLiquidVolumeFromHeight } from '@/lib/utils/sphereCalculations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -156,7 +156,7 @@ export default function SpheresSection({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-xl">
-                    {SPHERE_LABELS[sphere.name as SphereType] || sphere.name}
+                    {SPHERE_LABELS[sphere.name as ReservoirType] || sphere.name}
                     <span className="text-xs text-muted-foreground ml-2">
                       (Capacité: {capacity.toFixed(2)} m³)
                     </span>
@@ -221,7 +221,7 @@ export default function SpheresSection({
                         step="0.001"
                         min="0"
                         max={capacity}
-                        value={sphere.volumeLiquide}
+                        value={sphere.volumeLiquide.toFixed(3)}
                         onChange={(e) => updateSphere(index, 'volumeLiquide', parseFloat(e.target.value) || 0)}
                         disabled={disabled}
                         className="font-mono flex-1"
@@ -269,13 +269,11 @@ export default function SpheresSection({
                     <Input
                       type="number"
                       step="0.001"
-                      min="0.4"
-                      max="0.6"
                       value={sphere.densiteA15C}
-                      onChange={(e) => updateSphere(index, 'densiteA15C', parseFloat(e.target.value) || 0.508)}
+                      onChange={(e) => updateSphere(index, 'densiteA15C', parseFloat(e.target.value) || 0)}
                       disabled={disabled}
                       className="font-mono"
-                      placeholder="0.508"
+                      placeholder="0.0"
                     />
                   </div>
                 </div>

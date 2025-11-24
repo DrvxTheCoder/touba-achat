@@ -74,7 +74,7 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
         {/* Production du jour */}
         <MetricCard
           title="Production du jour"
-          value={`${metrics.productionJour.toFixed(2)} T`}
+          value={`${metrics.productionJour}`}
           icon={<TrendingUp className="h-5 w-5 text-green-600" />}
           trend={metrics.productionJour > 0 ? 'up' : 'neutral'}
           subtitle="Bouteilles remplies"
@@ -128,11 +128,12 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
 
         {/* Additional Info Cards */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+
           <InfoCard
-            title="Temps d'arrêt total"
-            value={`${Math.floor(metrics.tempsArretTotal / 60)}h ${metrics.tempsArretTotal % 60}min`}
-            description="Cumul des arrêts ce mois"
-            className="bg-orange-50 dark:bg-orange-950/20"
+            title="Stock disponible"
+            value={`${(metrics.stockPhysiqueActuel).toFixed(3)} T`}
+            description="Stock prêt à être utilisé"
+            className="bg-green-50 dark:bg-green-950/20"
           />
 
           <InfoCard
@@ -143,17 +144,17 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
           />
 
           <InfoCard
-            title="Stock disponible"
-            value={`${(metrics.capaciteTotale - metrics.stockPhysiqueActuel).toFixed(2)} T`}
-            description="Capacité restante"
-            className="bg-green-50 dark:bg-green-950/20"
+            title="Production moyenne"
+            value={`${(metrics.productionJour / (metrics.inventairesTermines || 1))}`}
+            description="Par jour d'inventaire"
+            className="bg-purple-50 dark:bg-purple-950/20"
           />
 
           <InfoCard
-            title="Production moyenne"
-            value={`${(metrics.productionJour / (metrics.inventairesTermines || 1)).toFixed(2)} T`}
-            description="Par jour d'inventaire"
-            className="bg-purple-50 dark:bg-purple-950/20"
+            title="Temps d'arrêt total"
+            value={`${Math.floor(metrics.tempsArretTotal / 60)}h ${metrics.tempsArretTotal % 60}min`}
+            description="Cumul des arrêts ce mois"
+            className="bg-orange-50 dark:bg-orange-950/20"
           />
         </div>
       </div>

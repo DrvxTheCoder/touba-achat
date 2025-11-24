@@ -127,8 +127,6 @@ export default function ProductionDetailPage() {
   const isTermine = inventory.status === 'TERMINE';
 
   return (
-    <ContentLayout title={`Inventaire de Production - ${inventory.date.toLocaleString()}`}>
-      <DynamicBreadcrumbs />
     <div className="container mx-auto py-6 space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -223,6 +221,5 @@ export default function ProductionDetailPage() {
         disabled={isTermine}
       />
     </div>
-    </ContentLayout>
   );
 }

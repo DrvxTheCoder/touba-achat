@@ -87,7 +87,6 @@ export default function ProductionList() {
               <div className="flex items-center gap-3 mb-2">
                 <h3 className="text-lg font-semibold">
                   {new Date(inventory.date).toLocaleDateString('fr-FR', {
-                    weekday: 'long',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
@@ -98,18 +97,18 @@ export default function ProductionList() {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-row gap-4 text-sm text-muted-foreground">
                 <div>
                   <span className="font-medium">Démarré par:</span>{' '}
                   {inventory.startedBy?.name}
                 </div>
-                <div className="flex items-center gap-1">
+                {/* <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   <span className="font-medium">Temps:</span>{' '}
                   {inventory.rendement !== null && inventory.rendement !== undefined
                     ? `${inventory.rendement.toFixed(1)}% rendement`
                     : 'En cours...'}
-                </div>
+                </div> */}
                 {inventory.status === 'TERMINE' && (
                   <>
                     <div>

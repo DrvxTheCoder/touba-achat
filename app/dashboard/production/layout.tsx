@@ -3,12 +3,10 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { redirect } from 'next/navigation';
 import { ContentLayout } from '@/components/user-panel/content-layout';
 import DynamicBreadcrumbs from '@/components/DynamicBreadcrumbs';
-import ProductionPageClient from './components/ProductionPageClient';
 
-export default async function ProductionPage() {
+export default async function ProductionLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-
-  if (!session) {
+      if (!session) {
     redirect('/auth');
   }
 
@@ -20,14 +18,10 @@ export default async function ProductionPage() {
   }
 
   const isAdmin = ['ADMIN', 'IT_ADMIN'].includes(session.user.role);
-
   return (
-    <>
-        <ProductionPageClient
-          canCreate={canCreate}
-          canView={canView}
-          isAdmin={isAdmin}
-        />
-    </>
+    <ContentLayout title="Production">
+      <DynamicBreadcrumbs />
+      {children}
+    </ContentLayout>
   );
 }

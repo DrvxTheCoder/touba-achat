@@ -138,14 +138,13 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
   }
 
   return (
-    <Card>
+    <Card className='h-full'>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Droplet className="h-5 w-5" />
             <div>
-              <CardTitle>Stock Actuel par Réservoir</CardTitle>
-              <CardDescription>Niveau de remplissage en temps réel</CardDescription>
+              <CardTitle>Stock Actuel </CardTitle>
+              <CardDescription><small className='text-xs text-muted-foreground'>par Réservoir</small></CardDescription>
             </div>
           </div>
           <Select value={selectedReservoirId} onValueChange={setSelectedReservoirId}>

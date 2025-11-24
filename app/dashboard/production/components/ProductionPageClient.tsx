@@ -45,7 +45,7 @@ export default function ProductionPageClient({
   const [selectedCenter, setSelectedCenter] = useState<ProductionCenter | null>(null);
 
   return (
-    <main className="container mx-auto py-6 space-y-6">
+    <main className="px-8 mx-auto py-6 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Production GPL</h1>
@@ -117,7 +117,7 @@ export default function ProductionPageClient({
 
       {/* Stock Evolution Chart and Reservoir Stock */}
       {canView && (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <StockEvolutionChart selectedCenterId={selectedCenter?.id} />
           </div>
@@ -134,16 +134,17 @@ export default function ProductionPageClient({
           </Suspense>
         )}
 
-        {canView && (
+        {/* {canView && (
           <Suspense fallback={<div>Chargement...</div>}>
             <ProductionDashboard selectedCenterId={selectedCenter?.id} />
           </Suspense>
-        )}
-      </div>
-
+        )} */}
       <Suspense fallback={<div>Chargement...</div>}>
         <ProductionList selectedCenterId={selectedCenter?.id} />
       </Suspense>
+      </div>
+
+
     </main>
   );
 }

@@ -75,7 +75,7 @@ export default function ReservoirSection({
               temperature: 20,
               volumeLiquide: 0,
               pressionInterne: 0,
-              densiteA15C: 0.508,
+              densiteA15C: 0,
             }));
             onUpdate(initialReservoirs);
           }
@@ -314,7 +314,7 @@ export default function ReservoirSection({
                         step="0.001"
                         min="0"
                         max={capacity}
-                        value={reservoir.volumeLiquide}
+                        value={reservoir.volumeLiquide.toFixed(3)}
                         onChange={(e) => updateReservoir(index, 'volumeLiquide', parseFloat(e.target.value) || 0)}
                         disabled={disabled}
                         className="font-mono flex-1"
