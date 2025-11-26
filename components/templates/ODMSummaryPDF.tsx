@@ -5,7 +5,7 @@ import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/
 import QRCode from 'qrcode';
 import { AccompanyingPerson } from '@/app/dashboard/odm/utils/odm';
 
-const pageURL = "https://touba.vercel.app";
+const pageURL = "https://touba-app.com";
 const parseRichTextContent = (content: any) => {
   if (!content || !content.content) return '';
 

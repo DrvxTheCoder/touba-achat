@@ -72,7 +72,18 @@ export function getAdminMenuList(pathname: string): Group[] {
           label: "Production",
           active: pathname.includes("/dashboard/production"),
           icon: Factory,
-          submenus: []
+          submenus: [
+            {
+              href: "/dashboard/production",
+              label: "Tableau de bord",
+              active: pathname === "/dashboard/production"
+            },
+            {
+              href: "/dashboard/production/liste-inventaires",
+              label: "Liste des inventaires",
+              active: pathname.includes("/dashboard/production/liste-inventaires")
+            }
+          ]
         },
         {
           href: "/bdc",
@@ -131,7 +142,18 @@ export function getManagementMenuList(pathname: string): Group[] {
           label: "Production",
           active: pathname.includes("/dashboard/production"),
           icon: Factory,
-          submenus: []
+          submenus: [
+            {
+              href: "/dashboard/production",
+              label: "Tableau de bord",
+              active: pathname === "/dashboard/production"
+            },
+            {
+              href: "/dashboard/production/liste-inventaires",
+              label: "Liste des inventaires",
+              active: pathname.includes("/dashboard/production/liste-inventaires")
+            }
+          ]
         },
         {
           href: "/bdc",

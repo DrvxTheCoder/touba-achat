@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { prisma } from '@/lib/prisma';
 import * as XLSX from 'xlsx';
+import { renderToBuffer } from '@react-pdf/renderer';
+import MonthlyProductionPDF from '@/lib/pdf/MonthlyProductionPDF';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Permission refusée' }, { status: 403 });
     }
 
-    const { format, startDate, endDate } = await req.json();
+    const { format, startDate, endDate, productionCenterId, capaciteTotale } = await req.json();
 
     // Validation
     if (!format || !['excel', 'pdf'].includes(format)) {
@@ -27,16 +29,31 @@ export async function POST(req: NextRequest) {
     const start = startDate ? new Date(startDate) : new Date(new Date().setMonth(new Date().getMonth() - 1));
     const end = endDate ? new Date(endDate) : new Date();
 
+    // Get production center if specified
+    const productionCenter = productionCenterId
+      ? await prisma.productionCenter.findUnique({
+          where: { id: parseInt(productionCenterId) },
+          select: { id: true, name: true, address: true }
+        })
+      : null;
+
     // Récupérer les données
     const inventories = await prisma.productionInventory.findMany({
       where: {
         date: { gte: start, lte: end },
-        status: 'TERMINE'
+        status: 'TERMINE',
+        ...(productionCenterId && { productionCenterId: parseInt(productionCenterId) })
       },
       orderBy: { date: 'asc' },
       include: {
         bottles: true,
-        spheres: true,
+        reservoirs: {
+          include: {
+            reservoirConfig: {
+              select: { name: true, type: true, capacity: true }
+            }
+          }
+        },
         arrets: true,
         startedBy: { select: { name: true } },
         completedBy: { select: { name: true } }
@@ -113,11 +130,30 @@ export async function POST(req: NextRequest) {
           'Content-Disposition': `attachment; filename="production_${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}.xlsx"`
         }
       });
+    } else if (format === 'pdf') {
+      // Generate PDF using MonthlyProductionPDF
+      const pdfBuffer = await renderToBuffer(
+        MonthlyProductionPDF({
+          inventories,
+          startDate: start,
+          endDate: end,
+          productionCenter,
+          capaciteTotale
+        })
+      );
+
+      const filename = `production_mensuelle_${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}.pdf`;
+
+      return new NextResponse(Buffer.from(pdfBuffer), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`
+        }
+      });
     } else {
-      // TODO: Implémenter l'export PDF avec une librairie comme PDFKit ou jsPDF
       return NextResponse.json(
-        { error: 'Export PDF non implémenté pour le moment' },
-        { status: 501 }
+        { error: 'Format invalide' },
+        { status: 400 }
       );
     }
   } catch (error) {

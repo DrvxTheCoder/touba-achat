@@ -116,13 +116,13 @@ export default function ArretDialog({ inventoryId, onArretAdded }: ArretDialogPr
           <DialogHeader>
             <DialogTitle>Enregistrer un arrêt de production</DialogTitle>
             <DialogDescription>
-              Saisir les informations concernant l'arrêt de production
+              Saisir les informations concernant l&apos;arrêt de production
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="type">Type d'arrêt *</Label>
+              <Label htmlFor="type">Type d&apos;arrêt *</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value) =>

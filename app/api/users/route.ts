@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { prisma } from '@/lib/prisma';
+import { UserStatus } from '@prisma/client';
 
 // GET /api/users - List users with optional access filter
 export async function GET(req: NextRequest) {
@@ -19,10 +20,10 @@ export async function GET(req: NextRequest) {
           access: {
             has: accessFilter as any,
           },
-          status: 'ACTIVE',
+          status: UserStatus.ACTIVE,
         }
       : {
-          status: 'ACTIVE',
+          status: UserStatus.ACTIVE,
         };
 
     const users = await prisma.user.findMany({

@@ -389,7 +389,7 @@ export default function ProductionCentersSettings() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Seuls les utilisateurs avec l'accès CREATE_PRODUCTION_INVENTORY sont listés
+                Seuls les utilisateurs avec l&apos;accès CREATE_PRODUCTION_INVENTORY sont listés
               </p>
             </div>
           </div>

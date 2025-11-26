@@ -73,11 +73,11 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Production du jour */}
         <MetricCard
-          title="Production du jour"
+          title="Bouteilles produites"
           value={`${metrics.productionJour}`}
           icon={<TrendingUp className="h-5 w-5 text-green-600" />}
           trend={metrics.productionJour > 0 ? 'up' : 'neutral'}
-          subtitle="Bouteilles remplies"
+          subtitle="(Hier)"
         />
 
         {/* Rendement moyen */}

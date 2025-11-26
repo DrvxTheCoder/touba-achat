@@ -153,11 +153,11 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
             </SelectTrigger>
             <SelectContent>
               {reservoirs.map((reservoir) => (
-                <SelectItem key={reservoir.id} value={reservoir.id.toString()}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono">{reservoir.name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {reservoir.type}
+                <SelectItem key={reservoir.id} value={reservoir.id.toString()} className='gap-2'>
+                  <div className="flex flex-row justify-between w-full gap-6">
+                    <span className="font-mono w-full h-fit text-nowrap">{reservoir.name}</span>
+                    <Badge variant="outline" className='text-xs py-0'>
+                      <small className="text-xs">{reservoir.type}</small>
                     </Badge>
                   </div>
                 </SelectItem>
@@ -202,7 +202,6 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
               <Progress
                 value={stockData.pourcentageRemplissage}
                 className="h-4"
-                indicatorClassName={getProgressColor(stockData.pourcentageRemplissage)}
               />
             </div>
 

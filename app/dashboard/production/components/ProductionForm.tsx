@@ -32,9 +32,11 @@ export default function ProductionForm({
   completing,
   disabled
 }: ProductionFormProps) {
-  // Transform spheres from Prisma format (with 5 input + 6 calculated fields) to component format
-  const transformedSpheres = (inventory.spheres || []).map((s: any) => ({
+  // Transform reservoirs from Prisma format (with 5 input + 6 calculated fields) to component format
+  const transformedReservoirs = (inventory.reservoirs || []).map((s: any) => ({
+    id: s.id,
     name: s.name,
+    reservoirConfigId: s.reservoirConfigId,
     // 5 input fields
     hauteur: s.hauteur || 0,
     temperature: s.temperature || 20,
@@ -59,7 +61,7 @@ export default function ProductionForm({
     divers: inventory.divers || 0,
     observations: inventory.observations || '',
     bottles: inventory.bottles || [],
-    spheres: transformedSpheres
+    reservoirs: transformedReservoirs
   });
 
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -96,8 +98,8 @@ export default function ProductionForm({
     setAutoSaveStatus('idle');
   };
 
-  const updateSpheres = (spheres: any[]) => {
-    setFormData(prev => ({ ...prev, spheres }));
+  const updateReservoirs = (reservoirs: any[]) => {
+    setFormData(prev => ({ ...prev, reservoirs }));
     setAutoSaveStatus('idle');
   };
 
@@ -120,7 +122,7 @@ export default function ProductionForm({
     formData.divers -
     remplissageTotal;
 
-  const stockFinalPhysique = formData.spheres.reduce(
+  const stockFinalPhysique = formData.reservoirs.reduce(
     (sum, s) => {
       const poids = parseFloat((s as any).poidsTotal) || 0;
       return sum + poids;
@@ -139,7 +141,7 @@ export default function ProductionForm({
       return;
     }
 
-    if (!formData.spheres.length) {
+    if (!formData.reservoirs.length) {
       toast.error('Veuillez renseigner au moins un réservoir');
       return;
     }
@@ -170,8 +172,9 @@ export default function ProductionForm({
         type: b.type,
         quantity: b.quantity || 0
       })),
-      spheres: formData.spheres.map((s: any) => ({
+      reservoirs: formData.reservoirs.map((s: any) => ({
         name: s.name,
+        reservoirConfigId: s.reservoirConfigId,
         hauteur: s.hauteur || 0,
         temperature: s.temperature || 20,
         volumeLiquide: s.volumeLiquide || 0,
@@ -243,8 +246,8 @@ export default function ProductionForm({
 
           <TabsContent value="reservoirs" className="space-y-4 mt-6">
             <ReservoirSection
-              reservoirs={formData.spheres as any}
-              onUpdate={updateSpheres}
+              reservoirs={formData.reservoirs as any}
+              onUpdate={updateReservoirs}
               disabled={disabled}
               productionCenterId={inventory.productionCenterId}
             />
@@ -306,7 +309,7 @@ export default function ProductionForm({
               ) : (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Clôturer l'inventaire
+                  Clôturer l&apos;inventaire
                 </>
               )}
             </Button>

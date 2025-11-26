@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
 
-const pageURL = "https://touba.vercel.app";
+const pageURL = "https://touba-app.com";
 
 Font.register({
   family: 'Ubuntu',

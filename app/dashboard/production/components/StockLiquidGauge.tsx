@@ -1,9 +1,7 @@
 'use client';
 
-import { color } from 'd3-color';
-import { interpolateRgb } from 'd3-interpolate';
-import LiquidFillGauge from 'react-liquid-gauge';
 import { Card, CardContent } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
 
 interface StockLiquidGaugeProps {
   value: number;
@@ -20,43 +18,26 @@ export default function StockLiquidGauge({
   subtitle,
   size = 150,
 }: StockLiquidGaugeProps) {
+  const [animatedPercentage, setAnimatedPercentage] = useState(0);
   const percentage = capacity > 0 ? (value / capacity) * 100 : 0;
 
-  // Color gradient based on fill level
-  const startColor = '#10b981'; // green
-  const midColor = '#f59e0b'; // orange
-  const endColor = '#ef4444'; // red
+  // Animate the fill on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedPercentage(percentage);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [percentage]);
 
-  // Interpolate colors based on percentage
-  let fillColor: string;
-  if (percentage <= 50) {
-    const interpolate = interpolateRgb(startColor, midColor);
-    fillColor = interpolate(percentage / 50);
-  } else {
-    const interpolate = interpolateRgb(midColor, endColor);
-    fillColor = interpolate((percentage - 50) / 50);
-  }
+  // Determine color based on fill level
+  const getColor = (percent: number) => {
+    if (percent < 30) return '#ef4444'; // red
+    if (percent < 70) return '#f59e0b'; // orange
+    return '#10b981'; // green
+  };
 
-  const gradientStops = [
-    {
-      key: '0%',
-      stopColor: color(fillColor).darker(0.5).toString(),
-      stopOpacity: 1,
-      offset: '0%',
-    },
-    {
-      key: '50%',
-      stopColor: fillColor,
-      stopOpacity: 0.75,
-      offset: '50%',
-    },
-    {
-      key: '100%',
-      stopColor: color(fillColor).brighter(0.5).toString(),
-      stopOpacity: 0.5,
-      offset: '100%',
-    },
-  ];
+  const fillColor = getColor(percentage);
+  const displayPercentage = Math.round(percentage);
 
   return (
     <Card className="h-full">
@@ -68,57 +49,55 @@ export default function StockLiquidGauge({
           )}
         </div>
 
-        <div className="flex-1 flex items-center justify-center">
-          <LiquidFillGauge
-            style={{ margin: '0 auto' }}
-            width={size}
-            height={size}
-            value={percentage}
-            percent="%"
-            textSize={1}
-            textOffsetX={0}
-            textOffsetY={0}
-            textRenderer={(props) => {
-              const percentValue = Math.round(props.value);
-              const radius = Math.min(props.height / 2, props.width / 2);
-              const textPixels = (props.textSize * radius / 2);
-              const valueStyle = {
-                fontSize: textPixels,
-              };
-              const percentStyle = {
-                fontSize: textPixels * 0.6,
-              };
+        <div className="flex-1 flex items-center justify-center relative">
+          {/* Custom liquid gauge */}
+          <div
+            className="relative rounded-full border-4 border-gray-300 dark:border-gray-700 overflow-hidden"
+            style={{ width: size, height: size }}
+          >
+            {/* Liquid fill with wave animation */}
+            <div
+              className="absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out"
+              style={{
+                height: `${animatedPercentage}%`,
+                backgroundColor: fillColor,
+                opacity: 0.7,
+              }}
+            >
+              {/* Wave effect using pseudo-element animation */}
+              <div
+                className="absolute top-0 left-0 right-0 h-8 animate-wave"
+                style={{
+                  backgroundColor: fillColor,
+                  opacity: 0.5,
+                }}
+              />
+            </div>
 
-              return (
-                <tspan>
-                  <tspan className="value" style={valueStyle}>
-                    {percentValue}
-                  </tspan>
-                  <tspan style={percentStyle}>{props.percent}</tspan>
-                </tspan>
-              );
-            }}
-            riseAnimation
-            waveAnimation
-            waveFrequency={2}
-            waveAmplitude={1}
-            gradient
-            gradientStops={gradientStops}
-            circleStyle={{
-              fill: fillColor,
-            }}
-            waveStyle={{
-              fill: fillColor,
-            }}
-            textStyle={{
-              fill: color('#444').toString(),
-              fontFamily: 'Arial',
-            }}
-            waveTextStyle={{
-              fill: color('#fff').toString(),
-              fontFamily: 'Arial',
-            }}
-          />
+            {/* Percentage text */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center z-10">
+                <span
+                  className="text-4xl font-bold"
+                  style={{
+                    color: animatedPercentage > 50 ? '#ffffff' : '#374151',
+                    textShadow: animatedPercentage > 50 ? '0 2px 4px rgba(0,0,0,0.2)' : 'none',
+                  }}
+                >
+                  {displayPercentage}
+                </span>
+                <span
+                  className="text-xl font-semibold ml-1"
+                  style={{
+                    color: animatedPercentage > 50 ? '#ffffff' : '#374151',
+                    textShadow: animatedPercentage > 50 ? '0 2px 4px rgba(0,0,0,0.2)' : 'none',
+                  }}
+                >
+                  %
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 text-center space-y-1">
@@ -129,6 +108,21 @@ export default function StockLiquidGauge({
             Capacité: {capacity.toFixed(2)} T
           </p>
         </div>
+
+        {/* Add wave animation styles */}
+        <style jsx>{`
+          @keyframes wave {
+            0% {
+              transform: translateX(-100%);
+            }
+            100% {
+              transform: translateX(100%);
+            }
+          }
+          .animate-wave {
+            animation: wave 3s ease-in-out infinite;
+          }
+        `}</style>
       </CardContent>
     </Card>
   );

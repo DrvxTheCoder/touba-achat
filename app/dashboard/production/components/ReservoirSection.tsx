@@ -66,8 +66,9 @@ export default function ReservoirSection({
           const data = await response.json();
           setReservoirConfigs(data);
 
-          // Initialize reservoirs if empty
-          if (reservoirs.length === 0 && data.length > 0) {
+          // Only initialize reservoirs if empty AND not from database (no reservoirs with id field)
+          const hasExistingData = reservoirs.some(r => r.id !== undefined);
+          if (reservoirs.length === 0 && !hasExistingData && data.length > 0) {
             const initialReservoirs: Reservoir[] = data.map((config: ReservoirConfig) => ({
               name: config.name,
               reservoirConfigId: config.id,

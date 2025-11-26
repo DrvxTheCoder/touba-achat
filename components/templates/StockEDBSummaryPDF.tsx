@@ -3,7 +3,7 @@ import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/
 import QRCode from 'qrcode';
 import { StockEDB } from '@/app/dashboard/etats/stock/types/stock-edb';
 
-const pageURL = "https://touba.vercel.app";
+const pageURL = "https://touba-app.com";
 
 Font.register({
   family: 'Ubuntu',
