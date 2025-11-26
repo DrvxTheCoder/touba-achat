@@ -3,10 +3,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Eye, AlertCircle, CheckCircle, Clock, List } from 'lucide-react';
 import { ProductionInventory, STATUS_LABELS, formatDuration } from '@/lib/types/production';
 
 export default function ProductionList() {
@@ -23,7 +24,7 @@ export default function ProductionList() {
   const loadInventories = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/production?page=${page}&limit=10`);
+      const res = await fetch(`/api/production?page=${page}&limit=5`);
       if (!res.ok) throw new Error('Erreur lors du chargement');
       const data = await res.json();
       setInventories(data.data); // L'API retourne 'data' pas 'inventories'
@@ -80,6 +81,17 @@ export default function ProductionList() {
 
   return (
     <div className="space-y-4">
+      {/* Header with "Voir tout" button */}
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-semibold">Inventaires Récents</h3>
+        <Link href="/dashboard/production/liste-inventaires">
+          <Button variant="outline" size="sm">
+            <List className="h-4 w-4 mr-2" />
+            Voir tout
+          </Button>
+        </Link>
+      </div>
+
       {inventories.map((inventory) => (
         <Card key={inventory.id} className="p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">

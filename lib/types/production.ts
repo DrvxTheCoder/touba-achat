@@ -143,8 +143,9 @@ export interface CompleteInventoryData {
     type: BottleType;
     quantity: number;
   }>;
-  spheres: Array<{
+  reservoirs: Array<{
     name: string;
+    reservoirConfigId?: number;
     hauteur: number;
     temperature: number;
     volumeLiquide: number;

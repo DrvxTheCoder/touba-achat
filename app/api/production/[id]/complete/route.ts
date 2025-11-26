@@ -88,9 +88,9 @@ export async function POST(
 
       // Créer les réservoirs avec validation et calculs automatiques
       let stockFinalPhysique = 0;
-      for (const sphereInput of data.spheres) {
+      for (const reservoirInput of data.reservoirs) {
         // Valider le schéma Zod
-        const parsedSphere = sphereInputSchema.parse(sphereInput);
+        const parsedSphere = sphereInputSchema.parse(reservoirInput);
 
         // Valider les règles métier
         const validationErrors = validateSphereInput(parsedSphere as SphereInputData);
@@ -106,6 +106,7 @@ export async function POST(
           data: {
             inventoryId,
             name: calculatedSphere.name,
+            reservoirConfigId: reservoirInput.reservoirConfigId,
             // 5 champs d'entrée
             hauteur: calculatedSphere.hauteur,
             temperature: calculatedSphere.temperature,

@@ -336,7 +336,7 @@ export default function BottleTypesSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Nom d'affichage</Label>
+              <Label htmlFor="name">Nom d&apos;affichage</Label>
               <Input
                 id="name"
                 value={formData.name}

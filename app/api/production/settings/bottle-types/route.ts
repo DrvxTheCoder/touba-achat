@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user has admin access
-    if (session.user.role !== 'ADMIN' && !session.user.access.includes('IT_ADMIN')) {
+    if (session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
@@ -80,7 +80,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Check if user has admin access
-    if (session.user.role !== 'ADMIN' && !session.user.access.includes('IT_ADMIN')) {
+    if (session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
@@ -124,7 +124,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Check if user has admin access
-    if (session.user.role !== 'ADMIN' && !session.user.access.includes('IT_ADMIN')) {
+    if (session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
