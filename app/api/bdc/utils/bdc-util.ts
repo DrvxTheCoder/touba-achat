@@ -426,7 +426,7 @@ export async function rejectBDC(
       data: {
         status: BDCStatus.REJECTED,
         rejectionReason,
-        approverId: userId,
+        rejectorId: userId,
       },
       include: {
         userCreator: true

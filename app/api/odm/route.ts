@@ -3,7 +3,69 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { createODM } from '@/app/api/odm/utils/odm-util';
 import prisma from '@/lib/prisma';
-import { ODMStatus, Role } from '@prisma/client';
+import { Prisma, ODMStatus, Role, EDBStatus } from '@prisma/client';
+
+
+function getDateRange(timeRange: string): { gte: Date; lte: Date } {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  switch (timeRange) {
+    case 'today':
+      return {
+        gte: today,
+        lte: now
+      };
+      
+    case 'this-week': {
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+      return {
+        gte: monday,
+        lte: now
+      };
+    }
+      
+    case 'this-month':
+      return {
+        gte: new Date(now.getFullYear(), now.getMonth(), 1),
+        lte: now
+      };
+      
+    case 'last-month': {
+      const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      return {
+        gte: firstDayLastMonth,
+        lte: lastDayLastMonth
+      };
+    }
+      
+    case 'last-3-months':
+      return {
+        gte: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+        lte: now
+      };
+      
+    case 'this-year':
+      return {
+        gte: new Date(now.getFullYear(), 0, 1),
+        lte: now
+      };
+      
+    case 'last-year':
+      return {
+        gte: new Date(now.getFullYear() - 1, 0, 1),
+        lte: new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
+      };
+      
+    default:
+      return {
+        gte: new Date(now.getFullYear(), now.getMonth(), 1),
+        lte: now
+      };
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +75,7 @@ export async function POST(req: Request) {
     }
 
     const { role } = session.user;
-    if (!['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'RH', 'ADMIN'].includes(role)) {
+    if (!['RESPONSABLE', 'MAGASINIER', 'DIRECTEUR', 'DIRECTEUR_GENERAL', 'RH', 'ADMIN'].includes(role)) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
@@ -40,70 +102,24 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const search = searchParams.get('search') || '';
     const timeRange = searchParams.get('timeRange') || 'this-month';
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dateRange = getDateRange(timeRange);
+
+    const statusFilter = status ? status.split(',') as ODMStatus[] : [];
     
-    let where: any = status ? { status } : {};
+      let where: Prisma.OrdreDeMissionWhereInput = {
+          createdAt: dateRange,
+          OR: [
+            { odmId: { contains: search, mode: 'insensitive' } },
+            { title: { contains: search, mode: 'insensitive' } },
+            { location: { contains: search, mode: 'insensitive' } },
+            { userCreator: { name: { contains: search, mode: 'insensitive' } } },
+            { userCreator: { email: { contains: search, mode: 'insensitive' } } },
+            { department: { name: { contains: search, mode: 'insensitive' } } },
+          ],
+          ...(statusFilter.length > 0 ? { status: { in: statusFilter } } : {}),
+        };
 
-    // Add time range filtering
-    switch (timeRange) {
-      case 'today':
-        where.createdAt = {
-          gte: today,
-          lte: now
-        };
-        break;
-        
-      case 'this-week': {
-        const monday = new Date(today);
-        monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-        where.createdAt = {
-          gte: monday,
-          lte: now
-        };
-        break;
-      }
-      case 'this-month':
-        where.createdAt = {
-          gte: new Date(now.getFullYear(), now.getMonth(), 1),
-          lte: now
-        };
-        break;
-      case 'last-month':
-        where.createdAt = {
-          gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-          lte: new Date(now.getFullYear(), now.getMonth(), 0)
-        };
-        break;
-      case 'last-3-months':
-        where.createdAt = {
-          gte: new Date(now.getFullYear(), now.getMonth() - 3, 1),
-          lte: now
-        };
-        break;
-      case 'this-year':
-        where.createdAt = {
-          gte: new Date(now.getFullYear(), 0, 1),
-          lte: now
-        };
-        break;
-      case 'last-year': 
-        where.createdAt = {
-          gte: new Date(now.getFullYear() - 1, 0, 1),
-          lte: new Date(now.getFullYear() - 1, 11, 31)
-        };
-        break;
-    }
 
-    // Add search functionality
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { location: { contains: search, mode: 'insensitive' } },
-        { odmId: { contains: search, mode: 'insensitive' } },
-        { userCreator: { name: { contains: search, mode: 'insensitive' } } },
-      ];
-    }
 
     // Role-based filtering
     if (session.user.role === 'RESPONSABLE') {

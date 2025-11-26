@@ -82,6 +82,10 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
     },
   });
 
+  // Find the rejection audit log if it exists
+  const rejectionLog = bdc.auditLogs?.find(log => log.eventType === "REJECTED");
+  const rejectedByUser = rejectionLog?.user;
+
   // Check if user is from DAF department
   const isDafDepartment = bdc.department.name === "Direction Administrative et Financière";
   
@@ -377,10 +381,10 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
                       <p>{bdc.printedBy?.name}</p>
                     </div>
                   )}
-                  {bdc.status === "REJECTED" && bdc.auditLogs && bdc.auditLogs.length > 0 && (
+                  {bdc.status === "REJECTED" && (bdc.rejector?.name) && (
                     <div>
                       <p className="font-extrabold text-destructive">Rejeté par:</p>
-                      <p>{bdc.auditLogs.find(log => log.eventType === "REJECTED")?.user?.id || "Inconnu"}</p>
+                      <p>{bdc.rejector?.name || "Inconnu"}</p>
                     </div>
                   )}  
                 </div>

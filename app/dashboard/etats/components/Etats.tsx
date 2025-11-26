@@ -851,6 +851,7 @@ import EDBMetrics from "./EDBMetrics"
                   <SelectItem value="last-3-months">Trimestre</SelectItem>
                   <SelectItem value="this-year">Cette année</SelectItem>
                   <SelectItem value="last-year">Année dernière</SelectItem>
+                  <SelectItem value="alltime">Tout</SelectItem>
                 </SelectContent>
               </Select>
                 <div className="ml-auto flex items-center gap-2">

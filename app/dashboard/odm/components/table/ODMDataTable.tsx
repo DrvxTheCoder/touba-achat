@@ -1,5 +1,5 @@
 // odm/components/table/ODMDataTable.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,17 @@ import * as XLSX from 'xlsx';
 import { translateStatus } from '@/app/utils/translate-status';
 import { toast } from 'sonner';
 
+const statusMapping = {
+  'Soumis': ['SUBMITTED'],
+  'Validé': ['AWAITING_DIRECTOR_APPROVAL'],
+  'En attente': ['AWAITING_RH_PROCESSING'],
+  'Traitement en cours': ['RH_PROCESSING'],
+  'Rejeté': ['REJECTED'],
+  'Traité': ['COMPLETED', 'AWAITING_FINANCE_APPROVAL'],
+};
+
+
+type StatusMappingKey = keyof typeof statusMapping;
 
 interface ODM {
   odmId: string;
@@ -47,6 +58,7 @@ export const ODMDataTable: React.FC<ODMDataTableProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -56,15 +68,23 @@ export const ODMDataTable: React.FC<ODMDataTableProps> = ({
         day: '2-digit'
     });
 };
+function isValidStatusMappingKey(key: string): key is StatusMappingKey {
+  return key in statusMapping;
+}
+  const statusFilter = useMemo(() => {
+    return selectedFilters
+      .filter(isValidStatusMappingKey)
+      .flatMap(key => statusMapping[key]);
+  }, [selectedFilters]);
 
   useEffect(() => {
       fetchODMs();
-  }, [page, debouncedSearchTerm, timeRange]);
+  }, [page, debouncedSearchTerm, timeRange, statusFilter]);
 
   const fetchODMs = async () => {
       setLoading(true);
       try {
-          const response = await fetch(`/api/odm?page=${page}&limit=5&search=${debouncedSearchTerm}&timeRange=${timeRange}`);
+          const response = await fetch(`/api/odm?page=${page}&limit=5&search=${debouncedSearchTerm}&timeRange=${timeRange}&status=${statusFilter.join(',')}`);
           if (!response.ok) {
               throw new Error('Failed to fetch ODMs');
           }
@@ -90,6 +110,19 @@ export const ODMDataTable: React.FC<ODMDataTableProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (filter: string) => {
+    if (isValidStatusMappingKey(filter)) {
+      setSelectedFilters(prev => 
+        prev.includes(filter) 
+          ? prev.filter(f => f !== filter)
+          : [...prev, filter]
+      );
+      setPage(1);
+    } else {
+      console.warn(`Invalid filter: ${filter}`);
     }
   };
 
@@ -146,7 +179,7 @@ export const ODMDataTable: React.FC<ODMDataTableProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          {/* <DropdownMenu>
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
@@ -155,16 +188,23 @@ export const ODMDataTable: React.FC<ODMDataTableProps> = ({
               >
                 <ListFilter className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only">Filtrer</span>
+                {selectedFilters.length !== 0 && (<small>{selectedFilters.length}</small>)}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Filtrer par</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem>
-                Status
-              </DropdownMenuCheckboxItem>
+              {Object.keys(statusMapping).map((status) => (
+                <DropdownMenuCheckboxItem 
+                  key={status}
+                  checked={selectedFilters.includes(status)}
+                  onCheckedChange={() => handleFilterChange(status)}
+                >
+                  {status}
+                </DropdownMenuCheckboxItem>
+              ))}
             </DropdownMenuContent>
-          </DropdownMenu> */}
+          </DropdownMenu>
           <Button
               size="sm"
               variant="outline"

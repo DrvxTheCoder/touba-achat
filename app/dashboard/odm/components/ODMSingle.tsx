@@ -134,8 +134,12 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
   const canValidate = odm.status === 'SUBMITTED';
   const canProcess = userRole === 'RH' && odm.status === 'RH_PROCESSING';
   const canEdit = userRole === 'RH' && isProcessed;
-  const isRHDirector = userRole === "DIRECTEUR" && userDepartment === "Direction Ressources Humaines";
+  const isRHDirector = (
+    (userRole === "DIRECTEUR" && userDepartment === "Direction Ressources Humaines") ||
+    userRole === "DRH"
+  );
   const canValidateAsRHDirector = isRHDirector && odm.status === 'AWAITING_RH_PROCESSING';
+  const cannotValidateAsRHDirector = isRHDirector && odm.department?.name !== "Direction Ressources Humaines";
 
   const isFinanceDirector = userRole === "DIRECTEUR" && userDepartment === "Direction Administrative et Financière";
   const canApproveFinance = isFinanceDirector && odm.status === 'AWAITING_FINANCE_APPROVAL';
@@ -400,7 +404,7 @@ const dateRange = `${formatDate(odm.startDate)} au ${formatDate(odm.endDate)}`;
                         <DropdownMenuShortcut><Edit className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
                       </DropdownMenuItem>
                       )}
-                      {isAuthorized && (
+                      {isAuthorized && !cannotValidateAsRHDirector && (
                         <>
                         
                         <DropdownMenuItem onClick={handleValidate} disabled={!canValidate} className="text-primary">

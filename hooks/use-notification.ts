@@ -62,28 +62,41 @@ async function fetchNotifications() {
       )
     );
 
-    const reverseOrder = [...newNotifications].reverse();
-
-    if (reverseOrder.length > 0) {
+    // Only show toasts for the 3 most recent notifications
+    if (newNotifications.length > 0) {
       audioElement?.play().catch(console.error);
       
-      newNotifications.forEach(notification => {
+      // Sort by creation date (newest first) and take only the first 3
+      const recentNotifications = [...newNotifications]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 4);
+      
+      recentNotifications.forEach(notification => {
         const { type, id } = extractDocumentId(notification.message);
         const url = generateDocumentUrl(type, id);
 
         toast("Nouvelle notification", {
           description: notification.message,
-          duration: 5000,
+          duration: 3000,
           action: {
             label: "Voir",
             onClick: () => {
-              // Mark as read
-              fetch(`/api/notifications/${notification.id}`, { method: 'PUT' });
+              // Mark as read when clicking the action button
               window.location.href = url;
+              fetch(`/api/notifications/${notification.id}`, { method: 'PUT' });
             },
           },
         });
       });
+      
+      // If there are more notifications than we're showing
+      const hiddenCount = newNotifications.length - recentNotifications.length;
+      if (hiddenCount > 0) {
+        toast(`${hiddenCount} autres notifications`, {
+          description: "Consultez le centre de notifications pour voir toutes les notifications",
+          duration: 3000,
+        });
+      }
     }
 
     globalState.previousNotifications = data;
