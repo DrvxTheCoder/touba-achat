@@ -51,7 +51,7 @@ import { translateStatus } from "@/app/utils/translate-status";
             <div className="rounded my-[40px] mx-auto max-w-[465px]">
               <Section className="mt-[32px]">
                 <Img
-                  src="https://touba.vercel.app/assets/img/touba-app192x192.png"
+                  src="https://touba-app.com/assets/img/touba-app192x192.png"
                   width="50"
                   alt="TOUBA OIL"
                   className="my-0 mx-auto"

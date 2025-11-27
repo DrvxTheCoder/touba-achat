@@ -79,7 +79,7 @@ export async function GET(
     try {
       const pdfBuffer = await renderToBuffer(BonDeCaissePDFTemplate({ data: pdfData }));
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(Buffer.from(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',

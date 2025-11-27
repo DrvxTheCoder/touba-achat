@@ -35,7 +35,10 @@ enum Access {
   RH_PROCESS
   CASHIER
   APPROVE_BDC
-  // Add other specific access types as needed
+  CREATE_PRODUCTION_INVENTORY
+  VIEW_PRODUCTION_DASHBOARD
+  VALIDATE_PRODUCTION_INVENTORY
+  EXPORT_PRODUCTION_REPORTS
 }
 
 enum EmployeeStatus {
@@ -198,6 +201,40 @@ enum StockEDBStatus {
   CONVERTED   // When converted to standard EDB
 }
 
+enum ProductionStatus {
+  EN_COURS              // Journée démarrée, saisie non complétée
+  TERMINE               // Saisie complétée et validée
+  ARCHIVE               // Archivé (> 2 ans)
+}
+
+enum ArretType {
+  INCIDENT_TECHNIQUE
+  PANNE
+  MAINTENANCE
+  AUTRE
+}
+
+enum BottleType {
+  B2_7                  // 2.7kg
+  B6                    // 6kg
+  B9                    // 9kg
+  B12_5                 // 12.5kg
+  B12_5K                // 12.5kg Kheuweul (avec robinet)
+  B38                   // 38kg
+}
+
+enum SphereType {
+  SO2
+  SO3
+  D100
+}
+
+enum ReservoirType {
+  SPHERE
+  CIGARE
+  AUTRE
+}
+
 model User {
   id                    Int             @id @default(autoincrement())
   email                 String          @unique
@@ -230,6 +267,10 @@ model User {
   rejectedBdcs          BonDeCaisse[] @relation("BDCRejector")
   printedBdcs           BonDeCaisse[] @relation("BDCPrinter")
   bdcAuditLogs          BonDeCaisseAuditLog[]
+  ProductionStarter     ProductionInventory[] @relation("ProductionStarter")
+  ProductionCompleter   ProductionInventory[] @relation("ProductionCompleter")
+  ArretCreator          ProductionArret[] @relation("ArretCreator")
+  ProductionCentersManaged ProductionCenter[] @relation("ChefProduction")
 }
 
 model Employee {
@@ -463,6 +504,166 @@ model BonDeCaisseAuditLog {
   eventType     BDCEventType
   eventAt       DateTime     @default(now())
   details       Json?        // For storing any additional event-specific details
+}
+
+model ProductionInventory {
+  id                    Int                  @id @default(autoincrement())
+  date                  DateTime             @unique
+  status                ProductionStatus     @default(EN_COURS)
+
+  // Centre de production
+  productionCenterId    Int?
+  productionCenter      ProductionCenter?    @relation(fields: [productionCenterId], references: [id])
+
+  // Timeline
+  startedAt             DateTime             @default(now())
+  startedById           Int
+  startedBy             User                 @relation("ProductionStarter", fields: [startedById], references: [id])
+
+  completedAt           DateTime?
+  completedById         Int?
+  completedBy           User?                @relation("ProductionCompleter", fields: [completedById], references: [id])
+
+  // Temps de production
+  tempsTotal            Int                  // En minutes, calculé auto
+  tempsArret            Int                  @default(0) // En minutes
+  tempsUtile            Int                  // Calculé: tempsTotal - tempsArret
+  rendement             Float?               // (tempsUtile / tempsTotal) * 100
+
+  arrets                ProductionArret[]
+
+  // Stocks
+  stockInitialPhysique  Float                // Auto depuis veille
+  butanier              Float?
+  recuperation          Float                @default(0)
+  approSAR              Float                @default(0)
+
+  // Calculés
+  cumulSortie           Float                @default(0)
+  stockFinalTheorique   Float?
+  stockFinalPhysique    Float?
+  ecart                 Float?
+  ecartPourcentage      Float?
+
+  // Production
+  bottles               BottleProduction[]
+  totalBottlesProduced  Int                  @default(0)
+
+  // Exports
+  ngabou                Float                @default(0)
+  exports               Float                @default(0)
+  divers                Float                @default(0)
+
+  // Réservoirs
+  reservoirs            Reservoir[]
+
+  // Audit
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  observations          String?
+}
+
+model ProductionArret {
+  id                    Int                  @id @default(autoincrement())
+  inventoryId           Int
+  inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  
+  type                  ArretType
+  heureDebut            DateTime
+  heureFin              DateTime
+  duree                 Int                  // En minutes
+  remarque              String?
+  
+  createdAt             DateTime             @default(now())
+  createdById           Int
+  createdBy             User                 @relation("ArretCreator", fields: [createdById], references: [id])
+}
+
+model BottleProduction {
+  id                    Int                  @id @default(autoincrement())
+  inventoryId           Int
+  inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  
+  type                  BottleType
+  quantity              Int
+  tonnage               Float                // Calculé auto
+  
+  @@unique([inventoryId, type])
+}
+
+model Reservoir {
+  id                    Int                  @id @default(autoincrement())
+  inventoryId           Int
+  inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  name                  String               // Nom du réservoir (D100, SO2, SO3, etc.)
+  reservoirConfigId     Int?
+  reservoirConfig       ReservoirConfig?     @relation(fields: [reservoirConfigId], references: [id])
+
+  // 5 champs de saisie manuelle
+  hauteur               Float                @default(0)     // en mm
+  temperature           Float                @default(20)    // en °C (15.1 - 35.3)
+  volumeLiquide         Float                @default(0)     // en m³
+  pressionInterne       Float                @default(0)     // en bar
+  densiteA15C           Float                @default(0) // densité à 15°C (typiquement 0.508)
+
+  // 6 champs calculés automatiquement
+  facteurCorrectionLiquide Float?
+  facteurCorrectionVapeur  Float?
+  densiteAmbiante          Float?
+  poidsLiquide             Float?            // en tonnes
+  poidsGaz                 Float?            // en tonnes
+  poidsTotal               Float?            // en tonnes
+
+  @@unique([inventoryId, name])
+}
+
+model ProductionCenter {
+  id                    Int                  @id @default(autoincrement())
+  name                  String               @unique
+  address               String
+  chefProductionId      Int
+  chefProduction        User                 @relation("ChefProduction", fields: [chefProductionId], references: [id])
+
+  reservoirs            ReservoirConfig[]
+  inventories           ProductionInventory[]
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+}
+
+model ReservoirConfig {
+  id                    Int                  @id @default(autoincrement())
+  name                  String               // D100, SO2, SO3, etc.
+  type                  ReservoirType        // SPHERE, CIGARE, AUTRE
+  capacity              Float                // Capacité en m³
+
+  productionCenterId    Int
+  productionCenter      ProductionCenter     @relation(fields: [productionCenterId], references: [id], onDelete: Cascade)
+
+  reservoirs            Reservoir[]
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([name, productionCenterId])
+}
+
+model BottleTypeConfig {
+  id                    Int                  @id @default(autoincrement())
+  type                  BottleType           @unique
+  weight                Float                // Poids en kg
+  name                  String               // Nom d'affichage (ex: "2.7kg", "6kg", etc.)
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+}
+
+model CorrectionFactorTable {
+  id                    Int      @id @default(autoincrement())
+  temperature           Float    @unique      // de 15.1 à 35.3 par pas de 0.2
+  facteurLiquide        Float
+  facteurVapeur         Float
 }
 
 
