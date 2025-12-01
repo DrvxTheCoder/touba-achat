@@ -14,6 +14,7 @@ import {
   PenBoxIcon,
   HandCoins,
   Factory,
+  Database,
 } from "lucide-react";
 
 type Submenu = {
@@ -97,6 +98,13 @@ export function getAdminMenuList(pathname: string): Group[] {
           label: "Employés / Utilisateur",
           active: pathname.includes("/dashboard/employes"),
           icon: Users,
+          submenus: []
+        },
+        {
+          href: "/dashboard/studio",
+          label: "Prisma Studio",
+          active: pathname.includes("/dashboard/studio"),
+          icon: Database,
           submenus: []
         },
 

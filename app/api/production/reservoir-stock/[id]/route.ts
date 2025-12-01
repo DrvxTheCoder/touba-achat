@@ -63,7 +63,7 @@ export async function GET(
     }
 
     const reservoir = latestInventory.reservoirs[0];
-    const stockActuel = reservoir.poidsTotal || 0;
+    const stockActuel = reservoir.poidsLiquide || 0;
     const capacityInTonnes = reservoirConfig.capacity * 0.51; // Convert m³ to tonnes
     const pourcentageRemplissage = capacityInTonnes > 0
       ? (stockActuel / capacityInTonnes) * 100

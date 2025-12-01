@@ -1,7 +1,7 @@
 // lib/data/correctionFactors.ts
 // Généré automatiquement depuis FACTEUR_DE_CORRECTION_DENSITES.xlsx
 // Table de conversion température → facteurs de correction pour densité
-// 121 températures de 15.0°C à 32.9°C
+// 211 températures de 15.0°C à 36.0°C
 
 export interface CorrectionFactor {
   temperature: number;
@@ -316,6 +316,301 @@ export const CORRECTION_FACTORS_TABLE: CorrectionFactor[] = [
     "facteurGaz": 0.002389
   },
   {
+    "temperature": 21.1,
+    "facteurLiquide": 0.007,
+    "facteurGaz": 0.002388
+  },
+  {
+    "temperature": 21.2,
+    "facteurLiquide": 0.0071,
+    "facteurGaz": 0.002387
+  },
+  {
+    "temperature": 21.3,
+    "facteurLiquide": 0.0073,
+    "facteurGaz": 0.002386
+  },
+  {
+    "temperature": 21.4,
+    "facteurLiquide": 0.0074,
+    "facteurGaz": 0.002385
+  },
+  {
+    "temperature": 21.5,
+    "facteurLiquide": 0.0075,
+    "facteurGaz": 0.002384
+  },
+  {
+    "temperature": 21.6,
+    "facteurLiquide": 0.0076,
+    "facteurGaz": 0.002383
+  },
+  {
+    "temperature": 21.7,
+    "facteurLiquide": 0.0077,
+    "facteurGaz": 0.002382
+  },
+  {
+    "temperature": 21.8,
+    "facteurLiquide": 0.0078,
+    "facteurGaz": 0.002381
+  },
+  {
+    "temperature": 21.9,
+    "facteurLiquide": 0.0079,
+    "facteurGaz": 0.00238
+  },
+  {
+    "temperature": 22.0,
+    "facteurLiquide": 0.0081,
+    "facteurGaz": 0.002379
+  },
+  {
+    "temperature": 22.1,
+    "facteurLiquide": 0.0082,
+    "facteurGaz": 0.002378
+  },
+  {
+    "temperature": 22.2,
+    "facteurLiquide": 0.0083,
+    "facteurGaz": 0.002377
+  },
+  {
+    "temperature": 22.3,
+    "facteurLiquide": 0.0084,
+    "facteurGaz": 0.002376
+  },
+  {
+    "temperature": 22.4,
+    "facteurLiquide": 0.0085,
+    "facteurGaz": 0.002375
+  },
+  {
+    "temperature": 22.5,
+    "facteurLiquide": 0.0086,
+    "facteurGaz": 0.002374
+  },
+  {
+    "temperature": 22.6,
+    "facteurLiquide": 0.0087,
+    "facteurGaz": 0.002373
+  },
+  {
+    "temperature": 22.7,
+    "facteurLiquide": 0.0088,
+    "facteurGaz": 0.002372
+  },
+  {
+    "temperature": 22.8,
+    "facteurLiquide": 0.0089,
+    "facteurGaz": 0.002371
+  },
+  {
+    "temperature": 22.9,
+    "facteurLiquide": 0.009,
+    "facteurGaz": 0.00237
+  },
+  {
+    "temperature": 23.0,
+    "facteurLiquide": 0.0092,
+    "facteurGaz": 0.002369
+  },
+  {
+    "temperature": 23.1,
+    "facteurLiquide": 0.0093,
+    "facteurGaz": 0.002368
+  },
+  {
+    "temperature": 23.2,
+    "facteurLiquide": 0.0094,
+    "facteurGaz": 0.002367
+  },
+  {
+    "temperature": 23.3,
+    "facteurLiquide": 0.0096,
+    "facteurGaz": 0.002366
+  },
+  {
+    "temperature": 23.4,
+    "facteurLiquide": 0.0097,
+    "facteurGaz": 0.002365
+  },
+  {
+    "temperature": 23.5,
+    "facteurLiquide": 0.0098,
+    "facteurGaz": 0.002364
+  },
+  {
+    "temperature": 23.6,
+    "facteurLiquide": 0.0099,
+    "facteurGaz": 0.002363
+  },
+  {
+    "temperature": 23.7,
+    "facteurLiquide": 0.01,
+    "facteurGaz": 0.002362
+  },
+  {
+    "temperature": 23.8,
+    "facteurLiquide": 0.0101,
+    "facteurGaz": 0.002361
+  },
+  {
+    "temperature": 23.9,
+    "facteurLiquide": 0.0103,
+    "facteurGaz": 0.00236
+  },
+  {
+    "temperature": 24.0,
+    "facteurLiquide": 0.0104,
+    "facteurGaz": 0.002359
+  },
+  {
+    "temperature": 24.1,
+    "facteurLiquide": 0.0105,
+    "facteurGaz": 0.002358
+  },
+  {
+    "temperature": 24.2,
+    "facteurLiquide": 0.0106,
+    "facteurGaz": 0.002357
+  },
+  {
+    "temperature": 24.3,
+    "facteurLiquide": 0.0107,
+    "facteurGaz": 0.002356
+  },
+  {
+    "temperature": 24.4,
+    "facteurLiquide": 0.0108,
+    "facteurGaz": 0.002356
+  },
+  {
+    "temperature": 24.5,
+    "facteurLiquide": 0.011,
+    "facteurGaz": 0.002355
+  },
+  {
+    "temperature": 24.6,
+    "facteurLiquide": 0.0111,
+    "facteurGaz": 0.002354
+  },
+  {
+    "temperature": 24.7,
+    "facteurLiquide": 0.0112,
+    "facteurGaz": 0.002353
+  },
+  {
+    "temperature": 24.8,
+    "facteurLiquide": 0.0114,
+    "facteurGaz": 0.002352
+  },
+  {
+    "temperature": 24.9,
+    "facteurLiquide": 0.0115,
+    "facteurGaz": 0.002352
+  },
+  {
+    "temperature": 25.0,
+    "facteurLiquide": 0.0116,
+    "facteurGaz": 0.002351
+  },
+  {
+    "temperature": 25.1,
+    "facteurLiquide": 0.0117,
+    "facteurGaz": 0.00235
+  },
+  {
+    "temperature": 25.2,
+    "facteurLiquide": 0.0118,
+    "facteurGaz": 0.002349
+  },
+  {
+    "temperature": 25.3,
+    "facteurLiquide": 0.0119,
+    "facteurGaz": 0.002348
+  },
+  {
+    "temperature": 25.4,
+    "facteurLiquide": 0.012,
+    "facteurGaz": 0.002347
+  },
+  {
+    "temperature": 25.5,
+    "facteurLiquide": 0.0121,
+    "facteurGaz": 0.002346
+  },
+  {
+    "temperature": 25.6,
+    "facteurLiquide": 0.0123,
+    "facteurGaz": 0.002345
+  },
+  {
+    "temperature": 25.7,
+    "facteurLiquide": 0.0123,
+    "facteurGaz": 0.002344
+  },
+  {
+    "temperature": 25.8,
+    "facteurLiquide": 0.0125,
+    "facteurGaz": 0.002343
+  },
+  {
+    "temperature": 25.9,
+    "facteurLiquide": 0.0126,
+    "facteurGaz": 0.002342
+  },
+  {
+    "temperature": 26.0,
+    "facteurLiquide": 0.0127,
+    "facteurGaz": 0.002341
+  },
+  {
+    "temperature": 26.1,
+    "facteurLiquide": 0.0128,
+    "facteurGaz": 0.00234
+  },
+  {
+    "temperature": 26.2,
+    "facteurLiquide": 0.0129,
+    "facteurGaz": 0.002339
+  },
+  {
+    "temperature": 26.3,
+    "facteurLiquide": 0.0131,
+    "facteurGaz": 0.002338
+  },
+  {
+    "temperature": 26.4,
+    "facteurLiquide": 0.0132,
+    "facteurGaz": 0.002337
+  },
+  {
+    "temperature": 26.5,
+    "facteurLiquide": 0.0333,
+    "facteurGaz": 0.002336
+  },
+  {
+    "temperature": 26.6,
+    "facteurLiquide": 0.0134,
+    "facteurGaz": 0.002335
+  },
+  {
+    "temperature": 26.7,
+    "facteurLiquide": 0.0135,
+    "facteurGaz": 0.002334
+  },
+  {
+    "temperature": 26.8,
+    "facteurLiquide": 0.0137,
+    "facteurGaz": 0.002333
+  },
+  {
+    "temperature": 26.9,
+    "facteurLiquide": 0.0138,
+    "facteurGaz": 0.002332
+  },
+  {
     "temperature": 27.0,
     "facteurLiquide": 0.0139,
     "facteurGaz": 0.002331
@@ -614,6 +909,161 @@ export const CORRECTION_FACTORS_TABLE: CorrectionFactor[] = [
     "temperature": 32.9,
     "facteurLiquide": 0.0206,
     "facteurGaz": 0.002278
+  },
+  {
+    "temperature": 33.0,
+    "facteurLiquide": 0.0207,
+    "facteurGaz": 0.002277
+  },
+  {
+    "temperature": 33.1,
+    "facteurLiquide": 0.0208,
+    "facteurGaz": 0.002276
+  },
+  {
+    "temperature": 33.2,
+    "facteurLiquide": 0.0209,
+    "facteurGaz": 0.002275
+  },
+  {
+    "temperature": 33.3,
+    "facteurLiquide": 0.021,
+    "facteurGaz": 0.002275
+  },
+  {
+    "temperature": 33.4,
+    "facteurLiquide": 0.0211,
+    "facteurGaz": 0.002274
+  },
+  {
+    "temperature": 33.5,
+    "facteurLiquide": 0.0212,
+    "facteurGaz": 0.002273
+  },
+  {
+    "temperature": 33.6,
+    "facteurLiquide": 0.0214,
+    "facteurGaz": 0.002272
+  },
+  {
+    "temperature": 33.7,
+    "facteurLiquide": 0.0215,
+    "facteurGaz": 0.002271
+  },
+  {
+    "temperature": 33.8,
+    "facteurLiquide": 0.0216,
+    "facteurGaz": 0.002271
+  },
+  {
+    "temperature": 33.9,
+    "facteurLiquide": 0.0217,
+    "facteurGaz": 0.00227
+  },
+  {
+    "temperature": 34.0,
+    "facteurLiquide": 0.0218,
+    "facteurGaz": 0.002269
+  },
+  {
+    "temperature": 34.1,
+    "facteurLiquide": 0.0219,
+    "facteurGaz": 0.002268
+  },
+  {
+    "temperature": 34.2,
+    "facteurLiquide": 0.0221,
+    "facteurGaz": 0.002267
+  },
+  {
+    "temperature": 34.3,
+    "facteurLiquide": 0.0222,
+    "facteurGaz": 0.002267
+  },
+  {
+    "temperature": 34.4,
+    "facteurLiquide": 0.0223,
+    "facteurGaz": 0.002266
+  },
+  {
+    "temperature": 34.5,
+    "facteurLiquide": 0.0224,
+    "facteurGaz": 0.002265
+  },
+  {
+    "temperature": 34.6,
+    "facteurLiquide": 0.0225,
+    "facteurGaz": 0.002264
+  },
+  {
+    "temperature": 34.7,
+    "facteurLiquide": 0.0226,
+    "facteurGaz": 0.002263
+  },
+  {
+    "temperature": 34.8,
+    "facteurLiquide": 0.0228,
+    "facteurGaz": 0.002263
+  },
+  {
+    "temperature": 34.9,
+    "facteurLiquide": 0.0229,
+    "facteurGaz": 0.002262
+  },
+  {
+    "temperature": 35.0,
+    "facteurLiquide": 0.023,
+    "facteurGaz": 0.002261
+  },
+  {
+    "temperature": 35.1,
+    "facteurLiquide": 0.0231,
+    "facteurGaz": 0.00226
+  },
+  {
+    "temperature": 35.2,
+    "facteurLiquide": 0.0232,
+    "facteurGaz": 0.002259
+  },
+  {
+    "temperature": 35.3,
+    "facteurLiquide": 0.0234,
+    "facteurGaz": 0.002259
+  },
+  {
+    "temperature": 35.4,
+    "facteurLiquide": 0.0235,
+    "facteurGaz": 0.02258
+  },
+  {
+    "temperature": 35.5,
+    "facteurLiquide": 0.0236,
+    "facteurGaz": 0.002257
+  },
+  {
+    "temperature": 35.6,
+    "facteurLiquide": 0.0237,
+    "facteurGaz": 0.002256
+  },
+  {
+    "temperature": 35.7,
+    "facteurLiquide": 0.0238,
+    "facteurGaz": 0.002255
+  },
+  {
+    "temperature": 35.8,
+    "facteurLiquide": 0.024,
+    "facteurGaz": 0.002255
+  },
+  {
+    "temperature": 35.9,
+    "facteurLiquide": 0.0241,
+    "facteurGaz": 0.002254
+  },
+  {
+    "temperature": 36.0,
+    "facteurLiquide": 0.0242,
+    "facteurGaz": 0.002253
   }
 ];
 

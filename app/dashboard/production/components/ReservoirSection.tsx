@@ -168,8 +168,8 @@ export default function ReservoirSection({
     }
   };
 
-  const totalStockFinal = reservoirs.reduce((sum, r) => sum + (r.poidsTotal || 0), 0);
-  const allReservoirsCalculated = reservoirs.every(r => r.poidsTotal !== undefined && r.poidsTotal > 0);
+  const totalStockFinal = reservoirs.reduce((sum, r) => sum + (r.poidsLiquide || 0), 0);
+  const allReservoirsCalculated = reservoirs.every(r => r.poidsLiquide !== undefined && r.poidsLiquide > 0);
 
   // Show loading state while fetching configs
   if (loading) {
@@ -211,7 +211,7 @@ export default function ReservoirSection({
         <p className="text-sm text-muted-foreground mb-4">
           Saisir les 5 mesures pour chaque réservoir. Les calculs se font automatiquement.
         </p>
-        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
+        {/* <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
             <strong>Sources des données :</strong>
@@ -223,13 +223,13 @@ export default function ReservoirSection({
             <br />
             <strong>💡 Calcul automatique du volume :</strong> Pour les réservoirs sphériques, vous pouvez utiliser le bouton calculatrice (<Calculator className="h-3 w-3 inline" />) pour calculer automatiquement le volume depuis la hauteur. Cette fonction est désactivée pour les réservoirs de type CIGARE.
           </AlertDescription>
-        </Alert>
+        </Alert> */}
       </div>
 
       <div className="space-y-6">
         {reservoirs.map((reservoir, index) => {
           const hasErrors = validationErrors[reservoir.name]?.length > 0;
-          const isCalculated = reservoir.poidsTotal !== undefined && reservoir.poidsTotal > 0;
+          const isCalculated = reservoir.poidsLiquide !== undefined && reservoir.poidsLiquide > 0;
           const config = reservoirConfigs.find(c => c.id === reservoir.reservoirConfigId);
           const capacity = config?.capacity || 0;
           const isCigare = config?.type === 'CIGARE';
@@ -315,13 +315,13 @@ export default function ReservoirSection({
                         step="0.001"
                         min="0"
                         max={capacity}
-                        value={reservoir.volumeLiquide.toFixed(3)}
+                        value={reservoir.volumeLiquide}
                         onChange={(e) => updateReservoir(index, 'volumeLiquide', parseFloat(e.target.value) || 0)}
                         disabled={disabled}
                         className="font-mono flex-1"
                         placeholder="0.000"
                       />
-                      {!isCigare && (
+                      {/* {!isCigare && (
                         <Button
                           type="button"
                           variant="outline"
@@ -333,7 +333,7 @@ export default function ReservoirSection({
                         >
                           <Calculator className="h-4 w-4" />
                         </Button>
-                      )}
+                      )} */}
                     </div>
                     {isCigare && (
                       <p className="text-xs text-muted-foreground">
@@ -446,7 +446,7 @@ export default function ReservoirSection({
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-semibold text-lg">Stock Final Physique (Total)</h4>
-            <p className="text-xs text-muted-foreground">Somme des poids totaux de tous les réservoirs</p>
+            <p className="text-xs text-muted-foreground">Somme des poids liquides de tous les réservoirs</p>
           </div>
           <div className="text-right">
             <div className={`text-3xl font-bold ${allReservoirsCalculated ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
@@ -462,15 +462,15 @@ export default function ReservoirSection({
         </div>
       </Card>
 
-      <div className="text-xs text-muted-foreground space-y-1 bg-muted p-3 rounded">
+      {/* <div className="text-xs text-muted-foreground space-y-1 bg-muted p-3 rounded">
         <p className="font-semibold">ℹ️ Formules de calcul :</p>
-        <p>• Les facteurs de correction sont interpolés depuis une table de 121 températures (15.0°C - 32.9°C)</p>
+        <p>• Les facteurs de correction sont interpolés depuis une table de 121 températures (15.0°C - 36°C)</p>
         <p>• Densité ambiante = Densité à 15°C - Facteur correction liquide</p>
         <p>• Poids liquide = Densité ambiante × Volume liquide</p>
-        <p>• Poids gaz = (Capacité - Volume liquide) × Facteur correction gaz × (Pression + 1)</p>
-        <p>• Poids total = Poids liquide + Poids gaz</p>
-        <p>• Stock Final Physique = Somme des poids totaux de tous les réservoirs</p>
-      </div>
+        <p>• Poids gaz = (Capacité - Volume liquide) × Facteur correction gaz × (Pression + 1) <em>(référence uniquement)</em></p>
+        <p>• Poids total = Poids liquide + Poids gaz <em>(référence uniquement)</em></p>
+        <p>• <strong>Stock Final Physique = Somme des poids liquides uniquement</strong></p>
+      </div> */}
     </div>
   );
 }

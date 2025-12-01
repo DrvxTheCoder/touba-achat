@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, Info, Calculator } from 'lucide-react';
 import { SPHERE_LABELS } from '@/lib/types/production';
-import { ReservoirType } from '@prisma/client';
 import { calculateSphereData, validateSphereInput, SphereInputData, SPHERE_CAPACITIES, calculateLiquidVolumeFromHeight } from '@/lib/utils/sphereCalculations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ReservoirType } from '@prisma/client';
 
 interface Sphere {
   id?: number;
@@ -111,8 +111,8 @@ export default function SpheresSection({
     }
   };
 
-  const totalStockFinal = spheres.reduce((sum, s) => sum + (s.poidsTotal || 0), 0);
-  const allSpheresCalculated = spheres.every(s => s.poidsTotal !== undefined && s.poidsTotal > 0);
+  const totalStockFinal = spheres.reduce((sum, s) => sum + (s.poidsLiquide || 0), 0);
+  const allSpheresCalculated = spheres.every(s => s.poidsLiquide !== undefined && s.poidsLiquide > 0);
 
   // Show loading state while initializing
   if (spheres.length === 0) {
@@ -130,7 +130,7 @@ export default function SpheresSection({
         <p className="text-sm text-muted-foreground mb-4">
           Saisir les 5 mesures pour chaque sphère. Les calculs se font automatiquement.
         </p>
-        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
+        {/* <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
             <strong>Sources des données :</strong>
@@ -142,13 +142,13 @@ export default function SpheresSection({
             <br />
             <strong>💡 Calcul automatique du volume :</strong> Vous pouvez utiliser le bouton calculatrice (<Calculator className="h-3 w-3 inline" />) à côté du volume liquide pour le calculer automatiquement depuis la hauteur (formule de segment sphérique).
           </AlertDescription>
-        </Alert>
+        </Alert> */}
       </div>
 
       <div className="space-y-6">
         {spheres.map((sphere, index) => {
           const hasErrors = validationErrors[sphere.name]?.length > 0;
-          const isCalculated = sphere.poidsTotal !== undefined && sphere.poidsTotal > 0;
+          const isCalculated = sphere.poidsLiquide !== undefined && sphere.poidsLiquide > 0;
           const capacity = SPHERE_CAPACITIES[sphere.name];
 
           return (
@@ -218,16 +218,15 @@ export default function SpheresSection({
                     <div className="flex gap-2">
                       <Input
                         type="number"
-                        step="0.001"
                         min="0"
                         max={capacity}
-                        value={sphere.volumeLiquide.toFixed(3)}
+                        value={sphere.volumeLiquide}
                         onChange={(e) => updateSphere(index, 'volumeLiquide', parseFloat(e.target.value) || 0)}
                         disabled={disabled}
                         className="font-mono flex-1"
                         placeholder="0.000"
                       />
-                      <Button
+                      {/* <Button
                         type="button"
                         variant="outline"
                         size="icon"
@@ -237,7 +236,7 @@ export default function SpheresSection({
                         className="shrink-0"
                       >
                         <Calculator className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
 
@@ -269,11 +268,13 @@ export default function SpheresSection({
                     <Input
                       type="number"
                       step="0.001"
+                      min="0.4"
+                      max="0.6"
                       value={sphere.densiteA15C}
-                      onChange={(e) => updateSphere(index, 'densiteA15C', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => updateSphere(index, 'densiteA15C', parseFloat(e.target.value) || 0.508)}
                       disabled={disabled}
                       className="font-mono"
-                      placeholder="0.0"
+                      placeholder="0.508"
                     />
                   </div>
                 </div>
@@ -301,11 +302,11 @@ export default function SpheresSection({
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                       <div className="bg-muted p-2 rounded">
                         <div className="text-muted-foreground">Facteur correction liquide</div>
-                        <div className="font-mono font-semibold">{sphere.facteurCorrectionLiquide?.toFixed(5)}</div>
+                        <div className="font-mono font-semibold">{sphere.facteurCorrectionLiquide?.toFixed(6)}</div>
                       </div>
                       <div className="bg-muted p-2 rounded">
                         <div className="text-muted-foreground">Facteur correction vapeur</div>
-                        <div className="font-mono font-semibold">{sphere.facteurCorrectionVapeur?.toFixed(5)}</div>
+                        <div className="font-mono font-semibold">{sphere.facteurCorrectionVapeur?.toFixed(6)}</div>
                       </div>
                       <div className="bg-muted p-2 rounded">
                         <div className="text-muted-foreground">Densité ambiante</div>
@@ -359,15 +360,15 @@ export default function SpheresSection({
         </div>
       </Card>
 
-      <div className="text-xs text-muted-foreground space-y-1 bg-muted p-3 rounded">
+      {/* <div className="text-xs text-muted-foreground space-y-1 bg-muted p-3 rounded">
         <p className="font-semibold">ℹ️ Formules de calcul :</p>
-        <p>• Les facteurs de correction sont interpolés depuis une table de 121 températures (15.0°C - 32.9°C)</p>
+        <p>• Les facteurs de correction sont interpolés depuis une table de 121 températures (15.0°C - 36°C)</p>
         <p>• Densité ambiante = Densité à 15°C - Facteur correction liquide</p>
         <p>• Poids liquide = Densité ambiante × Volume liquide</p>
         <p>• Poids gaz = (Capacité - Volume liquide) × Facteur correction gaz × (Pression + 1)</p>
         <p>• Poids total = Poids liquide + Poids gaz</p>
         <p>• Stock Final Physique = Somme des poids totaux des 3 sphères</p>
-      </div>
+      </div> */}
     </div>
   );
 }

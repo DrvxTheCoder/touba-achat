@@ -124,7 +124,7 @@ export default function ProductionForm({
 
   const stockFinalPhysique = formData.reservoirs.reduce(
     (sum, s) => {
-      const poids = parseFloat((s as any).poidsTotal) || 0;
+      const poids = parseFloat((s as any).poidsLiquide) || 0;
       return sum + poids;
     },
     0
