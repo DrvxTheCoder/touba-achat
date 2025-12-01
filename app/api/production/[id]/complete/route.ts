@@ -124,7 +124,7 @@ export async function POST(
         });
 
         // Utiliser le poids total calculé pour le stock final
-        stockFinalPhysique += calculatedSphere.poidsTotal;
+        stockFinalPhysique += calculatedSphere.poidsLiquide;
       }
 
       // Calculs finaux

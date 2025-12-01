@@ -179,7 +179,7 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
     }, 0);
   };
 
-  const calculateReservoirAvg = (reservoirName: string, field: 'hauteur' | 'poidsTotal') => {
+  const calculateReservoirAvg = (reservoirName: string, field: 'hauteur' | 'poidsLiquide') => {
     const values = inventories
       .map(inv => inv.reservoirs?.find((r: any) => r.name === reservoirName)?.[field])
       .filter(v => v !== undefined && v !== null);
@@ -391,8 +391,8 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
                   return (
                     <View key={resIdx} style={styles.colSphere}>
                       <Text style={styles.cellText}>
-                        {reservoir ? `${reservoir.poidsTotal?.toFixed(3) || '0.000'}T` : '-'}
-                        {/* {reservoir ? `${reservoir.hauteur}mm / ${reservoir.poidsTotal?.toFixed(1) || '0.0'}T` : '-'} */}
+                        {reservoir ? `${reservoir.poidsLiquide?.toFixed(3) || '0.000'}T` : '-'}
+                        {/* {reservoir ? `${reservoir.hauteur}mm / ${reservoir.poidsLiquide?.toFixed(1) || '0.0'}T` : '-'} */}
                       </Text>
                     </View>
                   );
@@ -471,8 +471,8 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
               {reservoirNames.map((name, resIdx) => (
                 <View key={resIdx} style={styles.colSphere}>
                   <Text style={[styles.cellText, { fontSize: 6 }]}>
-                    {/* {calculateReservoirAvg(name, 'hauteur').toFixed(0)}mm / 
-                    {calculateReservoirAvg(name, 'poidsTotal').toFixed(3)}T */}
+                    {/* {calculateReservoirAvg(name, 'hauteur').toFixed(0)}mm /
+                    {calculateReservoirAvg(name, 'poidsLiquide').toFixed(3)}T */}
                     -
                   </Text>
                 </View>

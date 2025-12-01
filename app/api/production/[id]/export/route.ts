@@ -63,10 +63,33 @@ export async function GET(
       return NextResponse.json({ error: 'Inventaire non trouvé' }, { status: 404 });
     }
 
+    // Fetch previous day's inventory for comparison
+    const currentDate = new Date(inventory.date);
+    const previousDate = new Date(currentDate);
+    previousDate.setDate(previousDate.getDate() - 1);
+
+    const previousInventory = await prisma.productionInventory.findFirst({
+      where: {
+        date: previousDate,
+        status: 'TERMINE',
+        ...(inventory.productionCenterId && { productionCenterId: inventory.productionCenterId })
+      },
+      include: {
+        reservoirs: {
+          orderBy: { name: 'asc' },
+          include: {
+            reservoirConfig: {
+              select: { name: true, type: true, capacity: true }
+            }
+          }
+        }
+      }
+    });
+
     if (format === 'excel') {
-      return generateExcelExport(inventory);
+      return generateExcelExport(inventory, previousInventory);
     } else if (format === 'pdf') {
-      return generatePDFExport(inventory);
+      return generatePDFExport(inventory, previousInventory);
     } else {
       return NextResponse.json({ error: 'Format invalide' }, { status: 400 });
     }
@@ -76,7 +99,7 @@ export async function GET(
   }
 }
 
-function generateExcelExport(inventory: any) {
+function generateExcelExport(inventory: any, previousInventory: any = null) {
   const workbook = XLSX.utils.book_new();
   const date = new Date(inventory.date).toLocaleDateString('fr-FR');
 
@@ -292,7 +315,7 @@ function generateExcelExport(inventory: any) {
   });
 }
 
-async function generatePDFExport(inventory: any) {
+async function generatePDFExport(inventory: any, previousInventory: any = null) {
   try {
     // Generate QR code
     const qrCodeDataUrl = await QRCode.toDataURL(
@@ -301,7 +324,7 @@ async function generatePDFExport(inventory: any) {
 
     // Render the PDF document to a buffer
     const pdfBuffer = await renderToBuffer(
-      ProductionInventoryPDF({ inventory, qrCodeImage: qrCodeDataUrl })
+      ProductionInventoryPDF({ inventory, previousInventory, qrCodeImage: qrCodeDataUrl })
     );
 
     const filename = `inventaire_production_${new Date(inventory.date).toISOString().split('T')[0]}.pdf`;

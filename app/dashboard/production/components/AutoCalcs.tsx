@@ -152,7 +152,7 @@ export default function AutoCalcs({
       </div>
 
       {/* Formule explicative */}
-      <Card className="p-4 mt-6 bg-muted/30">
+      {/* <Card className="p-4 mt-6 bg-muted/30">
         <div className="text-xs text-muted-foreground space-y-2">
           <div className="font-semibold">Formule de calcul:</div>
           <div className="font-mono text-xs">
@@ -167,7 +167,7 @@ export default function AutoCalcs({
             <div>✗ Écart {'>'} 5%: Attention requise</div>
           </div>
         </div>
-      </Card>
+      </Card> */}
     </Card>
   );
 }

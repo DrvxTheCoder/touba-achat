@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font, Image, DocumentProps } from '@react-pdf/renderer';
+import { BOTTLE_TYPES } from '@/lib/types/production';
 
 const pageURL = "https://touba-app.com";
 
@@ -182,17 +183,20 @@ const styles = StyleSheet.create({
     right: 30,
     textAlign: 'center',
     fontSize: 8,
-    color: '#999',
+    color: '#000',
   },
 });
 
 interface ProductionInventoryPDFProps {
   inventory: any;
+  previousInventory?: any;
   qrCodeImage?: string;
 }
 
-const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryPDFProps): React.ReactElement<DocumentProps> => {
+const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: ProductionInventoryPDFProps): React.ReactElement<DocumentProps> => {
   const date = new Date(inventory.date).toLocaleDateString('fr-FR');
+  const previousDate = previousInventory ? new Date(previousInventory.date).toLocaleDateString('fr-FR') : null;
+
 
   return (
     <Document>
@@ -207,11 +211,11 @@ const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryP
         </View>
 
         {/* Watermark */}
-        <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
+        {/* <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" /> */}
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>INVENTAIRE DE PRODUCTION GPL</Text>
+          <Text style={styles.title}>FICHE D'INVENTAIRE DE PRODUCTION (JOURNALIER)</Text>
           <Text style={styles.subtitle}>
             {inventory.productionCenter?.name || 'Centre de production'}
             {', '}
@@ -315,34 +319,36 @@ const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryP
           <Text style={styles.sectionTitle}>📤 SORTIES</Text>
           <View style={styles.summaryBox}>
             {/* Remplissage bouteilles */}
-            {inventory.bottles && inventory.bottles.length > 0 && (
-              <>
-                <Text style={[styles.summaryLabel, { marginBottom: 5, fontSize: 9, color: '#666' }]}>
-                  Remplissage Bouteilles:
-                </Text>
-                {inventory.bottles.map((bottle: any, index: number) => (
-                  <View key={index} style={[styles.summaryRow, { paddingLeft: 10 }]}>
+            <>
+              <Text style={[styles.summaryLabel, { marginBottom: 5, fontSize: 9, color: '#666' }]}>
+                Remplissage Bouteilles:
+              </Text>
+              {Object.keys(BOTTLE_TYPES).map((bottleType: string) => {
+                const bottle = inventory.bottles?.find((b: any) => b.type === bottleType);
+                const quantity = bottle?.quantity || 0;
+                const tonnage = bottle?.tonnage || 0;
+
+                return (
+                  <View key={bottleType} style={[styles.summaryRow, { paddingLeft: 10 }]}>
                     <Text style={[styles.summaryLabel, { fontSize: 9 }]}>
-                      {bottle.type} ({bottle.quantity} unités):
+                      {BOTTLE_TYPES[bottleType as keyof typeof BOTTLE_TYPES]} ({quantity} unités):
                     </Text>
                     <Text style={[styles.summaryValue, { fontSize: 9 }]}>
-                      {bottle.tonnage.toFixed(3)} T
+                      {tonnage.toFixed(3)} T
                     </Text>
                   </View>
-                ))}
-                <View style={[styles.summaryRow, { paddingLeft: 10, borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 3, marginTop: 3 }]}>
-                  <Text style={[styles.summaryLabel, { fontSize: 9, fontFamily: 'Oswald' }]}>
-                    Sous-total Remplissage:
-                  </Text>
-                  <Text style={[styles.summaryValue, { fontSize: 9, fontFamily: 'Oswald' }]}>
-                    {inventory.bottles
-                      .reduce((sum: number, b: any) => sum + b.tonnage, 0)
-                      .toFixed(3)} T
-                  </Text>
-                </View>
-                <View style={{ height: 8 }} />
-              </>
-            )}
+                );
+              })}
+              <View style={[styles.summaryRow, { paddingLeft: 10, borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 3, marginTop: 3 }]}>
+                <Text style={[styles.summaryLabel, { fontSize: 9, fontFamily: 'Oswald' }]}>
+                  Sous-total Remplissage:
+                </Text>
+                <Text style={[styles.summaryValue, { fontSize: 9, fontFamily: 'Oswald' }]}>
+                  {(inventory.bottles?.reduce((sum: number, b: any) => sum + b.tonnage, 0) || 0).toFixed(3)} T
+                </Text>
+              </View>
+              <View style={{ height: 8 }} />
+            </>
 
             {/* Autres sorties */}
             <View style={styles.summaryRow}>
@@ -389,7 +395,7 @@ const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryP
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Stock Final Physique:</Text>
               <Text style={styles.summaryValue}>
-                {inventory.stockFinalPhysique?.toFixed(3) || '0.000'} T
+                {inventory.reservoirs.reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0).toFixed(3)} T
               </Text>
             </View>
             <View style={styles.summaryRow}>
@@ -414,39 +420,41 @@ const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryP
 
       {/* Page 2: Production */}
       <Page size="A4" style={styles.page}>
-        <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
+        {/* <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" /> */}
 
         {/* Production de bouteilles */}
-        {inventory.bottles && inventory.bottles.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🍾 PRODUCTION DE BOUTEILLES</Text>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={styles.tableCell}>Type</Text>
-                <Text style={styles.tableCell}>Quantité</Text>
-                <Text style={styles.tableCell}>Tonnage (T)</Text>
-              </View>
-              {inventory.bottles.map((bottle: any, index: number) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={styles.tableCell}>{bottle.type}</Text>
-                  <Text style={styles.tableCell}>{bottle.quantity}</Text>
-                  <Text style={styles.tableCell}>{bottle.tonnage.toFixed(3)}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🍾 PRODUCTION DE BOUTEILLES</Text>
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableCell}>Type</Text>
+              <Text style={styles.tableCell}>Quantité</Text>
+              <Text style={styles.tableCell}>Tonnage (T)</Text>
+            </View>
+            {Object.keys(BOTTLE_TYPES).map((bottleType: string) => {
+              const bottle = inventory.bottles?.find((b: any) => b.type === bottleType);
+              const quantity = bottle?.quantity || 0;
+              const tonnage = bottle?.tonnage || 0;
+
+              return (
+                <View key={bottleType} style={styles.tableRow}>
+                  <Text style={styles.tableCell}>{BOTTLE_TYPES[bottleType as keyof typeof BOTTLE_TYPES]}</Text>
+                  <Text style={styles.tableCell}>{quantity}</Text>
+                  <Text style={styles.tableCell}>{tonnage.toFixed(3)}</Text>
                 </View>
-              ))}
-              <View style={styles.totalRow}>
-                <Text style={[styles.tableCell, { fontFamily: 'Oswald' }]}>TOTAL</Text>
-                <Text style={[styles.tableCell, { fontFamily: 'Oswald' }]}>
-                  {inventory.bottles.reduce((sum: number, b: any) => sum + b.quantity, 0)}
-                </Text>
-                <Text style={[styles.tableCell, { fontFamily: 'Oswald' }]}>
-                  {inventory.bottles
-                    .reduce((sum: number, b: any) => sum + b.tonnage, 0)
-                    .toFixed(3)}
-                </Text>
-              </View>
+              );
+            })}
+            <View style={styles.totalRow}>
+              <Text style={[styles.tableCell, { fontFamily: 'Oswald' }]}>TOTAL</Text>
+              <Text style={[styles.tableCell, { fontFamily: 'Oswald' }]}>
+                {inventory.bottles?.reduce((sum: number, b: any) => sum + b.quantity, 0) || 0}
+              </Text>
+              <Text style={[styles.tableCell, { fontFamily: 'Oswald' }]}>
+                {(inventory.bottles?.reduce((sum: number, b: any) => sum + b.tonnage, 0) || 0).toFixed(3)}
+              </Text>
             </View>
           </View>
-        )}
+        </View>
 
         {/* Arrêts techniques */}
         {inventory.arrets && inventory.arrets.length > 0 && (
@@ -503,6 +511,52 @@ const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryP
           </View>
         )}
 
+                {/* Previous Day's Stock Final Physique */}
+        {previousInventory && previousInventory.reservoirs && previousInventory.reservoirs.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              STOCK DEPART
+            </Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Nom</Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Hauteur (mm)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids liq. (T)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids gaz (T)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids tot. (T)</Text>
+              </View>
+              {previousInventory.reservoirs.map((reservoir: any, index: number) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.name}</Text>
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.hauteur}</Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsLiquide?.toFixed(3) || '0'}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsGaz?.toFixed(3) || '0'}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsTotal?.toFixed(3) || '0'}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.totalRow}>
+                <Text style={[styles.tableCell, { flex: 0.6, fontFamily: 'Oswald' }]}>
+                  TOTAL
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
+                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
+                  {previousInventory.reservoirs
+                    .reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0)
+                    .toFixed(3)}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
+              </View>
+            </View>
+          </View>
+        )}
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>STOCK FINAL PHYSIQUE</Text>
             <View style={styles.table}>
@@ -552,35 +606,24 @@ const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryP
                   </Text>
                 </View>
               ))}
+
               <View style={styles.totalRow}>
                 <Text style={[styles.tableCell, { flex: 0.6, fontFamily: 'Oswald' }]}>
                   TOTAL
                 </Text>
-                <Text style={[styles.tableCell, { flex: 0.5 }]}></Text>
                 <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}></Text>
-                {/* <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
+                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
                   {inventory.reservoirs
                     .reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0)
                     .toFixed(3)}
                 </Text>
-                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
-                  {inventory.reservoirs
-                    .reduce((sum: number, r: any) => sum + (r.poidsGaz || 0), 0)
-                    .toFixed(3)}
-                </Text> */}
-                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
-                  {inventory.reservoirs
-                    .reduce((sum: number, r: any) => sum + (r.poidsTotal || 0), 0)
-                    .toFixed(3)}
-                </Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
               </View>
             </View>
           </View>
+
+
 
         <Text style={styles.footer}>
           Document généré le {new Date().toLocaleString('fr-FR')} - Page 2/2
@@ -664,7 +707,7 @@ const ProductionInventoryPDF = ({ inventory, qrCodeImage }: ProductionInventoryP
                 </Text>
                 <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
                   {inventory.reservoirs
-                    .reduce((sum: number, r: any) => sum + (r.poidsTotal || 0), 0)
+                    .reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0)
                     .toFixed(3)}
                 </Text>
               </View>

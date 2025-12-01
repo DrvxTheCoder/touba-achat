@@ -5,3 +5,4 @@ quickscripts
 prisma/resetDB.ts
 app/dashboard/mail
 .vscode
+nul
