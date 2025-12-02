@@ -6,9 +6,7 @@ export interface ProductionArret {
   id: number;
   inventoryId: number;
   type: ArretType;
-  heureDebut: Date | string;
-  heureFin: Date | string;
-  duree: number; // En minutes
+  duree: number; // En minutes - saisie manuelle
   remarque?: string;
   createdAt: Date | string;
   createdById: number;
@@ -125,8 +123,7 @@ export interface DashboardData {
 
 export interface CreateArretData {
   type: ArretType;
-  heureDebut: Date;
-  heureFin: Date;
+  duree: number; // En minutes
   remarque?: string;
 }
 
@@ -256,6 +253,3 @@ export const formatDuration = (minutes: number): string => {
   return `${hours}h${mins.toString().padStart(2, '0')}`;
 };
 
-export const calculateDuree = (debut: Date, fin: Date): number => {
-  return Math.floor((fin.getTime() - debut.getTime()) / (1000 * 60));
-};

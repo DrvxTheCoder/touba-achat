@@ -27,7 +27,7 @@ export async function GET(
         startedBy: { select: { id: true, name: true, email: true } },
         completedBy: { select: { id: true, name: true, email: true } },
         arrets: {
-          orderBy: { heureDebut: 'asc' },
+          orderBy: { createdAt: 'asc' },
           include: { createdBy: { select: { id: true, name: true } } }
         },
         bottles: { orderBy: { type: 'asc' } },

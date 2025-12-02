@@ -249,8 +249,7 @@ export default function ProductionDetailPage() {
                 <div className="flex-1">
                   <div className="font-medium">{arret.type}</div>
                   <div className="text-sm text-muted-foreground">
-                    {new Date(arret.heureDebut).toLocaleTimeString('fr-FR')} -{' '}
-                    {new Date(arret.heureFin).toLocaleTimeString('fr-FR')}
+                    Ajouté le {new Date(arret.createdAt).toLocaleString('fr-FR')}
                   </div>
                   {arret.remarque && (
                     <div className="text-sm text-muted-foreground mt-1">

@@ -40,7 +40,7 @@ export async function GET(
           select: { id: true, name: true, email: true }
         },
         arrets: {
-          orderBy: { heureDebut: 'asc' },
+          orderBy: { createdAt: 'asc' },
           include: {
             createdBy: { select: { id: true, name: true } }
           }
@@ -265,21 +265,20 @@ function generateExcelExport(inventory: any, previousInventory: any = null) {
 
   // Feuille 5: Arrêts techniques
   if (inventory.arrets && inventory.arrets.length > 0) {
-    const arretHeaders = ['Type', 'Heure Début', 'Heure Fin', 'Durée (min)', 'Remarque', 'Créé par'];
+    const arretHeaders = ['Type', 'Durée (min)', 'Remarque', 'Créé par', 'Date création'];
     const arretData = inventory.arrets.map((a: any) => [
       a.type,
-      new Date(a.heureDebut).toLocaleTimeString('fr-FR'),
-      new Date(a.heureFin).toLocaleTimeString('fr-FR'),
       a.duree,
       a.remarque || '',
-      a.createdBy?.name || 'N/A'
+      a.createdBy?.name || 'N/A',
+      new Date(a.createdAt).toLocaleString('fr-FR')
     ]);
 
     const totalDuree = inventory.arrets.reduce((sum: number, a: any) => sum + a.duree, 0);
 
     arretData.push(
       [''],
-      ['TOTAL DURÉE ARRÊTS', '', '', totalDuree, '', '']
+      ['TOTAL DURÉE ARRÊTS', totalDuree, '', '', '']
     );
 
     const arretSheet = XLSX.utils.aoa_to_sheet([

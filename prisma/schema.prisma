@@ -567,13 +567,11 @@ model ProductionArret {
   id                    Int                  @id @default(autoincrement())
   inventoryId           Int
   inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
-  
+
   type                  ArretType
-  heureDebut            DateTime
-  heureFin              DateTime
-  duree                 Int                  // En minutes
+  duree                 Int                  // En minutes - saisie manuelle
   remarque              String?
-  
+
   createdAt             DateTime             @default(now())
   createdById           Int
   createdBy             User                 @relation("ArretCreator", fields: [createdById], references: [id])

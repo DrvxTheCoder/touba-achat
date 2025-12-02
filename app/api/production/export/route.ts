@@ -54,7 +54,11 @@ export async function POST(req: NextRequest) {
             }
           }
         },
-        arrets: true,
+        arrets: {
+          include: {
+            createdBy: { select: { id: true, name: true } }
+          }
+        },
         startedBy: { select: { name: true } },
         completedBy: { select: { name: true } }
       }
@@ -107,10 +111,10 @@ export async function POST(req: NextRequest) {
           arretsData.push({
             Date: new Date(inv.date).toLocaleDateString('fr-FR'),
             Type: arret.type,
-            Début: new Date(arret.heureDebut).toLocaleTimeString('fr-FR'),
-            Fin: new Date(arret.heureFin).toLocaleTimeString('fr-FR'),
             'Durée (min)': arret.duree,
-            Remarque: arret.remarque || ''
+            Remarque: arret.remarque || '',
+            'Créé par': arret.createdBy?.name || 'N/A',
+            'Date création': new Date(arret.createdAt).toLocaleString('fr-FR')
           });
         });
       });

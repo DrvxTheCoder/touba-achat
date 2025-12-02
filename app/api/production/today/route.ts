@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
           select: { id: true, name: true, email: true }
         },
         arrets: {
-          orderBy: { heureDebut: 'asc' },
+          orderBy: { createdAt: 'asc' },
           include: {
             createdBy: { select: { id: true, name: true } }
           }
@@ -71,8 +71,6 @@ export async function GET(req: NextRequest) {
       rendement: parseFloat(rendement.toFixed(2)),
       arrets: inventory.arrets.map(arret => ({
         ...arret,
-        heureDebut: arret.heureDebut.toISOString(),
-        heureFin: arret.heureFin.toISOString(),
         createdAt: arret.createdAt.toISOString()
       }))
     };

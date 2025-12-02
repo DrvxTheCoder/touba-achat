@@ -215,7 +215,7 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>FICHE D'INVENTAIRE DE PRODUCTION (JOURNALIER)</Text>
+          <Text style={styles.title}>FICHE D&apos;INVENTAIRE PRODUCTION (JOURNALIER)</Text>
           <Text style={styles.subtitle}>
             {inventory.productionCenter?.name || 'Centre de production'}
             {', '}
@@ -463,37 +463,34 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
             <View style={styles.table}>
               <View style={styles.tableHeader}>
                 <Text style={styles.tableCellLarge}>Type</Text>
-                <Text style={styles.tableCell}>Début</Text>
-                <Text style={styles.tableCell}>Fin</Text>
-                <Text style={styles.tableCellSmall}>Durée (min)</Text>
+                <Text style={styles.tableCell}>Durée (min)</Text>
+                <Text style={styles.tableCell}>Ajouté le</Text>
+                <Text style={styles.tableCellSmall}>Remarque</Text>
               </View>
               {inventory.arrets.map((arret: any, index: number) => (
                 <View key={index} style={styles.tableRow}>
                   <Text style={styles.tableCellLarge}>{arret.type}</Text>
+                  <Text style={styles.tableCell}>{arret.duree}</Text>
                   <Text style={styles.tableCell}>
-                    {new Date(arret.heureDebut).toLocaleTimeString('fr-FR', {
+                    {new Date(arret.createdAt).toLocaleString('fr-FR', {
+                      day: '2-digit',
+                      month: '2-digit',
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
                   </Text>
-                  <Text style={styles.tableCell}>
-                    {new Date(arret.heureFin).toLocaleTimeString('fr-FR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                  <Text style={styles.tableCellSmall}>{arret.duree}</Text>
+                  <Text style={styles.tableCellSmall}>{arret.remarque || '-'}</Text>
                 </View>
               ))}
               <View style={styles.totalRow}>
                 <Text style={[styles.tableCellLarge, { fontFamily: 'Oswald' }]}>
                   TOTAL DURÉE
                 </Text>
-                <Text style={styles.tableCell}></Text>
-                <Text style={styles.tableCell}></Text>
-                <Text style={[styles.tableCellSmall, { fontFamily: 'Oswald' }]}>
+                <Text style={[styles.tableCell, { fontFamily: 'Oswald' }]}>
                   {inventory.arrets.reduce((sum: number, a: any) => sum + a.duree, 0)} min
                 </Text>
+                <Text style={styles.tableCell}></Text>
+                <Text style={styles.tableCellSmall}></Text>
               </View>
             </View>
           </View>

@@ -7,8 +7,7 @@ import { z } from 'zod';
 
 const arretSchema = z.object({
   type: z.enum(['INCIDENT_TECHNIQUE', 'PANNE', 'MAINTENANCE', 'AUTRE']),
-  heureDebut: z.string().datetime(),
-  heureFin: z.string().datetime(),
+  duree: z.number().int().positive(),
   remarque: z.string().optional()
 });
 
@@ -64,28 +63,6 @@ export async function POST(
       );
     }
 
-    // Calculer la durée en minutes
-    const debut = new Date(validatedData.heureDebut);
-    const fin = new Date(validatedData.heureFin);
-    const duree = Math.floor((fin.getTime() - debut.getTime()) / 60000);
-
-    if (duree <= 0) {
-      return NextResponse.json(
-        { error: 'L\'heure de fin doit être après l\'heure de début' },
-        { status: 400 }
-      );
-    }
-
-    // Vérifier que les heures sont dans la journée
-    const inventoryDate = new Date(inventory.date);
-    if (debut.toDateString() !== inventoryDate.toDateString() ||
-        fin.toDateString() !== inventoryDate.toDateString()) {
-      return NextResponse.json(
-        { error: 'Les heures d\'arrêt doivent être dans la journée de production' },
-        { status: 400 }
-      );
-    }
-
     // Transaction pour créer l'arrêt et mettre à jour l'inventaire
     const result = await prisma.$transaction(async (tx) => {
       // Créer l'arrêt
@@ -93,9 +70,7 @@ export async function POST(
         data: {
           inventoryId,
           type: validatedData.type,
-          heureDebut: debut,
-          heureFin: fin,
-          duree,
+          duree: validatedData.duree,
           remarque: validatedData.remarque,
           createdById: parseInt(session.user.id)
         },
@@ -187,7 +162,7 @@ export async function GET(
 
     const arrets = await prisma.productionArret.findMany({
       where: { inventoryId },
-      orderBy: { heureDebut: 'asc' },
+      orderBy: { createdAt: 'asc' },
       include: {
         createdBy: {
           select: {
