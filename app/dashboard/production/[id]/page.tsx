@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, CheckCircle, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, Download, FileSpreadsheet, FileText, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -133,6 +133,41 @@ export default function ProductionDetailPage() {
     }
   };
 
+  const handlePrint = async () => {
+    try {
+      toast.loading('Préparation de l\'impression...');
+
+      const res = await fetch(`/api/production/${params.id}/export?format=pdf`);
+
+      if (!res.ok) {
+        throw new Error('Erreur lors de la préparation');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Open in new window and trigger print
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.addEventListener('load', () => {
+          printWindow.print();
+        });
+      }
+
+      toast.dismiss();
+      toast.success('Document prêt pour l\'impression');
+
+      // Clean up after a delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error: any) {
+      console.error(error);
+      toast.dismiss();
+      toast.error(error.message || 'Erreur lors de l\'impression');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -203,7 +238,11 @@ export default function ProductionDetailPage() {
               </DropdownMenuItem> */}
               <DropdownMenuItem onClick={() => handleExport('pdf')}>
                 <FileText className="h-4 w-4 mr-2 text-red-600" />
-                Exporter en PDF
+                Télécharger PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrint}>
+                <Printer className="h-4 w-4 mr-2 text-blue-600" />
+                Imprimer PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

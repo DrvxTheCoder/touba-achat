@@ -273,8 +273,6 @@ export default function ReservoirSection({
                     </Label>
                     <Input
                       type="number"
-                      step="0.01"
-                      min="0"
                       max="30000"
                       value={reservoir.hauteur}
                       onChange={(e) => updateReservoir(index, 'hauteur', parseFloat(e.target.value) || 0)}
@@ -292,9 +290,6 @@ export default function ReservoirSection({
                     </Label>
                     <Input
                       type="number"
-                      step="0.1"
-                      min="15.0"
-                      max="32.9"
                       value={reservoir.temperature}
                       onChange={(e) => updateReservoir(index, 'temperature', parseFloat(e.target.value) || 20)}
                       disabled={disabled}
@@ -312,8 +307,6 @@ export default function ReservoirSection({
                     <div className="flex gap-2">
                       <Input
                         type="number"
-                        step="0.001"
-                        min="0"
                         max={capacity}
                         value={reservoir.volumeLiquide}
                         onChange={(e) => updateReservoir(index, 'volumeLiquide', parseFloat(e.target.value) || 0)}
@@ -350,9 +343,6 @@ export default function ReservoirSection({
                     </Label>
                     <Input
                       type="number"
-                      step="0.01"
-                      min="0"
-                      max="20"
                       value={reservoir.pressionInterne}
                       onChange={(e) => updateReservoir(index, 'pressionInterne', parseFloat(e.target.value) || 0)}
                       disabled={disabled}
@@ -369,11 +359,8 @@ export default function ReservoirSection({
                     </Label>
                     <Input
                       type="number"
-                      step="0.001"
-                      min="0.4"
-                      max="0.6"
                       value={reservoir.densiteA15C}
-                      onChange={(e) => updateReservoir(index, 'densiteA15C', parseFloat(e.target.value) || 0.508)}
+                      onChange={(e) => updateReservoir(index, 'densiteA15C', parseFloat(e.target.value) || 0)}
                       disabled={disabled}
                       className="font-mono"
                       placeholder="0.508"
@@ -404,15 +391,15 @@ export default function ReservoirSection({
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                       <div className="bg-muted p-2 rounded">
                         <div className="text-muted-foreground">Facteur correction liquide</div>
-                        <div className="font-mono font-semibold">{reservoir.facteurCorrectionLiquide?.toFixed(5)}</div>
+                        <div className="font-mono font-semibold">{reservoir.facteurCorrectionLiquide?.toFixed(4)}</div>
                       </div>
                       <div className="bg-muted p-2 rounded">
                         <div className="text-muted-foreground">Facteur correction vapeur</div>
-                        <div className="font-mono font-semibold">{reservoir.facteurCorrectionVapeur?.toFixed(5)}</div>
+                        <div className="font-mono font-semibold">{reservoir.facteurCorrectionVapeur?.toFixed(6)}</div>
                       </div>
                       <div className="bg-muted p-2 rounded">
                         <div className="text-muted-foreground">Densité ambiante</div>
-                        <div className="font-mono font-semibold">{reservoir.densiteAmbiante?.toFixed(5)}</div>
+                        <div className="font-mono font-semibold">{reservoir.densiteAmbiante?.toFixed(4)}</div>
                       </div>
                       <div className="bg-blue-100 dark:bg-blue-950 p-2 rounded">
                         <div className="text-muted-foreground">Poids liquide</div>
