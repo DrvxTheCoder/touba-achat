@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
   boldText: { fontSize: 12, fontWeight: 'bold', fontFamily: 'Oswald' },
   page: {
     padding: 30,
+    paddingBottom: 20,
     position: 'relative',
     fontFamily: 'Ubuntu',
     fontSize: 10,
@@ -37,7 +38,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent:'flex-end',
     alignItems: 'flex-start',
-    margin: 10,
     marginBottom: 15
   },
   logo: { width: 50},
@@ -219,7 +219,7 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
           <Text style={styles.subtitle}>
             {inventory.productionCenter?.name || 'Centre de production'}
             {', '}
-            Date: {new Date(inventory.startedAt).toLocaleString('fr-FR')}
+            Date: {new Date(inventory.date).toLocaleDateString('fr-FR')}
             {', '}
             Démarré par: {inventory.startedBy?.name || 'N/A'}
           </Text>
@@ -258,41 +258,56 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
           )}
         </View> */}
 
-        {/* Temps de production */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⏱️ TEMPS DE PRODUCTION</Text>
-          <View style={styles.summaryBox}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Temps total:</Text>
-              <Text style={styles.summaryValue}>{inventory.tempsTotal} min</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Temps d&apos;arrêt:</Text>
-              <Text style={styles.summaryValue}>{inventory.tempsArret} min</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Temps utile:</Text>
-              <Text style={styles.summaryValue}>{inventory.tempsUtile} min</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Rendement:</Text>
-              <Text style={styles.summaryValue}>
-                {inventory.rendement?.toFixed(2) || '0'}%
-              </Text>
+                {/* Previous Day's Stock Final Physique */}
+        {previousInventory && previousInventory.reservoirs && previousInventory.reservoirs.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              STOCK DEPART
+            </Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Nom</Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Hauteur (mm)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids liq. (T)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids gaz (T)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids tot. (T)</Text>
+              </View>
+              {previousInventory.reservoirs.map((reservoir: any, index: number) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.name}</Text>
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.hauteur}</Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsLiquide?.toFixed(3) || '0'}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsGaz?.toFixed(3) || '0'}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsTotal?.toFixed(3) || '0'}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.totalRow}>
+                <Text style={[styles.tableCell, { flex: 0.6, fontFamily: 'Oswald' }]}>
+                  TOTAL
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
+                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
+                  {previousInventory.reservoirs
+                    .reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0)
+                    .toFixed(3)}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* Stocks */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📦 STOCKS ET APPROVISIONNEMENTS</Text>
+          <Text style={styles.sectionTitle}>APPROVISIONNEMENTS</Text>
           <View style={styles.summaryBox}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Stock Initial Physique:</Text>
-              <Text style={styles.summaryValue}>
-                {inventory.stockInitialPhysique?.toFixed(3)} T
-              </Text>
-            </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Butanier:</Text>
               <Text style={styles.summaryValue}>
@@ -401,13 +416,7 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: '#d32f2f' }]}>Écart:</Text>
               <Text style={[styles.summaryValue, { color: '#d32f2f' }]}>
-                {inventory.ecart?.toFixed(3) || '0.000'} T
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: '#d32f2f' }]}>Écart (%):</Text>
-              <Text style={[styles.summaryValue, { color: '#d32f2f' }]}>
-                {inventory.ecartPourcentage?.toFixed(2) || '0.00'}%
+                {inventory.ecart?.toFixed(3) || '0.000'} T ({inventory.ecartPourcentage?.toFixed(2) || '0.00'}%)
               </Text>
             </View>
           </View>
@@ -421,10 +430,77 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
       {/* Page 2: Production */}
       <Page size="A4" style={styles.page}>
         {/* <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" /> */}
+        
+                  <View style={styles.section}>
+            <Text style={styles.sectionTitle}>STOCK FINAL PHYSIQUE</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Nom</Text>
+                {/* <Text style={[styles.tableCell, { flex: 0.5 }]}>Type</Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Cap. (m³)</Text> */}
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Hauteur (mm)</Text>
+                {/* <Text style={[styles.tableCell, { flex: 0.6 }]}>Temp. (°C)</Text>
+                <Text style={[styles.tableCell, { flex: 0.7 }]}>Vol. liq. (m³)</Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>Press. (bar)</Text>
+                <Text style={[styles.tableCell, { flex: 0.7 }]}>Dens. 15°C</Text> */}
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids liq. (T)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids gaz (T)</Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids tot. (T)</Text>
+              </View>
+              {inventory.reservoirs.map((reservoir: any, index: number) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.name}</Text>
+                  {/* <Text style={[styles.tableCell, { flex: 0.5 }]}>
+                    {reservoir.reservoirConfig?.type || 'N/A'}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>
+                    {reservoir.reservoirConfig?.capacity?.toFixed(2) || '0'}
+                  </Text> */}
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.hauteur}</Text>
+                  {/* <Text style={[styles.tableCell, { flex: 0.6 }]}>
+                    {reservoir.temperature}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.7 }]}>
+                    {reservoir.volumeLiquide.toFixed(3)}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.6 }]}>
+                    {reservoir.pressionInterne}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.7 }]}>
+                    {reservoir.densiteA15C.toFixed(3)}
+                  </Text> */}
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsLiquide?.toFixed(3) || '0'}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsGaz?.toFixed(3) || '0'}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                    {reservoir.poidsTotal?.toFixed(3) || '0'}
+                  </Text>
+                </View>
+              ))}
+
+              <View style={styles.totalRow}>
+                <Text style={[styles.tableCell, { flex: 0.6, fontFamily: 'Oswald' }]}>
+                  TOTAL
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
+                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
+                  {inventory.reservoirs
+                    .reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0)
+                    .toFixed(3)}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
+                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
+              </View>
+            </View>
+          </View>
+
 
         {/* Production de bouteilles */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🍾 PRODUCTION DE BOUTEILLES</Text>
+          <Text style={styles.sectionTitle}>PRODUCTION DE BOUTEILLES</Text>
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableCell}>Type</Text>
@@ -496,6 +572,7 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
           </View>
         )}
 
+
         {/* Observations */}
         {inventory.observations && (
           <View style={styles.section}>
@@ -508,117 +585,32 @@ const ProductionInventoryPDF = ({ inventory, previousInventory, qrCodeImage }: P
           </View>
         )}
 
-                {/* Previous Day's Stock Final Physique */}
-        {previousInventory && previousInventory.reservoirs && previousInventory.reservoirs.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              STOCK DEPART
-            </Text>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>Nom</Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>Hauteur (mm)</Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids liq. (T)</Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids gaz (T)</Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids tot. (T)</Text>
-              </View>
-              {previousInventory.reservoirs.map((reservoir: any, index: number) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.name}</Text>
-                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.hauteur}</Text>
-                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                    {reservoir.poidsLiquide?.toFixed(3) || '0'}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                    {reservoir.poidsGaz?.toFixed(3) || '0'}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                    {reservoir.poidsTotal?.toFixed(3) || '0'}
-                  </Text>
-                </View>
-              ))}
-              <View style={styles.totalRow}>
-                <Text style={[styles.tableCell, { flex: 0.6, fontFamily: 'Oswald' }]}>
-                  TOTAL
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
-                  {previousInventory.reservoirs
-                    .reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0)
-                    .toFixed(3)}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
-              </View>
+
+
+        {/* Temps de production */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⏱️ TEMPS DE PRODUCTION</Text>
+          <View style={styles.summaryBox}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Temps total:</Text>
+              <Text style={styles.summaryValue}>{inventory.tempsTotal} min</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Temps d&apos;arrêt:</Text>
+              <Text style={styles.summaryValue}>{inventory.tempsArret} min</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Temps utile:</Text>
+              <Text style={styles.summaryValue}>{inventory.tempsUtile} min</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Rendement:</Text>
+              <Text style={styles.summaryValue}>
+                {inventory.rendement?.toFixed(2) || '0'}%
+              </Text>
             </View>
           </View>
-        )}
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>STOCK FINAL PHYSIQUE</Text>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>Nom</Text>
-                {/* <Text style={[styles.tableCell, { flex: 0.5 }]}>Type</Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>Cap. (m³)</Text> */}
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>Hauteur (mm)</Text>
-                {/* <Text style={[styles.tableCell, { flex: 0.6 }]}>Temp. (°C)</Text>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>Vol. liq. (m³)</Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>Press. (bar)</Text>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>Dens. 15°C</Text> */}
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids liq. (T)</Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids gaz (T)</Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>Poids tot. (T)</Text>
-              </View>
-              {inventory.reservoirs.map((reservoir: any, index: number) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.name}</Text>
-                  {/* <Text style={[styles.tableCell, { flex: 0.5 }]}>
-                    {reservoir.reservoirConfig?.type || 'N/A'}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.6 }]}>
-                    {reservoir.reservoirConfig?.capacity?.toFixed(2) || '0'}
-                  </Text> */}
-                  <Text style={[styles.tableCell, { flex: 0.6 }]}>{reservoir.hauteur}</Text>
-                  {/* <Text style={[styles.tableCell, { flex: 0.6 }]}>
-                    {reservoir.temperature}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.7 }]}>
-                    {reservoir.volumeLiquide.toFixed(3)}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.6 }]}>
-                    {reservoir.pressionInterne}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.7 }]}>
-                    {reservoir.densiteA15C.toFixed(3)}
-                  </Text> */}
-                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                    {reservoir.poidsLiquide?.toFixed(3) || '0'}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                    {reservoir.poidsGaz?.toFixed(3) || '0'}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                    {reservoir.poidsTotal?.toFixed(3) || '0'}
-                  </Text>
-                </View>
-              ))}
-
-              <View style={styles.totalRow}>
-                <Text style={[styles.tableCell, { flex: 0.6, fontFamily: 'Oswald' }]}>
-                  TOTAL
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.8, fontFamily: 'Oswald' }]}>
-                  {inventory.reservoirs
-                    .reduce((sum: number, r: any) => sum + (r.poidsLiquide || 0), 0)
-                    .toFixed(3)}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}></Text>
-              </View>
-            </View>
-          </View>
+        </View>
 
 
 
