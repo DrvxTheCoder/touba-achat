@@ -103,6 +103,16 @@ function generateExcelExport(inventory: any, previousInventory: any = null) {
   const workbook = XLSX.utils.book_new();
   const date = new Date(inventory.date).toLocaleDateString('fr-FR');
 
+  // Helper function to format time in hours and minutes if > 60 min
+  const formatTime = (minutes: number): string => {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+    }
+    return `${minutes} min`;
+  };
+
   // Feuille 1: Informations générales
   const generalInfo = [
     ['INVENTAIRE DE PRODUCTION GPL'],
@@ -126,9 +136,9 @@ function generateExcelExport(inventory: any, previousInventory: any = null) {
 
   generalInfo.push(
     ['TEMPS DE PRODUCTION'],
-    ['Temps total (min)', inventory.tempsTotal],
-    ['Temps d\'arrêt (min)', inventory.tempsArret],
-    ['Temps utile (min)', inventory.tempsUtile],
+    ['Temps total', formatTime(inventory.tempsTotal)],
+    ['Temps d\'arrêt', formatTime(inventory.tempsArret)],
+    ['Temps utile', formatTime(inventory.tempsUtile)],
     ['Rendement (%)', inventory.rendement?.toFixed(2) || '0'],
     ['']
   );
