@@ -1,38 +1,21 @@
 // app/dashboard/production/[id]/ProductionTimer.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Clock, Activity, TrendingUp } from 'lucide-react';
 import { formatDuration } from '@/lib/types/production';
 
 interface ProductionTimerProps {
-  startedAt: string | Date;
+  tempsTotal: number;
   totalArrets: number;
   rendement: number;
 }
 
 export default function ProductionTimer({
-  startedAt,
+  tempsTotal,
   totalArrets,
   rendement
 }: ProductionTimerProps) {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    const updateElapsed = () => {
-      const start = new Date(startedAt).getTime();
-      const now = Date.now();
-      const minutes = Math.floor((now - start) / 60000);
-      setElapsed(minutes);
-    };
-
-    updateElapsed();
-    const interval = setInterval(updateElapsed, 1000);
-
-    return () => clearInterval(interval);
-  }, [startedAt]);
-
-  const tempsProductif = elapsed - totalArrets;
+  const tempsProductif = tempsTotal - totalArrets;
 
   return (
     <div className="flex items-center gap-8">
@@ -41,8 +24,8 @@ export default function ProductionTimer({
           <Clock className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <div className="text-sm text-muted-foreground">Temps écoulé</div>
-          <div className="text-2xl font-bold">{formatDuration(elapsed)}</div>
+          <div className="text-sm text-muted-foreground">Temps total</div>
+          <div className="text-2xl font-bold">{formatDuration(tempsTotal)}</div>
         </div>
       </div>
 

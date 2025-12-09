@@ -41,6 +41,8 @@ export interface ProductionInventory {
   startedById: number;
   completedAt?: Date | string | null;
   completedById?: number | null;
+  heureDebut?: string | null;
+  heureFin?: string | null;
 
   // Temps de production
   tempsTotal: number; // En minutes
@@ -136,6 +138,9 @@ export interface CompleteInventoryData {
   divers: number;
   stockFinalPhysique: number;
   observations?: string;
+  heureDebut?: string;
+  heureFin?: string;
+  tempsTotal?: number;
   bottles: Array<{
     type: BottleType;
     quantity: number;
@@ -145,6 +150,7 @@ export interface CompleteInventoryData {
     reservoirConfigId?: number;
     hauteur: number;
     temperature: number;
+    temperatureVapeur: number;
     volumeLiquide: number;
     pressionInterne: number;
     densiteA15C: number;

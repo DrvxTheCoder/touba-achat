@@ -20,6 +20,8 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  BarChart,
+  Bar,
 } from 'recharts';
 import { format, subDays, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -151,30 +153,12 @@ export default function StockEvolutionChart({ selectedCenterId }: StockEvolution
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={400}>
-            <AreaChart
+            <BarChart
               data={chartData}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
             >
-              <defs>
-                <linearGradient id="colorPhysique" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorTheorique" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorEcart" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={formatDate}
-                className="text-xs"
-              />
+              <XAxis dataKey="date" tickFormatter={formatDate} className="text-xs" />
               <YAxis
                 className="text-xs"
                 label={{ value: 'Tonnes (T)', angle: -90, position: 'insideLeft' }}
@@ -191,31 +175,22 @@ export default function StockEvolutionChart({ selectedCenterId }: StockEvolution
                   return labels[value] || value;
                 }}
               />
-              <Area
-                type="monotone"
+
+              <Bar
                 dataKey="stockPhysique"
+                fill="#3b82f6"
                 stroke="#3b82f6"
-                fillOpacity={1}
-                fill="url(#colorPhysique)"
-                strokeWidth={2}
+                radius={[4, 4, 0, 0]}
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="stockTheorique"
+                fill="#10b981"
                 stroke="#10b981"
-                fillOpacity={1}
-                fill="url(#colorTheorique)"
-                strokeWidth={2}
+                radius={[4, 4, 0, 0]}
               />
-              <Line
-                type="monotone"
-                dataKey="ecart"
-                stroke="#f59e0b"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-              />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
+
         )}
       </CardContent>
     </Card>

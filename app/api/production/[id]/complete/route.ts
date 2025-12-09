@@ -27,6 +27,7 @@ const sphereInputSchema = z.object({
   name: z.string().min(1), // Accept any reservoir name (D100, SO2, SO3, RO1, RO2, etc.)
   hauteur: z.number().min(0).max(30000),
   temperature: z.number().min(15.0).max(32.9),
+  temperatureVapeur: z.number().min(15.0).max(32.9),
   volumeLiquide: z.number().min(0),
   pressionInterne: z.number().min(0).max(20),
   densiteA15C: z.number().min(0.4).max(0.6)
@@ -60,9 +61,9 @@ export async function POST(
         throw new Error('Inventaire déjà terminé');
       }
 
-      // Calculer temps total
+      // Use manual time fields if provided, otherwise calculate from timestamps
       const now = new Date();
-      const tempsTotal = Math.floor(
+      const tempsTotal = data.tempsTotal || Math.floor(
         (now.getTime() - inventory.startedAt.getTime()) / 60000
       );
 
@@ -110,6 +111,7 @@ export async function POST(
             // 5 champs d'entrée
             hauteur: calculatedSphere.hauteur,
             temperature: calculatedSphere.temperature,
+            temperatureVapeur: calculatedSphere.temperatureVapeur,
             volumeLiquide: calculatedSphere.volumeLiquide,
             pressionInterne: calculatedSphere.pressionInterne,
             densiteA15C: calculatedSphere.densiteA15C,
@@ -164,6 +166,8 @@ export async function POST(
           ecartPourcentage,
           rendement,
           totalBottlesProduced: totalBottles,
+          heureDebut: data.heureDebut,
+          heureFin: data.heureFin,
           tempsTotal,
           tempsUtile: tempsTotal - inventory.tempsArret,
           observations: data.observations

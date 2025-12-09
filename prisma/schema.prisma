@@ -525,7 +525,9 @@ model ProductionInventory {
   completedBy           User?                @relation("ProductionCompleter", fields: [completedById], references: [id])
 
   // Temps de production
-  tempsTotal            Int                  // En minutes, calculé auto
+  heureDebut            String?              // Heure de début (format HH:MM)
+  heureFin              String?              // Heure de fin (format HH:MM)
+  tempsTotal            Int                  // En minutes, calculé à partir de heureDebut et heureFin
   tempsArret            Int                  @default(0) // En minutes
   tempsUtile            Int                  // Calculé: tempsTotal - tempsArret
   rendement             Float?               // (tempsUtile / tempsTotal) * 100
@@ -598,9 +600,10 @@ model Reservoir {
   reservoirConfigId     Int?
   reservoirConfig       ReservoirConfig?     @relation(fields: [reservoirConfigId], references: [id])
 
-  // 5 champs de saisie manuelle
+  // 6 champs de saisie manuelle
   hauteur               Float                @default(0)     // en mm
-  temperature           Float                @default(20)    // en °C (15.1 - 35.3)
+  temperature           Float                @default(20)    // en °C (15.1 - 35.3) - température liquide
+  temperatureVapeur     Float                @default(20)    // en °C (15.1 - 35.3) - température vapeur
   volumeLiquide         Float                @default(0)     // en m³
   pressionInterne       Float                @default(0)     // en bar
   densiteA15C           Float                @default(0) // densité à 15°C (typiquement 0.508)

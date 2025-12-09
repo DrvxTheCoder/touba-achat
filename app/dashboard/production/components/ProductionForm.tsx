@@ -12,6 +12,7 @@ import BottlesSection from './BottlesSection';
 import ExportsSection from './ExportsSection';
 import ReservoirSection from './ReservoirSection';
 import AutoCalcs from './AutoCalcs';
+import TimeInputSection from './TimeInputSection';
 import { ProductionInventory, CompleteInventoryData } from '@/lib/types/production';
 import { calculateTonnage } from '@/lib/types/production';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +24,7 @@ interface ProductionFormProps {
   onComplete: (data: CompleteInventoryData) => Promise<void>;
   completing: boolean;
   disabled: boolean;
+  onTempsCalculated?: (temps: number) => void;
 }
 
 export default function ProductionForm({
@@ -30,16 +32,18 @@ export default function ProductionForm({
   onAutoSave,
   onComplete,
   completing,
-  disabled
+  disabled,
+  onTempsCalculated
 }: ProductionFormProps) {
-  // Transform reservoirs from Prisma format (with 5 input + 6 calculated fields) to component format
+  // Transform reservoirs from Prisma format (with 6 input + 6 calculated fields) to component format
   const transformedReservoirs = (inventory.reservoirs || []).map((s: any) => ({
     id: s.id,
     name: s.name,
     reservoirConfigId: s.reservoirConfigId,
-    // 5 input fields
+    // 6 input fields
     hauteur: s.hauteur || 0,
     temperature: s.temperature || 20,
+    temperatureVapeur: s.temperatureVapeur || 20,
     volumeLiquide: s.volumeLiquide || 0,
     pressionInterne: s.pressionInterne || 0,
     densiteA15C: s.densiteA15C || 0,
@@ -60,6 +64,8 @@ export default function ProductionForm({
     exports: inventory.exports || 0,
     divers: inventory.divers || 0,
     observations: inventory.observations || '',
+    heureDebut: inventory.heureDebut || '',
+    heureFin: inventory.heureFin || '',
     bottles: inventory.bottles || [],
     reservoirs: transformedReservoirs
   });
@@ -103,6 +109,33 @@ export default function ProductionForm({
     setAutoSaveStatus('idle');
   };
 
+  // Calculate temps total from heureDebut and heureFin
+  const calculateTempsTotal = (debut: string, fin: string): number => {
+    if (!debut || !fin) return 0;
+
+    const [debutH, debutM] = debut.split(':').map(Number);
+    const [finH, finM] = fin.split(':').map(Number);
+
+    const debutMinutes = debutH * 60 + debutM;
+    let finMinutes = finH * 60 + finM;
+
+    // Handle case where end time is next day (e.g., 23:00 to 02:00)
+    if (finMinutes < debutMinutes) {
+      finMinutes += 24 * 60; // Add 24 hours
+    }
+
+    return finMinutes - debutMinutes;
+  };
+
+  const tempsTotal = calculateTempsTotal(formData.heureDebut, formData.heureFin);
+
+  // Notify parent component of calculated time
+  useEffect(() => {
+    if (onTempsCalculated) {
+      onTempsCalculated(tempsTotal);
+    }
+  }, [tempsTotal, onTempsCalculated]);
+
   // Calculs automatiques
   const remplissageTotal = formData.bottles.reduce(
     (sum, b) => {
@@ -136,6 +169,16 @@ export default function ProductionForm({
 
   const handleComplete = async () => {
     // Validation
+    if (!formData.heureDebut || !formData.heureFin) {
+      toast.error('Veuillez renseigner les heures de début et de fin');
+      return;
+    }
+
+    if (tempsTotal === 0) {
+      toast.error('Le temps total de production ne peut pas être zéro');
+      return;
+    }
+
     if (!formData.bottles.length) {
       toast.error('Veuillez renseigner au moins une bouteille');
       return;
@@ -168,6 +211,9 @@ export default function ProductionForm({
       divers: formData.divers,
       stockFinalPhysique,
       observations: formData.observations,
+      heureDebut: formData.heureDebut,
+      heureFin: formData.heureFin,
+      tempsTotal,
       bottles: formData.bottles.map(b => ({
         type: b.type,
         quantity: b.quantity || 0
@@ -177,6 +223,7 @@ export default function ProductionForm({
         reservoirConfigId: s.reservoirConfigId,
         hauteur: s.hauteur || 0,
         temperature: s.temperature || 20,
+        temperatureVapeur: s.temperatureVapeur || 20,
         volumeLiquide: s.volumeLiquide || 0,
         pressionInterne: s.pressionInterne || 0,
         densiteA15C: s.densiteA15C || 0
@@ -205,6 +252,15 @@ export default function ProductionForm({
           )}
         </div>
       )}
+
+      {/* Time Input Section */}
+      <TimeInputSection
+        heureDebut={formData.heureDebut}
+        heureFin={formData.heureFin}
+        tempsTotal={tempsTotal}
+        onUpdate={updateField}
+        disabled={disabled}
+      />
 
       <Card className="p-6">
         <Tabs defaultValue="appro" className="w-full">

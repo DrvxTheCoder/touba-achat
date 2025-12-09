@@ -21,9 +21,10 @@ interface Reservoir {
   id?: number;
   name: string;
   reservoirConfigId?: number;
-  // 5 champs de saisie
+  // 6 champs de saisie
   hauteur: number;
   temperature: number;
+  temperatureVapeur: number;
   volumeLiquide: number;
   pressionInterne: number;
   densiteA15C: number;
@@ -74,6 +75,7 @@ export default function ReservoirSection({
               reservoirConfigId: config.id,
               hauteur: 0,
               temperature: 20,
+              temperatureVapeur: 20,
               volumeLiquide: 0,
               pressionInterne: 0,
               densiteA15C: 0,
@@ -209,7 +211,7 @@ export default function ReservoirSection({
       <div>
         <h3 className="text-lg font-semibold mb-2">Pesée des réservoirs de GPL</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Saisir les 5 mesures pour chaque réservoir. Les calculs se font automatiquement.
+          Saisir les mesures pour chaque réservoir. Les calculs se font automatiquement.
         </p>
         {/* <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
           <Info className="h-4 w-4 text-blue-600" />
@@ -282,16 +284,32 @@ export default function ReservoirSection({
                     />
                   </div>
 
-                  {/* Température */}
+                  {/* Température Liquide */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
-                      Température (°C)
+                      Température Liquide (°C)
                       <span className="text-xs text-muted-foreground ml-1">- Entis XL</span>
                     </Label>
                     <Input
                       type="number"
                       value={reservoir.temperature}
                       onChange={(e) => updateReservoir(index, 'temperature', parseFloat(e.target.value) || 20)}
+                      disabled={disabled}
+                      className="font-mono"
+                      placeholder="20.0"
+                    />
+                  </div>
+
+                  {/* Température Vapeur */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Température Vapeur (°C)
+                      <span className="text-xs text-muted-foreground ml-1">- Entis XL</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      value={reservoir.temperatureVapeur}
+                      onChange={(e) => updateReservoir(index, 'temperatureVapeur', parseFloat(e.target.value) || 20)}
                       disabled={disabled}
                       className="font-mono"
                       placeholder="20.0"

@@ -6,7 +6,8 @@ import { getCorrectionFactors } from '@/lib/data/correctionFactors';
 export interface SphereInputData {
   name: string;
   hauteur: number; // en mm
-  temperature: number; // en °C
+  temperature: number; // en °C (température liquide)
+  temperatureVapeur: number; // en °C (température vapeur)
   volumeLiquide: number; // en m³
   pressionInterne: number; // en bar
   densiteA15C: number; // densité à 15°C (généralement 0.508)
@@ -73,7 +74,10 @@ export function calculateLiquidVolumeFromHeight(
  */
 export function calculateSphereData(input: SphereInputData): SphereCalculatedData {
   // 1. Récupérer les facteurs de correction depuis la table
-  const { facteurLiquide, facteurGaz } = getCorrectionFactors(input.temperature);
+  // Facteur liquide basé sur température liquide
+  const { facteurLiquide } = getCorrectionFactors(input.temperature);
+  // Facteur gaz basé sur température vapeur
+  const { facteurGaz } = getCorrectionFactors(input.temperatureVapeur);
 
   // 2. Calculer la densité ambiante
   // Formule Excel: Densité à 15°C - Facteur de correction densité liquide
@@ -123,9 +127,14 @@ export function validateSphereInput(input: SphereInputData): string[] {
     errors.push('La hauteur semble anormalement élevée (> 30000 mm)');
   }
 
-  // Validation de la température
+  // Validation de la température liquide
   if (input.temperature < 15.0 || input.temperature > 32.9) {
-    errors.push('La température doit être entre 15.0°C et 32.9°C');
+    errors.push('La température liquide doit être entre 15.0°C et 32.9°C');
+  }
+
+  // Validation de la température vapeur
+  if (input.temperatureVapeur < 15.0 || input.temperatureVapeur > 32.9) {
+    errors.push('La température vapeur doit être entre 15.0°C et 32.9°C');
   }
 
   // Validation du volume liquide

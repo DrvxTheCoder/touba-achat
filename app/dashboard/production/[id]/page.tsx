@@ -27,6 +27,7 @@ export default function ProductionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [calculatedTempsTotal, setCalculatedTempsTotal] = useState(0);
 
   useEffect(() => {
     loadInventory();
@@ -216,8 +217,7 @@ export default function ProductionDetailPage() {
               Inventaire du {new Date(inventory.date).toLocaleDateString('fr-FR')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Démarré par {inventory.startedBy?.name} à{' '}
-              {new Date(inventory.startedAt).toLocaleTimeString('fr-FR')}
+              Démarré par {inventory.startedBy?.name}
             </p>
           </div>
         </div>
@@ -257,21 +257,30 @@ export default function ProductionDetailPage() {
       </div>
 
       {/* Timer et Arrêts */}
-      {isEnCours && (
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <ProductionTimer
-              startedAt={inventory.startedAt}
-              totalArrets={inventory.tempsArret || 0}
-              rendement={inventory.rendement || 0}
-            />
-            <ArretDialog
-              inventoryId={inventory.id}
-              onArretAdded={handleArretAdded}
-            />
-          </div>
-        </Card>
-      )}
+      {(() => {
+        const tempsTotal = calculatedTempsTotal || inventory.tempsTotal || 0;
+        const tempsArret = inventory.tempsArret || 0;
+        const tempsUtile = tempsTotal - tempsArret;
+        const rendement = tempsTotal > 0 ? (tempsUtile / tempsTotal) * 100 : 0;
+
+        return (
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <ProductionTimer
+                tempsTotal={tempsTotal}
+                totalArrets={tempsArret}
+                rendement={rendement}
+              />
+              {isEnCours && (
+                <ArretDialog
+                  inventoryId={inventory.id}
+                  onArretAdded={handleArretAdded}
+                />
+              )}
+            </div>
+          </Card>
+        );
+      })()}
 
       {/* Liste des arrêts */}
       {inventory.arrets && inventory.arrets.length > 0 && (
@@ -315,6 +324,7 @@ export default function ProductionDetailPage() {
         onComplete={handleComplete}
         completing={completing}
         disabled={isTermine}
+        onTempsCalculated={setCalculatedTempsTotal}
       />
     </div>
   );
