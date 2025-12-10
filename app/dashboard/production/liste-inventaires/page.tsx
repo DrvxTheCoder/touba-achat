@@ -21,8 +21,11 @@ export default function ListeInventairesPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
+  const [selectedCenterId, setSelectedCenterId] = useState<string>('all');
   const [inventories, setInventories] = useState<any[]>([]);
+  const [productionCenters, setProductionCenters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCenters, setLoadingCenters] = useState(true);
 
   // Generate years (current year and 5 years back)
   const currentYear = new Date().getFullYear();
@@ -45,6 +48,7 @@ export default function ListeInventairesPage() {
 
   useEffect(() => {
     loadInventories();
+    loadProductionCenters();
   }, []);
 
   const loadInventories = async () => {
@@ -58,6 +62,20 @@ export default function ListeInventairesPage() {
       toast.error('Erreur lors du chargement des inventaires');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProductionCenters = async () => {
+    try {
+      const res = await fetch('/api/production/settings/centers');
+      if (!res.ok) throw new Error('Erreur de chargement');
+      const centers = await res.json();
+      setProductionCenters(centers || []);
+    } catch (error) {
+      console.error(error);
+      toast.error('Erreur lors du chargement des centres de production');
+    } finally {
+      setLoadingCenters(false);
     }
   };
 
@@ -92,6 +110,7 @@ export default function ListeInventairesPage() {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           capaciteTotale: metrics.capaciteTotale,
+          ...(selectedCenterId !== 'all' && { productionCenterId: parseInt(selectedCenterId) }),
         }),
       });
 
@@ -160,6 +179,7 @@ export default function ListeInventairesPage() {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           capaciteTotale: metrics.capaciteTotale,
+          ...(selectedCenterId !== 'all' && { productionCenterId: parseInt(selectedCenterId) }),
         }),
       });
 
@@ -210,7 +230,7 @@ export default function ListeInventairesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Year Selection */}
             <div className="space-y-2">
               <Label htmlFor="year">Année</Label>
@@ -239,6 +259,24 @@ export default function ListeInventairesPage() {
                   {months.map((month) => (
                     <SelectItem key={month.value} value={month.value}>
                       {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Production Center Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="center">Centre de Production</Label>
+              <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
+                <SelectTrigger id="center">
+                  <SelectValue placeholder="Sélectionner un centre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les centres</SelectItem>
+                  {productionCenters.map((center) => (
+                    <SelectItem key={center.id} value={center.id.toString()}>
+                      {center.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -277,7 +315,7 @@ export default function ListeInventairesPage() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Sélectionnez un mois et une année pour exporter le rapport mensuel de production.
+            Sélectionnez un mois, une année et optionnellement un centre de production pour exporter le rapport mensuel.
           </p>
         </CardContent>
       </Card>

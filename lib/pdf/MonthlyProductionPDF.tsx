@@ -22,10 +22,19 @@ Font.register({
 // Define styles
 const styles = StyleSheet.create({
   page: {
-    padding: 15, // Reduced padding for more space
+    padding: 15,
+    paddingTop: 30, // Extra space for logo
+    paddingBottom: 35, // Extra space for footer signatures
     position: 'relative',
     fontFamily: 'Ubuntu',
     fontSize: 7,
+  },
+  logo: {
+    position: 'absolute',
+    top: 10,
+    right: 15,
+    width: 30,
+    height: 30,
   },
   watermark: {
     position: 'absolute',
@@ -36,13 +45,13 @@ const styles = StyleSheet.create({
     width: 300
   },
   header: {
-    marginBottom: 8, // Reduced margin
+    marginBottom: 6,
     textAlign: 'center',
   },
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 4,
     textAlign: 'center',
     fontFamily: 'Oswald',
   },
@@ -52,106 +61,142 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-  
-  // --- TABLE STYLING: Based on ProductionInventoryPDF ---
+
+  // --- TABLE STYLING ---
   table: {
     width: '100%',
     borderWidth: 1,
     borderStyle: 'solid',
-    borderColor: '#ddd', // Lighter border
+    borderColor: '#ddd',
     backgroundColor: '#fff',
   },
-  tableHeaderSection: { // Main section headers (APPROVISIONNEMENT, SORTIES, STOCK)
+  tableHeaderSection: {
     flexDirection: 'row',
-    backgroundColor: '#e8f5e9', // Light green background
+    backgroundColor: '#e8f5e9',
     borderBottomWidth: 1,
-    borderBottomColor: '#999', // Darker bottom border for the section header
+    borderBottomColor: '#999',
     borderTopWidth: 1,
     borderTopColor: '#ddd',
+    minHeight: 12,
   },
-  tableHeaderRow: { // Column headers (VRAC, Récup, Ngabou, etc.)
+  tableHeaderRow: {
     flexDirection: 'row',
-    backgroundColor: '#e0e0e0', // Gray background for column headers
+    backgroundColor: '#e0e0e0',
     borderBottomWidth: 1,
-    borderBottomColor: '#999', // Darker border
+    borderBottomColor: '#999',
+    minHeight: 11,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0', // Light gray separator
-    minHeight: 18,
-    alignItems: 'center',
+    borderBottomColor: '#e0e0e0',
+    minHeight: 12,
   },
   tableTotalRow: {
     flexDirection: 'row',
-    backgroundColor: '#c8e6c9', // Light green total row
+    backgroundColor: '#c8e6c9',
     borderTopWidth: 2,
-    borderTopColor: '#4caf50', // Darker green top border
+    borderTopColor: '#4caf50',
     fontFamily: 'Oswald',
-    alignItems: 'center',
+    minHeight: 12,
   },
-  
-  // Column definitions (adjusted widths for better fit)
-  colDate: { width: '5%', borderRightWidth: 1, borderRightColor: '#ddd', padding: 2, fontSize: 6 },
-  colStockInit: { width: '6%', borderRightWidth: 1, borderRightColor: '#ddd', padding: 2, fontSize: 6 }, // Increased width slightly
 
-  // Approvisionnement section - 10% total
-  sectionAppro: { width: '10%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
-  colAppro: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 2, fontSize: 6 }, 
+  // Increased column widths proportionately (except rendement)
+  colDate: { width: '3.5%', borderRightWidth: 1, borderRightColor: '#ddd', fontSize: 5 },
+  colStockInit: { width: '5%', borderRightWidth: 1, borderRightColor: '#ddd', fontSize: 5 },
 
-  // Sorties section - 55% total
-  sectionSorties: { width: '55%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
-  // Bottle columns have varying widths based on the number of types, adjusting to make space
-  colSortie: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 2, fontSize: 6 },
-  colCumulSortie: { flex: 1.2, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 2, fontSize: 6, fontFamily: 'Oswald' },
+  // Approvisionnement section - 11% (was 9%)
+  sectionAppro: { width: '11%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
+  colAppro: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
 
-  // Stock section - 24% total
-  sectionStock: { width: '24%', flexDirection: 'row' },
-  colStockFinal: { flex: 1.5, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 2, fontSize: 6 }, // Stock Théorique/Physique
-  colSphere: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 2, fontSize: 6 }, // Reservoir columns (adjusted for 3)
-  colCreux: { flex: 1, padding: 2, fontSize: 6 },
+  // Sorties VRAC section - 10% (was 8%)
+  sectionSortiesVrac: { width: '15%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
+  colSortieVrac: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
+
+  // Sorties Conditionnées section - 34% (was 28%)
+  sectionSortiesConditionees: { width: '29%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
+  colBottle: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
+  colCumulSortie: { flex: 1.2, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5, fontFamily: 'Oswald' },
+
+  // Stock Final section - 27% (was 24.5%)
+  sectionStockFinal: { width: '27%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
+  colStockFinal: { flex: 1.2, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
+  colSphere: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
+  colEcart: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
+  colCreux: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
+
+  // Rendement section - 12% (was 14%)
+  sectionRendement: { width: '12%', flexDirection: 'row' },
+  colRendement: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
+  colRendementLast: { flex: 1, padding: 1, fontSize: 5 },
 
   // Header cells
-  headerCell: { // Section headers
-    fontWeight: 'bold',
-    color: '#000',
-    padding: 3,
-    fontSize: 8,
-    textAlign: 'center',
-    fontFamily: 'Oswald',
-    flex: 1, // Ensure text is centered within the section's allocated space
-  },
-  headerCellSub: { // Column headers
+  headerCell: {
     fontWeight: 'bold',
     color: '#000',
     padding: 2,
-    fontSize: 6,
+    fontSize: 7,
     textAlign: 'center',
-    lineHeight: 1.2, // Ensure snug fit
+    fontFamily: 'Oswald',
+    flex: 1,
+  },
+  headerCellSub: {
+    fontWeight: 'bold',
+    color: '#000',
+    padding: 1,
+    fontSize: 5,
+    textAlign: 'center',
+    lineHeight: 1.1,
   },
 
-  // Data cells
+  // Data cells - tightened line height
   cellText: {
     textAlign: 'right',
-    fontSize: 6,
+    fontSize: 5,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    lineHeight: 1.4,
+    lineHeight: 1.1,
+    paddingVertical: 1,
   },
   cellTextDate: {
     textAlign: 'center',
-    fontSize: 6,
-    lineHeight: 1.4,
+    fontSize: 5,
+    lineHeight: 1.1,
+    paddingVertical: 1,
+  },
+
+  // Footer with signatures
+  footerSignatures: {
+    position: 'absolute',
+    bottom: 30,
+    left: 15,
+    right: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    fontSize: 7,
+  },
+  signatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  signatureLabel: {
+    marginRight: 5,
+  },
+  signatureLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    width: 100,
+    marginLeft: 5,
   },
 
   footer: {
     position: 'absolute',
-    bottom: 15,
+    bottom: 10,
     left: 15,
     right: 15,
     textAlign: 'center',
-    fontSize: 7,
+    fontSize: 6,
     color: '#999',
   },
 });
@@ -174,10 +219,8 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
     )
   ).sort();
 
-  // Get all unique reservoir names
-  // Use a fixed list of 3 reservoirs (SO2, SO3, D100) based on the input data for consistency and layout control
+  // Fixed reservoir names
   const reservoirNames = ['D100', 'SO2', 'SO3'];
-
 
   // Calculate totals
   const calculateTotal = (field: string) => {
@@ -187,66 +230,58 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
   const calculateBottleTotal = (bottleType: string) => {
     return inventories.reduce((sum, inv) => {
       const bottle = inv.bottles?.find((b: any) => b.type === bottleType);
-      // In the source PDF, the total row for bottle types is under the "B2.7", "B12.5", etc. columns. 
-      // Based on the source PDF data in production_Décembre_2025.pdf, these columns contain the *quantities* (B12.5, B12.5K, B2.7, B38, B6, B9), 
-      // and the TOTAL row sums these quantities. The `calculateBottleTotal` in the original component sums the *tonnage*. 
-      // I will adjust the logic to sum *quantity* to match the source PDF's TOTAL row, and display quantities in data rows.
-      return sum + (bottle?.quantity || 0); // SUM QUANTITY
+      return sum + (bottle?.quantity || 0);
     }, 0);
   };
-
-  // Find the date columns in the source PDF and extract the bottle type order:
-  // B12.5, B12.5K, B2.7, B38, B6, B9.
-  // The provided code sorts them alphabetically, I'll use the alphabetical sort from the code 
-  // but ensure the column headers reflect the replacement (e.g., B12.5_Kheuweul -> B12.5.K)
 
   // Use the capaciteTotale passed from the API (already in tonnes)
   let totalCapacityTonnes = capaciteTotale || 0;
 
   if (!totalCapacityTonnes && inventories.length > 0) {
-    // Fallback calculation: sum the max capacity of the reservoirs
-    const allReservoirConfigs = new Map<string, number>();
-    inventories.forEach(inv => {
-      inv.reservoirs?.forEach((r: any) => {
-        if (r.reservoirConfig && !allReservoirConfigs.has(r.name)) {
-          allReservoirConfigs.set(r.name, r.reservoirConfig.capacity || 0);
-        }
-      });
-    });
-    // This part is complex, for simplicity based on the source PDF which is 
-    // a snapshot, I'll use a hardcoded value derived from the source data 
-    // if `capaciteTotale` isn't provided, or assume it will be provided correctly.
-    // The total capacity is implicitly used to calculate "Creux" (Empty Space)
-    // The capacity of the 3 tanks combined is approximately: 1712 + 1712 + 1569 (based on averages in the SF Phys column descriptions)
-    // Using a rough estimate for capacity in tonnes: 4993.47 T (from an online tool's config)
-    totalCapacityTonnes = 4993.47; 
+    totalCapacityTonnes = 4993.47;
   }
 
-  // Calculate the ratio for Sorties columns to ensure they fit, 
-  // considering 3 fixed (Ngabou, Export, Divers) + N bottle types + Cumul
-  const numSortieColumns = 3 + bottleTypes.length + 1; // 3 fixed + N bottles + 1 Cumul
-  // Distribute the 55% width across these columns:
-  const getSortieColStyle = (isCumul: boolean) => ({
-    width: isCumul ? `${(1.2 / numSortieColumns) * (55 / (3 + bottleTypes.length + 1.2))}*100%` : `${(1 / numSortieColumns) * (55 / (3 + bottleTypes.length + 1.2))}*100%`,
-    flex: isCumul ? 1.2 : 1, // Adjusted flex for a better fit within the parent sectionSorties
-    borderRightWidth: 0.5, 
-    borderRightColor: '#e0e0e0', 
-    padding: 2, 
-    fontSize: 6,
-  });
+  // Helper function to convert minutes to hours with H separator
+  const convertMinutesToHours = (minutes: number): string => {
+    const totalHours = minutes / 60;
+    const hours = Math.floor(totalHours);
+    const mins = Math.round((totalHours - hours) * 60);
+    return `${hours}H${mins.toString().padStart(2, '0')}`;
+  };
 
-  // Calculate the ratio for Stock columns: 1 StockTheorique + 3 Reservoirs + 1 StockPhysique + 1 Creux
-  // Stock Final: flex 1.5, Sphere: flex 1 (x3), Creux: flex 1
-  const totalStockFlex = 1.5 + 3 + 1.5 + 1; // 1.5 (StockTheo) + 3 * 1 (Reservoirs) + 1.5 (SFPhys) + 1 (Creux) = 7
-  
-  const colStockFinalStyle = { flex: 1.5, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 2, fontSize: 6 };
-  const colSphereStyle = { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 2, fontSize: 6 };
-  const colCreuxStyle = { flex: 1, padding: 2, fontSize: 6 };
+  // Calculate total bottles produced
+  const calculateTotalBottles = () => {
+    return inventories.reduce((sum, inv) => sum + (inv.totalBottlesProduced || 0), 0);
+  };
 
+  // Calculate Rendement Horaire for a single inventory (in T/hour)
+  const calculateRendementHoraire = (cumulSortie: number, tempsTotal: number): string => {
+    if (!tempsTotal || tempsTotal === 0) return '-';
+    const hoursWorked = tempsTotal / 60;
+    return (cumulSortie / hoursWorked).toFixed(2);
+  };
+
+  // Calculate average Creux
+  const calculateAverageCreux = () => {
+    const totalCreux = inventories.reduce((sum, inv) => {
+      const creux = totalCapacityTonnes - (inv.stockFinalPhysique || 0);
+      return sum + creux;
+    }, 0);
+    return inventories.length > 0 ? (totalCreux / inventories.length).toFixed(3) : '0.000';
+  };
+
+  // Dynamic column styles for stock final
+  const colStockFinalStyle = { flex: 1.2, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 };
+  const colSphereStyle = { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 };
+  const colEcartStyle = { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 };
+  const colCreuxStyle = { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 };
 
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
+        {/* Logo */}
+        <Image style={styles.logo} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
+
         {/* Watermark */}
         <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
 
@@ -265,41 +300,51 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
           {/* Section Headers (Row 1) */}
           <View style={styles.tableHeaderSection}>
             <View style={[styles.colDate, { backgroundColor: 'transparent' }]}>
-              <Text style={styles.headerCell}>Date</Text>
+              <Text style={styles.headerCell}>DATE</Text>
             </View>
             <View style={[styles.colStockInit, { backgroundColor: 'transparent' }]}>
-              <Text style={styles.headerCell}>Stock Init</Text>
+              <Text style={styles.headerCell}>STOCK INIT</Text>
             </View>
 
             {/* Approvisionnement Section */}
             <View style={styles.sectionAppro}>
-              <Text style={styles.headerCell}>APPROVISIONNEMENT</Text>
+              <Text style={styles.headerCell}>APPROVISIONNEMENTS</Text>
             </View>
 
-            {/* Sorties Section */}
-            <View style={styles.sectionSorties}>
-              <Text style={styles.headerCell}>SORTIES</Text>
+            {/* Sorties VRAC Section */}
+            <View style={styles.sectionSortiesVrac}>
+              <Text style={styles.headerCell}>SORTIES VRAC</Text>
             </View>
 
-            {/* Stock Section */}
-            <View style={styles.sectionStock}>
-              <Text style={styles.headerCell}>STOCK</Text>
+            {/* Sorties Conditionnées Section */}
+            <View style={styles.sectionSortiesConditionees}>
+              <Text style={styles.headerCell}>SORTIES CONDITIONNÉES</Text>
+            </View>
+
+            {/* Stock Final Section */}
+            <View style={styles.sectionStockFinal}>
+              <Text style={styles.headerCell}>STOCK FINAL</Text>
+            </View>
+
+            {/* Rendement Section */}
+            <View style={styles.sectionRendement}>
+              <Text style={styles.headerCell}>RENDEMENT</Text>
             </View>
           </View>
 
           {/* Column Headers (Row 2) */}
           <View style={styles.tableHeaderRow}>
-            {/* Date - 5% */}
+            {/* Date */}
             <View style={styles.colDate}>
               <Text style={styles.headerCellSub}>Date</Text>
             </View>
 
-            {/* Stock Initial - 6% */}
+            {/* Stock Initial */}
             <View style={styles.colStockInit}>
               <Text style={styles.headerCellSub}>VRAC (T)</Text>
             </View>
 
-            {/* Appro section - 10% total */}
+            {/* Appro section */}
             <View style={styles.sectionAppro}>
               <View style={styles.colAppro}>
                 <Text style={styles.headerCellSub}>Récup.</Text>
@@ -308,25 +353,28 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
                 <Text style={styles.headerCellSub}>SAR</Text>
               </View>
               <View style={styles.colAppro}>
-                <Text style={styles.headerCellSub}>Butanier</Text>
+                <Text style={styles.headerCellSub}>Butan.</Text>
               </View>
             </View>
 
-            {/* Sorties section - 55% total */}
-            <View style={styles.sectionSorties}>
-              <View style={styles.colSortie}>
+            {/* Sorties VRAC section */}
+            <View style={styles.sectionSortiesVrac}>
+              <View style={styles.colSortieVrac}>
                 <Text style={styles.headerCellSub}>Ngabou</Text>
               </View>
-              <View style={styles.colSortie}>
+              <View style={styles.colSortieVrac}>
                 <Text style={styles.headerCellSub}>Export</Text>
               </View>
-              <View style={styles.colSortie}>
+              <View style={styles.colSortieVrac}>
                 <Text style={styles.headerCellSub}>Divers</Text>
               </View>
+            </View>
 
-              {/* Bottle type columns (Displaying Quantity) */}
+            {/* Sorties Conditionnées section */}
+            <View style={styles.sectionSortiesConditionees}>
+              {/* Bottle type columns */}
               {bottleTypes.map((type, idx) => (
-                <View key={idx} style={styles.colSortie}>
+                <View key={idx} style={styles.colBottle}>
                   <Text style={styles.headerCellSub}>{type.replace('_', '.')}</Text>
                 </View>
               ))}
@@ -336,24 +384,43 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
               </View>
             </View>
 
-            {/* Stock section - 24% total */}
-            <View style={styles.sectionStock}>
+            {/* Stock Final section */}
+            <View style={styles.sectionStockFinal}>
               <View style={colStockFinalStyle}>
-                <Text style={styles.headerCellSub}>Stock Théo. (T)</Text>
+                <Text style={styles.headerCellSub}>ST (T)</Text>
               </View>
 
-              {/* Reservoir columns (Displaying Tonnage) */}
+              {/* Reservoir columns */}
               {reservoirNames.map((name, idx) => (
                 <View key={idx} style={colSphereStyle}>
-                  <Text style={styles.headerCellSub}>{name} (T)</Text>
+                  <Text style={styles.headerCellSub}>{name}</Text>
                 </View>
               ))}
 
               <View style={colStockFinalStyle}>
-                <Text style={styles.headerCellSub}>SF Phys. (T)</Text>
+                <Text style={styles.headerCellSub}>SFP (T)</Text>
+              </View>
+              <View style={colEcartStyle}>
+                <Text style={styles.headerCellSub}>Écart</Text>
               </View>
               <View style={colCreuxStyle}>
-                <Text style={styles.headerCellSub}>Creux (T)</Text>
+                <Text style={styles.headerCellSub}>Creux</Text>
+              </View>
+            </View>
+
+            {/* Rendement section */}
+            <View style={styles.sectionRendement}>
+              <View style={styles.colRendement}>
+                <Text style={styles.headerCellSub}>THT (h)</Text>
+              </View>
+              <View style={styles.colRendement}>
+                <Text style={styles.headerCellSub}>TA (min)</Text>
+              </View>
+              <View style={styles.colRendement}>
+                <Text style={styles.headerCellSub}>TU (h)</Text>
+              </View>
+              <View style={styles.colRendementLast}>
+                <Text style={styles.headerCellSub}>RH (T/h)</Text>
               </View>
             </View>
           </View>
@@ -370,66 +437,69 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
 
               {/* Stock Initial */}
               <View style={styles.colStockInit}>
-                <Text style={styles.cellText}>{inventory.stockInitialPhysique?.toFixed(2) || '0.00'}</Text>
+                <Text style={styles.cellText}>{inventory.stockInitialPhysique?.toFixed(3) || '0.00'}</Text>
               </View>
 
               {/* Approvisionnement section */}
               <View style={styles.sectionAppro}>
                 <View style={styles.colAppro}>
-                  <Text style={styles.cellText}>{(inventory.recuperation || 0).toFixed(2)}</Text>
+                  <Text style={styles.cellText}>{(inventory.recuperation || 0).toFixed(3)}</Text>
                 </View>
                 <View style={styles.colAppro}>
-                  <Text style={styles.cellText}>{(inventory.approSAR || 0).toFixed(2)}</Text>
+                  <Text style={styles.cellText}>{(inventory.approSAR || 0).toFixed(3)}</Text>
                 </View>
                 <View style={styles.colAppro}>
-                  <Text style={styles.cellText}>{(inventory.butanier || 0).toFixed(2)}</Text>
+                  <Text style={styles.cellText}>{(inventory.butanier || 0).toFixed(3)}</Text>
                 </View>
               </View>
 
-              {/* Sorties section */}
-              <View style={styles.sectionSorties}>
-                <View style={styles.colSortie}>
-                  <Text style={styles.cellText}>{(inventory.ngabou || 0).toFixed(2)}</Text>
+              {/* Sorties VRAC section */}
+              <View style={styles.sectionSortiesVrac}>
+                <View style={styles.colSortieVrac}>
+                  <Text style={styles.cellText}>{(inventory.ngabou || 0).toFixed(3)}</Text>
                 </View>
-                <View style={styles.colSortie}>
-                  <Text style={styles.cellText}>{(inventory.exports || 0).toFixed(2)}</Text>
+                <View style={styles.colSortieVrac}>
+                  <Text style={styles.cellText}>{(inventory.exports || 0).toFixed(3)}</Text>
                 </View>
-                <View style={styles.colSortie}>
-                  <Text style={styles.cellText}>{(inventory.divers || 0).toFixed(2)}</Text>
+                <View style={styles.colSortieVrac}>
+                  <Text style={styles.cellText}>{(inventory.divers || 0).toFixed(3)}</Text>
                 </View>
+              </View>
 
-                {/* Bottle types (Displaying Quantity) */}
+              {/* Sorties Conditionnées section */}
+              <View style={styles.sectionSortiesConditionees}>
+                {/* Bottle types */}
                 {bottleTypes.map((type, typeIdx) => {
                   const bottle = inventory.bottles?.find((b: any) => b.type === type);
                   return (
-                    <View key={typeIdx} style={styles.colSortie}>
+                    <View key={typeIdx} style={styles.colBottle}>
                       <Text style={styles.cellText}>{bottle?.quantity || '0'}</Text>
                     </View>
                   );
                 })}
 
-                {/* Cumul Sorties (Tonnage) */}
+                {/* Cumul Sorties */}
                 <View style={styles.colCumulSortie}>
                   <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>
-                    {(inventory.cumulSortie || 0).toFixed(2)}
+                    {(inventory.cumulSortie || 0).toFixed(3)}
                   </Text>
                 </View>
               </View>
 
-              {/* Stock section */}
-              <View style={styles.sectionStock}>
-                {/* Stock Final Théorique */}
+              {/* Stock Final section */}
+              <View style={styles.sectionStockFinal}>
+                {/* Stock Théorique */}
                 <View style={colStockFinalStyle}>
-                  <Text style={styles.cellText}>{(inventory.stockFinalTheorique || 0).toFixed(2)}</Text>
+                  <Text style={styles.cellText}>{(inventory.stockFinalTheorique || 0).toFixed(3)}</Text>
                 </View>
 
-                {/* Reservoirs (Poids Liquide Tonnage) */}
+                {/* Reservoirs */}
                 {reservoirNames.map((name, resIdx) => {
                   const reservoir = inventory.reservoirs?.find((r: any) => r.name === name);
                   return (
                     <View key={resIdx} style={colSphereStyle}>
                       <Text style={styles.cellText}>
-                        {reservoir ? `${reservoir.poidsLiquide?.toFixed(3) || '0.000'}` : '-'}
+                        {reservoir ? `${reservoir.poidsLiquide?.toFixed(3) || '0.00'}` : '-'}
                       </Text>
                     </View>
                   );
@@ -437,13 +507,38 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
 
                 {/* Stock Final Physique */}
                 <View style={colStockFinalStyle}>
-                  <Text style={styles.cellText}>{(inventory.stockFinalPhysique || 0).toFixed(2)}</Text>
+                  <Text style={styles.cellText}>{(inventory.stockFinalPhysique || 0).toFixed(3)}</Text>
+                </View>
+
+                {/* Écart */}
+                <View style={colEcartStyle}>
+                  <Text style={styles.cellText}>
+                    {(inventory.ecart || 0).toFixed(3)}
+                  </Text>
                 </View>
 
                 {/* Creux */}
                 <View style={colCreuxStyle}>
                   <Text style={styles.cellText}>
-                    {(totalCapacityTonnes - (inventory.stockFinalPhysique || 0)).toFixed(2)}
+                    {(totalCapacityTonnes - (inventory.stockFinalPhysique || 0)).toFixed(3)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Rendement section */}
+              <View style={styles.sectionRendement}>
+                <View style={styles.colRendement}>
+                  <Text style={styles.cellText}>{convertMinutesToHours(inventory.tempsTotal || 0)}</Text>
+                </View>
+                <View style={styles.colRendement}>
+                  <Text style={styles.cellText}>{inventory.tempsArret || '0'}</Text>
+                </View>
+                <View style={styles.colRendement}>
+                  <Text style={styles.cellText}>{convertMinutesToHours(inventory.tempsUtile || 0)}</Text>
+                </View>
+                <View style={styles.colRendementLast}>
+                  <Text style={styles.cellText}>
+                    {calculateRendementHoraire(inventory.cumulSortie || 0, inventory.tempsTotal || 0)}
                   </Text>
                 </View>
               </View>
@@ -453,71 +548,109 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
           {/* Total Row */}
           <View style={styles.tableTotalRow}>
             <View style={styles.colDate}>
-              <Text style={[styles.cellText, { fontFamily: 'Oswald', fontSize: 7, textAlign: 'center' }]}>TOTAL</Text>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald', fontSize: 6, textAlign: 'center' }]}>TOTAL</Text>
             </View>
             <View style={styles.colStockInit}>
               <Text style={[styles.cellText, { textAlign: 'center' }]}>-</Text>
             </View>
 
-            {/* Appro Totals (Tonnage) */}
+            {/* Appro Totals */}
             <View style={styles.sectionAppro}>
               <View style={styles.colAppro}>
-                <Text style={[styles.cellText, { fontSize: 7 }]}>{calculateTotal('recuperation').toFixed(2)}</Text>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('recuperation').toFixed(3)}</Text>
               </View>
               <View style={styles.colAppro}>
-                <Text style={[styles.cellText, { fontSize: 7 }]}>{calculateTotal('approSAR').toFixed(2)}</Text>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('approSAR').toFixed(3)}</Text>
               </View>
               <View style={styles.colAppro}>
-                <Text style={[styles.cellText, { fontSize: 7 }]}>{calculateTotal('butanier').toFixed(2)}</Text>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('butanier').toFixed(3)}</Text>
               </View>
             </View>
 
-            {/* Sorties Totals (Quantity for Bottles, Tonnage for Ngabou/Export/Divers/Cumul) */}
-            <View style={styles.sectionSorties}>
-              <View style={styles.colSortie}>
-                <Text style={[styles.cellText, { fontSize: 7 }]}>{calculateTotal('ngabou').toFixed(2)}</Text>
+            {/* Sorties VRAC Totals */}
+            <View style={styles.sectionSortiesVrac}>
+              <View style={styles.colSortieVrac}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('ngabou').toFixed(3)}</Text>
               </View>
-              <View style={styles.colSortie}>
-                <Text style={[styles.cellText, { fontSize: 7 }]}>{calculateTotal('exports').toFixed(2)}</Text>
+              <View style={styles.colSortieVrac}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('exports').toFixed(3)}</Text>
               </View>
-              <View style={styles.colSortie}>
-                <Text style={[styles.cellText, { fontSize: 7 }]}>{calculateTotal('divers').toFixed(2)}</Text>
+              <View style={styles.colSortieVrac}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('divers').toFixed(3)}</Text>
               </View>
+            </View>
 
-              {/* Bottle type totals (Quantity) */}
+            {/* Sorties Conditionnées Totals */}
+            <View style={styles.sectionSortiesConditionees}>
+              {/* Bottle type totals */}
               {bottleTypes.map((type, typeIdx) => (
-                <View key={typeIdx} style={styles.colSortie}>
-                  <Text style={[styles.cellText, { fontSize: 7 }]}>{calculateBottleTotal(type).toFixed(0)}</Text>
+                <View key={typeIdx} style={styles.colBottle}>
+                  <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateBottleTotal(type).toFixed(0)}</Text>
                 </View>
               ))}
 
-              {/* Cumul Total (Tonnage) */}
+              {/* Cumul Total */}
               <View style={styles.colCumulSortie}>
-                <Text style={[styles.cellText, { fontFamily: 'Oswald', fontSize: 7 }]}>
-                  {calculateTotal('cumulSortie').toFixed(2)}
+                <Text style={[styles.cellText, { fontFamily: 'Oswald', fontSize: 6 }]}>
+                  {calculateTotal('cumulSortie').toFixed(3)}
                 </Text>
               </View>
             </View>
 
-            {/* Stock columns - show '-' for totals/averages */}
-            <View style={styles.sectionStock}>
+            {/* Stock Final Totals */}
+            <View style={styles.sectionStockFinal}>
               <View style={colStockFinalStyle}>
-                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'center' }]}>-</Text>
+                <Text style={[styles.cellText, { fontSize: 6, textAlign: 'center' }]}>-</Text>
               </View>
 
               {reservoirNames.map((name, resIdx) => (
                 <View key={resIdx} style={colSphereStyle}>
-                  <Text style={[styles.cellText, { fontSize: 6, textAlign: 'center' }]}>-</Text>
+                  <Text style={[styles.cellText, { fontSize: 5, textAlign: 'center' }]}>-</Text>
                 </View>
               ))}
 
               <View style={colStockFinalStyle}>
-                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'center' }]}>-</Text>
+                <Text style={[styles.cellText, { fontSize: 6, textAlign: 'center' }]}>-</Text>
+              </View>
+              <View style={colEcartStyle}>
+                <Text style={[styles.cellText, { fontSize: 6, textAlign: 'center' }]}>-</Text>
               </View>
               <View style={colCreuxStyle}>
-                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'center' }]}>-</Text>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateAverageCreux()}</Text>
               </View>
             </View>
+
+            {/* Rendement Totals */}
+            <View style={styles.sectionRendement}>
+              <View style={styles.colRendement}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>
+                  {convertMinutesToHours(calculateTotal('tempsTotal'))}
+                </Text>
+              </View>
+              <View style={styles.colRendement}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('tempsArret').toFixed(0)}</Text>
+              </View>
+              <View style={styles.colRendement}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>
+                  {convertMinutesToHours(calculateTotal('tempsUtile'))}
+                </Text>
+              </View>
+              <View style={styles.colRendementLast}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>
+                  {calculateRendementHoraire(calculateTotal('cumulSortie'), calculateTotal('tempsTotal'))}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Footer Signatures */}
+        <View style={styles.footerSignatures}>
+          <View style={styles.signatureItem}>
+            <Text style={styles.signatureLabel}>VISA PRODUCTION: _____________</Text>
+          </View>
+          <View style={styles.signatureItem}>
+            <Text style={styles.signatureLabel}>Chef de Centre: _____________</Text>
           </View>
         </View>
 
