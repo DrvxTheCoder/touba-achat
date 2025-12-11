@@ -118,15 +118,15 @@ const styles = StyleSheet.create({
   colBottle: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
   colCumulSortie: { flex: 1.2, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5, fontFamily: 'Oswald' },
 
-  // Stock Final section - 27% (was 24.5%)
-  sectionStockFinal: { width: '27%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
+  // Stock Final section - 25% (reduced to make room for Rendement)
+  sectionStockFinal: { width: '25%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' },
   colStockFinal: { flex: 1.2, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
   colSphere: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
   colEcart: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
   colCreux: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
 
-  // Rendement section - 12% (was 14%)
-  sectionRendement: { width: '12%', flexDirection: 'row' },
+  // Rendement section - 14% (increased to fit new column)
+  sectionRendement: { width: '14%', flexDirection: 'row' },
   colRendement: { flex: 1, borderRightWidth: 0.5, borderRightColor: '#e0e0e0', padding: 1, fontSize: 5 },
   colRendementLast: { flex: 1, padding: 1, fontSize: 5 },
 
@@ -255,10 +255,33 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
   };
 
   // Calculate Rendement Horaire for a single inventory (in T/hour)
-  const calculateRendementHoraire = (cumulSortie: number, tempsTotal: number): string => {
-    if (!tempsTotal || tempsTotal === 0) return '-';
-    const hoursWorked = tempsTotal / 60;
-    return (cumulSortie / hoursWorked).toFixed(2);
+  // Only uses bottles produced in tonnes, excludes ngabou, exports, divers
+  // Uses TU (Temps Utile) instead of THT (Total Heures Travaillé)
+  const calculateRendementHoraire = (inventory: any): string => {
+    if (!inventory.tempsUtile || inventory.tempsUtile === 0) return '-';
+
+    // Calculate total bottles tonnage only
+    const totalBottlesTonnage = inventory.bottles?.reduce((sum: number, bottle: any) => {
+      return sum + (bottle.tonnage || 0);
+    }, 0) || 0;
+
+    const hoursWorked = inventory.tempsUtile / 60;
+    return (totalBottlesTonnage / hoursWorked).toFixed(2);
+  };
+
+  // Calculate percentage of RH over 24T ideal production
+  const calculatePercentage24T = (inventory: any): string => {
+    if (!inventory.tempsUtile || inventory.tempsUtile === 0) return '-';
+
+    // Calculate total bottles tonnage only
+    const totalBottlesTonnage = inventory.bottles?.reduce((sum: number, bottle: any) => {
+      return sum + (bottle.tonnage || 0);
+    }, 0) || 0;
+
+    const hoursWorked = inventory.tempsUtile / 60;
+    const rendementHoraire = totalBottlesTonnage / hoursWorked;
+    const percentage = (rendementHoraire / 24) * 100;
+    return percentage.toFixed(2);
   };
 
   // Calculate average Creux
@@ -419,8 +442,11 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
               <View style={styles.colRendement}>
                 <Text style={styles.headerCellSub}>TU (h)</Text>
               </View>
-              <View style={styles.colRendementLast}>
+              <View style={styles.colRendement}>
                 <Text style={styles.headerCellSub}>RH (T/h)</Text>
+              </View>
+              <View style={styles.colRendementLast}>
+                <Text style={styles.headerCellSub}>% 24T</Text>
               </View>
             </View>
           </View>
@@ -536,9 +562,14 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
                 <View style={styles.colRendement}>
                   <Text style={styles.cellText}>{convertMinutesToHours(inventory.tempsUtile || 0)}</Text>
                 </View>
+                <View style={styles.colRendement}>
+                  <Text style={styles.cellText}>
+                    {calculateRendementHoraire(inventory)}
+                  </Text>
+                </View>
                 <View style={styles.colRendementLast}>
                   <Text style={styles.cellText}>
-                    {calculateRendementHoraire(inventory.cumulSortie || 0, inventory.tempsTotal || 0)}
+                    {calculatePercentage24T(inventory)}%
                   </Text>
                 </View>
               </View>
@@ -613,7 +644,7 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
                 <Text style={[styles.cellText, { fontSize: 6, textAlign: 'center' }]}>-</Text>
               </View>
               <View style={colEcartStyle}>
-                <Text style={[styles.cellText, { fontSize: 6, textAlign: 'center' }]}>-</Text>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateTotal('ecart').toFixed(3)}</Text>
               </View>
               <View style={colCreuxStyle}>
                 <Text style={[styles.cellText, { fontSize: 6 }]}>{calculateAverageCreux()}</Text>
@@ -635,9 +666,44 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
                   {convertMinutesToHours(calculateTotal('tempsUtile'))}
                 </Text>
               </View>
+              <View style={styles.colRendement}>
+                <Text style={[styles.cellText, { fontSize: 6 }]}>
+                  {(() => {
+                    const totalTempsUtile = calculateTotal('tempsUtile');
+                    if (!totalTempsUtile || totalTempsUtile === 0) return '-';
+
+                    // Calculate total bottles tonnage across all inventories
+                    const totalBottlesTonnage = inventories.reduce((sum, inv) => {
+                      const invBottlesTonnage = inv.bottles?.reduce((bottleSum: number, bottle: any) => {
+                        return bottleSum + (bottle.tonnage || 0);
+                      }, 0) || 0;
+                      return sum + invBottlesTonnage;
+                    }, 0);
+
+                    const totalHoursWorked = totalTempsUtile / 60;
+                    return (totalBottlesTonnage / totalHoursWorked).toFixed(2);
+                  })()}
+                </Text>
+              </View>
               <View style={styles.colRendementLast}>
                 <Text style={[styles.cellText, { fontSize: 6 }]}>
-                  {calculateRendementHoraire(calculateTotal('cumulSortie'), calculateTotal('tempsTotal'))}
+                  {(() => {
+                    const totalTempsUtile = calculateTotal('tempsUtile');
+                    if (!totalTempsUtile || totalTempsUtile === 0) return '-';
+
+                    // Calculate total bottles tonnage across all inventories
+                    const totalBottlesTonnage = inventories.reduce((sum, inv) => {
+                      const invBottlesTonnage = inv.bottles?.reduce((bottleSum: number, bottle: any) => {
+                        return bottleSum + (bottle.tonnage || 0);
+                      }, 0) || 0;
+                      return sum + invBottlesTonnage;
+                    }, 0);
+
+                    const totalHoursWorked = totalTempsUtile / 60;
+                    const rendementHoraire = totalBottlesTonnage / totalHoursWorked;
+                    const percentage = (rendementHoraire / 24) * 100;
+                    return percentage.toFixed(2) + '%';
+                  })()}
                 </Text>
               </View>
             </View>

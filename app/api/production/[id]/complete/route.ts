@@ -63,9 +63,12 @@ export async function POST(
 
       // Use manual time fields if provided, otherwise calculate from timestamps
       const now = new Date();
-      const tempsTotal = data.tempsTotal || Math.floor(
+      let tempsTotal = data.tempsTotal || Math.floor(
         (now.getTime() - inventory.startedAt.getTime()) / 60000
       );
+
+      // Subtract 60 minutes (1 hour) for lunch break
+      tempsTotal = Math.max(0, tempsTotal - 60);
 
       // Créer les bouteilles
       let totalBottles = 0;
