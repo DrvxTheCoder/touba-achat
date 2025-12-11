@@ -8,6 +8,7 @@ import CenterSwitcher from './CenterSwitcher';
 import ProductionMetrics from './ProductionMetrics';
 import StockEvolutionChart from './StockEvolutionChart';
 import ReservoirStockCard from './ReservoirStockCard';
+import BottleProductionPieChart from './BottleProductionPieChart';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
@@ -50,7 +51,7 @@ export default function ProductionPageClient({
         <div>
           <h1 className="text-3xl font-bold">Production GPL</h1>
           <p className="text-muted-foreground">
-            Suivi journalier de la production de gaz
+            Suivi de la production de gaz
           </p>
         </div>
 
@@ -115,14 +116,14 @@ export default function ProductionPageClient({
         <ProductionMetrics selectedCenterId={selectedCenter?.id} />
       )}
 
-      {/* Stock Evolution Chart and Reservoir Stock */}
+      {/* Stock Evolution Chart and Bottle Production Pie Chart */}
       {canView && (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <StockEvolutionChart selectedCenterId={selectedCenter?.id} />
           </div>
           <div className="lg:col-span-1">
-            <ReservoirStockCard selectedCenterId={selectedCenter?.id} />
+            <BottleProductionPieChart selectedCenterId={selectedCenter?.id} />
           </div>
         </div>
       )}

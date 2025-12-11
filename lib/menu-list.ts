@@ -100,13 +100,6 @@ export function getAdminMenuList(pathname: string): Group[] {
           icon: Users,
           submenus: []
         },
-        {
-          href: "/dashboard/studio",
-          label: "Prisma Studio",
-          active: pathname.includes("/dashboard/studio"),
-          icon: Database,
-          submenus: []
-        },
 
       ]
     },

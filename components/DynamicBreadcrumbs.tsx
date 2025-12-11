@@ -17,7 +17,14 @@ const pathMap: { [key: string]: string } = {
   stock: 'Articles en stock',
   acceuil: 'Accueil',
   "etats-de-besoin":'Mes États de Besoins',
-  bdc: 'Bon de caisse'
+  bdc: 'Bon de caisse',
+  production: 'Production',
+  "liste-inventaires": 'Liste des inventaires',
+  settings: 'Paramètres de production',
+  reservoirs: 'Réservoirs',
+  "bottles-types": 'Types de bouteilles',
+  centers: 'Centres de production',
+
   // Add more mappings as needed
 };
 

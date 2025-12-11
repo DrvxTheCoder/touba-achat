@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
       where,
       include: {
         reservoirs: true,
+        bottles: true,
       },
       orderBy: {
         completedAt: 'desc',
@@ -59,30 +60,100 @@ export async function GET(req: NextRequest) {
 
     // Calculate metrics
     const stockPhysiqueActuel = latestInventory?.stockFinalPhysique || 0;
-    const productionJour = inventories.reduce((sum, inv) => sum + inv.totalBottlesProduced, 0);
 
-    const rendementMoyen = inventories.length > 0
-      ? inventories.reduce((sum, inv) => sum + (inv.rendement || 0), 0) / inventories.length
+    // Total bottles produced (quantity)
+    const totalBottlesProduced = inventories.reduce((sum, inv) => sum + inv.totalBottlesProduced, 0);
+
+    // Cumul Conditionee (total bottle tonnage in tonnes)
+    const cumulConditionee = inventories.reduce((sum, inv) => {
+      const bottleTonnage = inv.bottles?.reduce((bSum, bottle) => bSum + (bottle.tonnage || 0), 0) || 0;
+      return sum + bottleTonnage;
+    }, 0);
+
+    // Calculate Rendement Horaire Moyen using TU and bottle tonnage only
+    let totalRH = 0;
+    let validRHCount = 0;
+    inventories.forEach((inv) => {
+      if (inv.tempsUtile && inv.tempsUtile > 0) {
+        const bottleTonnage = inv.bottles?.reduce((sum, bottle) => sum + (bottle.tonnage || 0), 0) || 0;
+        const hoursWorked = inv.tempsUtile / 60;
+        const rh = bottleTonnage / hoursWorked;
+        totalRH += rh;
+        validRHCount++;
+      }
+    });
+    const rendementHoraireMoyen = validRHCount > 0 ? totalRH / validRHCount : 0;
+
+    // Calculate % 24T moyen
+    const pourcentage24TMoyen = rendementHoraireMoyen > 0 ? (rendementHoraireMoyen / 24) * 100 : 0;
+
+    // Temps Total de Production (in minutes)
+    const tempsTotal = inventories.reduce((sum, inv) => sum + inv.tempsTotal, 0);
+
+    // Temps Utile (in minutes)
+    const tempsUtile = inventories.reduce((sum, inv) => sum + inv.tempsUtile, 0);
+
+    // Écart Moyen (in tonnes)
+    const ecartMoyenTonnes = inventories.length > 0
+      ? (inventories.reduce((sum, inv) => sum + (inv.ecart || 0), 0) / inventories.length) * 10
       : 0;
 
-    const ecartMoyen = inventories.length > 0
+    // Écart Moyen (in percentage)
+    const ecartMoyenPourcentage = inventories.length > 0
       ? inventories.reduce((sum, inv) => sum + (inv.ecartPourcentage || 0), 0) / inventories.length
       : 0;
+
+    // Creux Moyen (in tonnes)
+    const capaciteTotaleEnTonnes = capaciteTotale * 0.51;
+    const creuxMoyen = inventories.length > 0
+      ? inventories.reduce((sum, inv) => {
+          const creux = capaciteTotaleEnTonnes - (inv.stockFinalPhysique || 0);
+          return sum + creux;
+        }, 0) / inventories.length
+      : 0;
+
+    // Cumul Sortie breakdown (in tonnes)
+    const cumulSortieBottles = cumulConditionee; // Already calculated above
+    const cumulSortieNgabou = inventories.reduce((sum, inv) => sum + inv.ngabou, 0);
+    const cumulSortieExports = inventories.reduce((sum, inv) => sum + inv.exports, 0);
+    const cumulSortieDivers = inventories.reduce((sum, inv) => sum + inv.divers, 0);
+    const cumulSortieTotal = cumulSortieBottles + cumulSortieNgabou + cumulSortieExports + cumulSortieDivers;
 
     const tempsArretTotal = inventories.reduce((sum, inv) => sum + inv.tempsArret, 0);
     const inventairesTermines = inventories.length;
 
-    // Convert capacity from m³ to tonnes (approximate conversion using GPL density ~0.51)
-    const capaciteTotaleEnTonnes = capaciteTotale * 0.51;
+    // Old metrics for backwards compatibility
+    const rendementMoyen = inventories.length > 0
+      ? inventories.reduce((sum, inv) => sum + (inv.rendement || 0), 0) / inventories.length
+      : 0;
 
     return NextResponse.json({
+      // Legacy metrics
       stockPhysiqueActuel,
       capaciteTotale: capaciteTotaleEnTonnes,
-      productionJour,
+      productionJour: totalBottlesProduced, // Kept for backwards compatibility
       rendementMoyen,
-      ecartMoyen,
+      ecartMoyen: ecartMoyenPourcentage,
       tempsArretTotal,
       inventairesTermines,
+
+      // New metrics for redesigned dashboard
+      totalBottlesProduced,
+      cumulConditionee,
+      rendementHoraireMoyen,
+      pourcentage24TMoyen,
+      tempsTotal,
+      tempsUtile,
+      ecartMoyenTonnes,
+      ecartMoyenPourcentage,
+      creuxMoyen,
+      cumulSortie: {
+        bottles: cumulSortieBottles,
+        ngabou: cumulSortieNgabou,
+        exports: cumulSortieExports,
+        divers: cumulSortieDivers,
+        total: cumulSortieTotal,
+      },
     });
   } catch (error: any) {
     console.error('Erreur récupération métriques:', error);

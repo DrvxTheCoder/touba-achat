@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { Package, Weight, Clock, TrendingUp, AlertTriangle, Gauge } from 'lucide-react';
 import StockLiquidGauge from './StockLiquidGauge';
+import ReservoirStockCard from './ReservoirStockCard';
 
 interface ProductionMetricsProps {
   selectedCenterId?: number | null;
 }
 
 interface MetricsData {
+  // Legacy metrics
   stockPhysiqueActuel: number;
   capaciteTotale: number;
   productionJour: number;
@@ -17,18 +19,36 @@ interface MetricsData {
   ecartMoyen: number;
   tempsArretTotal: number;
   inventairesTermines: number;
+
+  // New metrics
+  totalBottlesProduced: number;
+  cumulConditionee: number;
+  rendementHoraireMoyen: number;
+  pourcentage24TMoyen: number;
+  tempsTotal: number;
+  tempsUtile: number;
+  ecartMoyenTonnes: number;
+  ecartMoyenPourcentage: number;
+  creuxMoyen: number;
+  cumulSortie: {
+    bottles: number;
+    ngabou: number;
+    exports: number;
+    divers: number;
+    total: number;
+  };
 }
 
+// Helper function to convert minutes to "XHY" format
+const convertMinutesToHours = (minutes: number): string => {
+  const totalHours = minutes / 60;
+  const hours = Math.floor(totalHours);
+  const mins = Math.round((totalHours - hours) * 60);
+  return `${hours}H${mins.toString().padStart(2, '0')}`;
+};
+
 export default function ProductionMetrics({ selectedCenterId }: ProductionMetricsProps) {
-  const [metrics, setMetrics] = useState<MetricsData>({
-    stockPhysiqueActuel: 0,
-    capaciteTotale: 0,
-    productionJour: 0,
-    rendementMoyen: 0,
-    ecartMoyen: 0,
-    tempsArretTotal: 0,
-    inventairesTermines: 0,
-  });
+  const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,14 +75,24 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-20 bg-muted rounded"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-20 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p>Impossible de charger les métriques</p>
       </div>
     );
   }
@@ -70,53 +100,96 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
   return (
     <div className="space-y-6">
       {/* Primary Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Production du jour */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {/* Bouteilles Produites */}
         <MetricCard
-          title="Bouteilles produites"
-          value={`${metrics.productionJour}`}
-          icon={<TrendingUp className="h-5 w-5 text-green-600" />}
-          trend={metrics.productionJour > 0 ? 'up' : 'neutral'}
-          subtitle="(Hier)"
+          title="Bouteilles Produites"
+          value={metrics.totalBottlesProduced.toLocaleString()}
+          icon={<Package className="h-5 w-5 text-blue-600" />}
+          subtitle="Ce mois"
         />
 
-        {/* Rendement moyen */}
+        {/* Cumul Conditionee */}
         <MetricCard
-          title="Rendement moyen"
-          value={`${metrics.rendementMoyen.toFixed(1)}%`}
-          icon={<Clock className="h-5 w-5 text-blue-600" />}
-          trend={metrics.rendementMoyen >= 90 ? 'up' : metrics.rendementMoyen >= 75 ? 'neutral' : 'down'}
-          subtitle="Temps utile / temps total"
+          title="Cumul Conditionné"
+          value={`${metrics.cumulConditionee.toFixed(3)} T`}
+          icon={<Weight className="h-5 w-5 text-green-600" />}
+          subtitle="Production totale"
         />
 
-        {/* Écart moyen */}
-        <MetricCard
-          title="Écart moyen"
-          value={`${Math.abs(metrics.ecartMoyen).toFixed(2)}%`}
-          icon={
-            Math.abs(metrics.ecartMoyen) > 5 ? (
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
-            ) : (
-              <TrendingDown className="h-5 w-5 text-green-600" />
-            )
-          }
-          trend={Math.abs(metrics.ecartMoyen) > 5 ? 'down' : 'up'}
-          subtitle="Stock théorique vs physique"
-        />
+        {/* Rendement Horaire Moyen & % 24T */}
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Rendement Horaire</p>
+                <p className="text-2xl font-bold mt-2">
+                  {metrics.rendementHoraireMoyen.toFixed(2)} T/h
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Gauge className="h-3 w-3 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">
+                    {metrics.pourcentage24TMoyen.toFixed(2)}% {"(24T/h)"}
+                  </p>
+                </div>
+              </div>
+              <div className="p-2 rounded-full bg-muted">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Inventaires terminés */}
+        {/* Temps Total */}
         <MetricCard
-          title="Inventaires ce mois"
-          value={metrics.inventairesTermines.toString()}
-          icon={<Calendar className="h-5 w-5 text-purple-600" />}
-          trend="neutral"
-          subtitle="Journées complétées"
+          title="Temps Total"
+          value={convertMinutesToHours(metrics.tempsTotal)}
+          icon={<Clock className="h-5 w-5 text-orange-600" />}
+          subtitle={`Temps Utile: ${convertMinutesToHours(metrics.tempsUtile)}`}
         />
       </div>
 
-      {/* Stock Physique avec Liquid Gauge */}
+      {/* Stock Physique avec Liquid Gauge et Additional Info Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-1">
+                {/* Additional Info Cards (stacked vertically) */}
+        <div className="lg:col-span-1 space-y-4">
+          {/* Écart Moyen */}
+          <InfoCard
+            title="Écart Moyen"
+            value={`${metrics.ecartMoyenTonnes.toFixed(3)} T`}
+            description={`SFP(T) - ST(T)`}
+            className={
+              Math.abs(metrics.ecartMoyenPourcentage) > 5
+                ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900'
+                : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900'
+            }
+            icon={
+              Math.abs(metrics.ecartMoyenPourcentage) > 5 ? (
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+              ) : (
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              )
+            }
+          />
+
+          {/* Creux Moyen */}
+          <InfoCard
+            title="Creux Moyen"
+            value={`${metrics.creuxMoyen.toFixed(3)} T`}
+            description={`${((metrics.creuxMoyen / metrics.capaciteTotale) * 100).toFixed(1)}% de la capacité`}
+            className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900"
+          />
+
+          {/* Cumul Sortie - All in One Card */}
+          <InfoCard
+            title="Cumul Sortie"
+            value={`${metrics.cumulSortie.total.toFixed(3)} T`}
+            description={`Bouteilles: ${metrics.cumulSortie.bottles.toFixed(2)}T | VRAC: ${metrics.cumulSortie.total - metrics.cumulSortie.bottles}T`}
+            className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900"
+          />
+        </div>
+        {/* Stock Gauges */}
+        <div className="lg:col-span-1 space-y-4">
           <StockLiquidGauge
             value={metrics.stockPhysiqueActuel}
             capacity={metrics.capaciteTotale}
@@ -124,38 +197,10 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
             subtitle="Tous les réservoirs"
             size={180}
           />
+          
         </div>
-
-        {/* Additional Info Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          <InfoCard
-            title="Stock disponible"
-            value={`${(metrics.stockPhysiqueActuel).toFixed(3)} T`}
-            description="Stock prêt à être utilisé"
-            className="bg-green-50 dark:bg-green-950/20"
-          />
-
-          <InfoCard
-            title="Taux de remplissage"
-            value={`${((metrics.stockPhysiqueActuel / metrics.capaciteTotale) * 100).toFixed(1)}%`}
-            description="Stock actuel / Capacité totale"
-            className="bg-blue-50 dark:bg-blue-950/20"
-          />
-
-          <InfoCard
-            title="Production moyenne"
-            value={`${(metrics.productionJour / (metrics.inventairesTermines || 1))}`}
-            description="Par jour d'inventaire"
-            className="bg-purple-50 dark:bg-purple-950/20"
-          />
-
-          <InfoCard
-            title="Temps d'arrêt total"
-            value={`${Math.floor(metrics.tempsArretTotal / 60)}h ${metrics.tempsArretTotal % 60}min`}
-            description="Cumul des arrêts ce mois"
-            className="bg-orange-50 dark:bg-orange-950/20"
-          />
+        <div className="lg:col-span-1">
+          <ReservoirStockCard selectedCenterId={selectedCenterId} />
         </div>
       </div>
     </div>
@@ -167,17 +212,10 @@ interface MetricCardProps {
   title: string;
   value: string;
   icon: React.ReactNode;
-  trend: 'up' | 'down' | 'neutral';
   subtitle?: string;
 }
 
-function MetricCard({ title, value, icon, trend, subtitle }: MetricCardProps) {
-  const trendColors = {
-    up: 'text-green-600',
-    down: 'text-red-600',
-    neutral: 'text-muted-foreground',
-  };
-
+function MetricCard({ title, value, icon, subtitle }: MetricCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
@@ -189,7 +227,7 @@ function MetricCard({ title, value, icon, trend, subtitle }: MetricCardProps) {
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
           </div>
-          <div className={`p-2 rounded-full bg-muted`}>{icon}</div>
+          <div className="p-2 rounded-full bg-muted">{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -202,13 +240,17 @@ interface InfoCardProps {
   value: string;
   description: string;
   className?: string;
+  icon?: React.ReactNode;
 }
 
-function InfoCard({ title, value, description, className }: InfoCardProps) {
+function InfoCard({ title, value, description, className, icon }: InfoCardProps) {
   return (
     <Card className={className}>
-      <CardContent className="p-6">
-        <h4 className="text-sm font-medium text-muted-foreground mb-2">{title}</h4>
+      <CardContent className="px-6 py-4">
+        <div className="flex items-start justify-between mb-2">
+          <h4 className="text-sm font-medium text-muted-foreground">{title}</h4>
+          {icon && <div>{icon}</div>}
+        </div>
         <p className="text-2xl font-bold mb-1">{value}</p>
         <p className="text-xs text-muted-foreground">{description}</p>
       </CardContent>

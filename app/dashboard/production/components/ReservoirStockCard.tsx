@@ -191,10 +191,17 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
               </div>
             </div>
 
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 gap-4">
+              <div className="bg-muted rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-1">Stock Physique</p>
+                <p className="text-2xl font-bold">{stockData.stockActuel.toFixed(3)} <small className='text-muted-foreground'>T</small></p>
+              </div>
+            </div>
+
             {/* Progress Bar */}
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">0 T</span>
+              <div className="flex justify-end text-sm">
                 <span className="text-muted-foreground">
                   {(stockData.capacity * 0.51).toFixed(2)} T
                 </span>
@@ -205,56 +212,6 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
               />
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-muted rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Stock Physique</p>
-                <p className="text-2xl font-bold">{stockData.stockActuel.toFixed(3)} <small className='text-muted-foreground'>T</small></p>
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Capacité</p>
-                <p className="text-2xl font-bold">
-                  {(stockData.capacity * 0.51).toFixed(3)} <small className='text-muted-foreground'>T</small>
-                </p>
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Disponible</p>
-                <p className="text-2xl font-bold">
-                  {((stockData.capacity * 0.51) - stockData.stockActuel).toFixed(2)} <small className='text-muted-foreground'>T</small>
-                </p>
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Dernière MAJ</p>
-                <p className="text-sm font-medium">
-                  {new Date(stockData.derniereMAJ).toLocaleDateString('fr-FR', {
-                    day: '2-digit',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            </div>
-
-            {/* Status indicator */}
-            <div className="flex items-center gap-2 text-sm">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  stockData.pourcentageRemplissage > 80
-                    ? 'bg-red-500 animate-pulse'
-                    : stockData.pourcentageRemplissage > 50
-                    ? 'bg-yellow-500'
-                    : 'bg-green-500'
-                }`}
-              ></div>
-              <span className="text-muted-foreground">
-                {stockData.pourcentageRemplissage > 80
-                  ? 'Niveau élevé - Attention'
-                  : stockData.pourcentageRemplissage > 50
-                  ? 'Niveau moyen'
-                  : 'Niveau faible'}
-              </span>
-            </div>
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
