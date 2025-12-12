@@ -7,7 +7,6 @@ import { ProductionDashboard } from './ProductionDashboard';
 import CenterSwitcher from './CenterSwitcher';
 import ProductionMetrics from './ProductionMetrics';
 import StockEvolutionChart from './StockEvolutionChart';
-import ReservoirStockCard from './ReservoirStockCard';
 import BottleProductionPieChart from './BottleProductionPieChart';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
