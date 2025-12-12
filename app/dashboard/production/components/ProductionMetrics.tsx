@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package, Weight, Clock, TrendingUp, AlertTriangle, Gauge } from 'lucide-react';
+import { Package, Weight, Clock, TrendingUp, AlertTriangle, Gauge, DropletIcon } from 'lucide-react';
 import StockLiquidGauge from './StockLiquidGauge';
 import ReservoirStockCard from './ReservoirStockCard';
 
@@ -113,8 +113,8 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
         <MetricCard
           title="Cumul Conditionné"
           value={`${metrics.cumulConditionee.toFixed(3)} T`}
-          icon={<Weight className="h-5 w-5 text-green-600" />}
-          subtitle="Production totale"
+          icon={<DropletIcon className="h-5 w-5 text-green-600" />}
+          subtitle="Bouteilles produites"
         />
 
         {/* Rendement Horaire Moyen & % 24T */}
@@ -155,7 +155,7 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
         <div className="lg:col-span-1 space-y-4">
           {/* Écart Moyen */}
           <InfoCard
-            title="Écart Moyen"
+            title="Écart Total"
             value={`${metrics.ecartMoyenTonnes.toFixed(3)} T`}
             description={`SFP(T) - ST(T)`}
             className={
@@ -184,7 +184,7 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
           <InfoCard
             title="Cumul Sortie"
             value={`${metrics.cumulSortie.total.toFixed(3)} T`}
-            description={`Bouteilles: ${metrics.cumulSortie.bottles.toFixed(2)}T | VRAC: ${metrics.cumulSortie.total - metrics.cumulSortie.bottles}T`}
+            description={`Bouteilles : ${metrics.cumulSortie.bottles.toFixed(2)}T | VRAC : ${metrics.cumulSortie.total - metrics.cumulSortie.bottles}T`}
             className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900"
           />
         </div>

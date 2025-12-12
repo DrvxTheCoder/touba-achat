@@ -172,11 +172,7 @@ export default function BottleProductionPieChart({ selectedCenterId }: BottlePro
             </ResponsiveContainer>
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-2 gap-3 pt-4 border-t">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Total Tonnage</p>
-                <p className="text-xl font-bold">{totalTonnage.toFixed(3)} T</p>
-              </div>
+            <div className="flex flex-row items-center justify-center gap-3 pt-4 border-t">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Types</p>
                 <p className="text-xl font-bold">{chartData.length}</p>

@@ -124,7 +124,7 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Droplet className="h-5 w-5" />
-            Stock Actuel par Réservoir
+            Réservoirs
           </CardTitle>
           <CardDescription>Aucun réservoir configuré</CardDescription>
         </CardHeader>
@@ -143,18 +143,17 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-2">
             <div>
-              <CardTitle>Stock Actuel </CardTitle>
-              <CardDescription><small className='text-xs text-muted-foreground'>par Réservoir</small></CardDescription>
+              <CardTitle>Reservoirs </CardTitle>
             </div>
           </div>
           <Select value={selectedReservoirId} onValueChange={setSelectedReservoirId}>
-            <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectTrigger className="w-fit">
               <SelectValue placeholder="Sélectionner un réservoir" />
             </SelectTrigger>
             <SelectContent>
               {reservoirs.map((reservoir) => (
                 <SelectItem key={reservoir.id} value={reservoir.id.toString()} className='gap-2'>
-                  <div className="flex flex-row justify-between w-full gap-6">
+                  <div className="flex flex-row justify-between w-full gap-2">
                     <span className="font-mono w-full h-fit text-nowrap">{reservoir.name}</span>
                     <Badge variant="outline" className='text-xs py-0'>
                       <small className="text-xs">{reservoir.type}</small>

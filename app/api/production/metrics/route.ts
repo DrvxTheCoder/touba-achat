@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
 
     // Écart Moyen (in tonnes)
     const ecartMoyenTonnes = inventories.length > 0
-      ? inventories.reduce((sum, inv) => sum + (inv.ecart || 0), 0) / inventories.length
+      ? inventories.reduce((sum, inv) => sum + (inv.ecart || 0), 0)
       : 0;
 
     // Écart Moyen (in percentage)
