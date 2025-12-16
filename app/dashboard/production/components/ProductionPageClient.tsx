@@ -133,12 +133,7 @@ export default function ProductionPageClient({
             <ProductionStart selectedCenterId={selectedCenter?.id} />
           </Suspense>
         )}
-
-        {/* {canView && (
-          <Suspense fallback={<div>Chargement...</div>}>
-            <ProductionDashboard selectedCenterId={selectedCenter?.id} />
-          </Suspense>
-        )} */}
+        
       <Suspense fallback={<div>Chargement...</div>}>
         <ProductionList />
       </Suspense>

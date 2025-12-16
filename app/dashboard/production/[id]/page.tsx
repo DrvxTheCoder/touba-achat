@@ -224,7 +224,8 @@ export default function ProductionDetailPage() {
 
         <div className="flex items-center gap-2">
           {/* Export button */}
-          <DropdownMenu>
+          
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
@@ -232,10 +233,6 @@ export default function ProductionDetailPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {/* <DropdownMenuItem onClick={() => handleExport('excel')}>
-                <FileSpreadsheet className="h-4 w-4 mr-2 text-green-600" />
-                Exporter en Excel
-              </DropdownMenuItem> */}
               <DropdownMenuItem onClick={() => handleExport('pdf')}>
                 <FileText className="h-4 w-4 mr-2 text-red-600" />
                 Télécharger PDF
@@ -245,7 +242,7 @@ export default function ProductionDetailPage() {
                 Imprimer PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
 
           {isTermine && (
             <div className="flex items-center gap-2 text-green-600">

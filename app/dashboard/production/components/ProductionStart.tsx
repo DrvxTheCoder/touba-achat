@@ -113,7 +113,7 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
   };
 
   return (
-    <Card>
+    <Card className='w-fit'>
       <CardHeader>
         <CardTitle>🌅 Démarrer une Nouvelle Journée</CardTitle>
         <CardDescription>

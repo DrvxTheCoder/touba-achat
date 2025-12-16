@@ -151,8 +151,8 @@ const styles = StyleSheet.create({
 
   // Data cells - tightened line height
   cellText: {
-    textAlign: 'right',
-    fontSize: 5,
+    textAlign: 'center',
+    fontSize: 6,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   },
   cellTextDate: {
     textAlign: 'center',
-    fontSize: 5,
+    fontSize: 6,
     lineHeight: 1.1,
     paddingVertical: 1,
   },

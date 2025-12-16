@@ -1,7 +1,7 @@
 // app/dashboard/production/ProductionList.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
@@ -12,29 +12,45 @@ import { ProductionInventory, STATUS_LABELS, formatDuration } from '@/lib/types/
 
 export default function ProductionList() {
   const router = useRouter();
+  const isInitialMount = useRef(true);
   const [inventories, setInventories] = useState<ProductionInventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadInventories();
-  }, [page]);
+useEffect(() => {
+  loadInventories(); // initial fetch
 
-  const loadInventories = async () => {
-    try {
+  const interval = setInterval(() => {
+    loadInventories();
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [page]);
+
+
+const loadInventories = async () => {
+  try {
+    if (isInitialMount.current) {
       setLoading(true);
-      const res = await fetch(`/api/production?page=${page}&limit=5`);
-      if (!res.ok) throw new Error('Erreur lors du chargement');
-      const data = await res.json();
-      setInventories(data.data); // L'API retourne 'data' pas 'inventories'
-      setTotalPages(data.pagination.totalPages);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
     }
-  };
+
+    const res = await fetch(`/api/production?page=${page}&limit=4`);
+    if (!res.ok) throw new Error('Erreur lors du chargement');
+
+    const data = await res.json();
+    setInventories(data.data);
+    setTotalPages(data.pagination.totalPages);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    if (isInitialMount.current) {
+      setLoading(false);
+      isInitialMount.current = false;
+    }
+  }
+};
+
 
   if (loading) {
     return (
@@ -80,7 +96,7 @@ export default function ProductionList() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       {/* Header with "Voir tout" button */}
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-lg font-semibold">Inventaires Récents</h3>
