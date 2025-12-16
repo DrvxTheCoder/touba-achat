@@ -30,7 +30,7 @@ const COLORS = [
   '#f59e0b', // amber
   '#8b5cf6', // violet
   '#ec4899', // pink
-  '#14b8a6', // teal
+  '#823c16ff', // brown
   '#f97316', // orange
 ];
 

@@ -32,6 +32,12 @@ const styles = StyleSheet.create({
   logo: {
     position: 'absolute',
     top: 10,
+    left: 15,
+    height: 30,
+  },
+  logoTwo: {
+    position: 'absolute',
+    top: 10,
     right: 15,
     width: 30,
     height: 30,
@@ -303,7 +309,8 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Logo */}
-        <Image style={styles.logo} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
+        <Image style={styles.logo} src="https://touba-app.com/assets/img/TGAZ.png" />
+        <Image style={styles.logoTwo} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
 
         {/* Watermark */}
         <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
