@@ -213,9 +213,10 @@ interface MonthlyProductionPDFProps {
   endDate: Date;
   productionCenter?: any;
   capaciteTotale?: number;
+  exportedByUser?: string;
 }
 
-const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCenter, capaciteTotale }: MonthlyProductionPDFProps): React.ReactElement<DocumentProps> => {
+const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCenter, capaciteTotale, exportedByUser }: MonthlyProductionPDFProps): React.ReactElement<DocumentProps> => {
   // Get all unique bottle types from inventories
   const bottleTypes = Array.from(
     new Set(
@@ -720,7 +721,7 @@ const MonthlyProductionPDF = ({ inventories, startDate, endDate, productionCente
         {/* Footer Signatures */}
         <View style={styles.footerSignatures}>
           <View style={styles.signatureItem}>
-            <Text style={styles.signatureLabel}>VISA PRODUCTION: _____________</Text>
+            <Text style={styles.signatureLabel}>VISA PRODUCTION: {exportedByUser || '_____________'}</Text>
           </View>
           <View style={styles.signatureItem}>
             <Text style={styles.signatureLabel}>Chef de Centre: _____________</Text>

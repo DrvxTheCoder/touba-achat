@@ -142,7 +142,8 @@ export async function POST(req: NextRequest) {
           startDate: start,
           endDate: end,
           productionCenter,
-          capaciteTotale
+          capaciteTotale,
+          exportedByUser: session.user.name || undefined
         })
       );
 
