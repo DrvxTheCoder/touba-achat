@@ -64,7 +64,7 @@ export default function SpheresSection({
     if (
       sphere.hauteur > 0 &&
       sphere.temperature >= 15.0 &&
-      sphere.temperature <= 32.9 &&
+      sphere.temperature <= 36.0 &&
       sphere.volumeLiquide > 0 &&
       sphere.pressionInterne >= 0 &&
       sphere.densiteA15C > 0
@@ -200,7 +200,7 @@ export default function SpheresSection({
                       type="number"
                       step="0.1"
                       min="15.0"
-                      max="32.9"
+                      max="36.0"
                       value={sphere.temperature}
                       onChange={(e) => updateSphere(index, 'temperature', parseFloat(e.target.value) || 20)}
                       disabled={disabled}

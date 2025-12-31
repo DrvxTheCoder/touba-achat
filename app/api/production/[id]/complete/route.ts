@@ -26,8 +26,8 @@ interface Bottle {
 const sphereInputSchema = z.object({
   name: z.string().min(1), // Accept any reservoir name (D100, SO2, SO3, RO1, RO2, etc.)
   hauteur: z.number().min(0).max(30000),
-  temperature: z.number().min(15.0).max(32.9),
-  temperatureVapeur: z.number().min(15.0).max(32.9),
+  temperature: z.number().min(15.0).max(36.0),
+  temperatureVapeur: z.number().min(15.0).max(36.0),
   volumeLiquide: z.number().min(0),
   pressionInterne: z.number().min(0).max(20),
   densiteA15C: z.number().min(0.4).max(0.6)

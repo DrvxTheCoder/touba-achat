@@ -74,8 +74,8 @@ export default function ReservoirSection({
               name: config.name,
               reservoirConfigId: config.id,
               hauteur: 0,
-              temperature: 20,
-              temperatureVapeur: 20,
+              temperature: 0,
+              temperatureVapeur: 0,
               volumeLiquide: 0,
               pressionInterne: 0,
               densiteA15C: 0,
@@ -99,18 +99,51 @@ export default function ReservoirSection({
 
     // Calculer automatiquement si tous les champs sont remplis
     const reservoir = updated[index];
+
+    console.log('🔄 updateReservoir called:', {
+      field,
+      value,
+      reservoir: reservoir.name,
+      allFields: {
+        hauteur: reservoir.hauteur,
+        temperature: reservoir.temperature,
+        temperatureVapeur: reservoir.temperatureVapeur,
+        volumeLiquide: reservoir.volumeLiquide,
+        pressionInterne: reservoir.pressionInterne,
+        densiteA15C: reservoir.densiteA15C
+      }
+    });
+
+    // Vérifier les températures et afficher des avertissements
+    const tempErrors: string[] = [];
+    if (field === 'temperature' && (value < 15.0 || value > 36.0)) {
+      tempErrors.push(`La température liquide doit être entre 15.0°C et 36.0°C (valeur: ${value}°C)`);
+    }
+    if (field === 'temperatureVapeur' && (value < 15.0 || value > 36.0)) {
+      tempErrors.push(`La température vapeur doit être entre 15.0°C et 36.0°C (valeur: ${value}°C)`);
+    }
+
+    // Mettre à jour les erreurs de validation pour ce réservoir
+    if (tempErrors.length > 0) {
+      setValidationErrors({ ...validationErrors, [reservoir.name]: tempErrors });
+    }
+
     if (
       reservoir.hauteur > 0 &&
       reservoir.temperature >= 15.0 &&
-      reservoir.temperature <= 32.9 &&
+      reservoir.temperature <= 36.0 &&
+      reservoir.temperatureVapeur >= 15.0 &&
+      reservoir.temperatureVapeur <= 36.0 &&
       reservoir.volumeLiquide > 0 &&
       reservoir.pressionInterne >= 0 &&
       reservoir.densiteA15C > 0
     ) {
+      console.log('✅ All conditions met, proceeding with calculation');
       try {
         // Valider
         const errors = validateSphereInput(reservoir as SphereInputData);
         if (errors.length > 0) {
+          console.log('❌ Validation errors:', errors);
           setValidationErrors({ ...validationErrors, [reservoir.name]: errors });
         } else {
           // Supprimer les erreurs si tout est valide
@@ -118,19 +151,28 @@ export default function ReservoirSection({
           delete newErrors[reservoir.name];
           setValidationErrors(newErrors);
 
-          // Calculer
+          // Calculer - Toujours recalculer si tous les champs sont valides
+          console.log('🧮 Calculating sphere data...');
           const calculated = calculateSphereData(reservoir as SphereInputData);
+          console.log('✅ Calculated values:', {
+            poidsLiquide: calculated.poidsLiquide,
+            poidsGaz: calculated.poidsGaz,
+            poidsTotal: calculated.poidsTotal
+          });
           updated[index] = {
             ...reservoir,
             ...calculated,
           };
         }
       } catch (error: any) {
+        console.log('❌ Calculation error:', error.message);
         setValidationErrors({
           ...validationErrors,
           [reservoir.name]: [error.message],
         });
       }
+    } else {
+      console.log('⚠️ Conditions not met for calculation');
     }
 
     onUpdate(updated);
@@ -292,11 +334,13 @@ export default function ReservoirSection({
                     </Label>
                     <Input
                       type="number"
+                      step="0.1"
+                      min="15.0"
+                      max="36.0"
                       value={reservoir.temperature}
                       onChange={(e) => updateReservoir(index, 'temperature', parseFloat(e.target.value) || 20)}
                       disabled={disabled}
                       className="font-mono"
-                      placeholder="20.0"
                     />
                   </div>
 
@@ -308,11 +352,13 @@ export default function ReservoirSection({
                     </Label>
                     <Input
                       type="number"
+                      step="0.1"
+                      min="15.0"
+                      max="36.0"
                       value={reservoir.temperatureVapeur}
                       onChange={(e) => updateReservoir(index, 'temperatureVapeur', parseFloat(e.target.value) || 20)}
                       disabled={disabled}
                       className="font-mono"
-                      placeholder="20.0"
                     />
                   </div>
 

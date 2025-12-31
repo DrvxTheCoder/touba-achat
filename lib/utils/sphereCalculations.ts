@@ -128,13 +128,13 @@ export function validateSphereInput(input: SphereInputData): string[] {
   }
 
   // Validation de la température liquide
-  if (input.temperature < 15.0 || input.temperature > 32.9) {
-    errors.push('La température liquide doit être entre 15.0°C et 32.9°C');
+  if (input.temperature < 15.0 || input.temperature > 36.0) {
+    errors.push('La température liquide doit être entre 15.0°C et 37.0°C');
   }
 
   // Validation de la température vapeur
-  if (input.temperatureVapeur < 15.0 || input.temperatureVapeur > 32.9) {
-    errors.push('La température vapeur doit être entre 15.0°C et 32.9°C');
+  if (input.temperatureVapeur < 15.0 || input.temperatureVapeur > 36.0) {
+    errors.push('La température vapeur doit être entre 15.0°C et 37.0°C');
   }
 
   // Validation du volume liquide
