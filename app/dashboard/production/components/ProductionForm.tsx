@@ -179,20 +179,20 @@ export default function ProductionForm({
       return;
     }
 
-    if (!formData.bottles.length) {
-      toast.error('Veuillez renseigner au moins une bouteille');
-      return;
-    }
+    // if (!formData.bottles.length) {
+    //   toast.error('Veuillez renseigner au moins une bouteille');
+    //   return;
+    // }
 
-    if (!formData.reservoirs.length) {
-      toast.error('Veuillez renseigner au moins un réservoir');
-      return;
-    }
+    // if (!formData.reservoirs.length) {
+    //   toast.error('Veuillez renseigner au moins un réservoir');
+    //   return;
+    // }
 
-    if (remplissageTotal === 0) {
-      toast.error('Le remplissage total ne peut pas être zéro');
-      return;
-    }
+    // if (remplissageTotal === 0) {
+    //   toast.error('Le remplissage total ne peut pas être zéro');
+    //   return;
+    // }
 
     // Vérification de l'écart
     if (Math.abs(ecartPourcentage) > 5) {
