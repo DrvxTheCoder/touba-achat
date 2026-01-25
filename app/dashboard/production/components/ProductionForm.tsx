@@ -56,13 +56,44 @@ export default function ProductionForm({
     poidsTotal: s.poidsTotal
   }));
 
+  // Initialize dynamic values from inventory - load saved values if they exist
+  const initApproValues = () => {
+    const values: Record<string, number> = {};
+    // Load from saved approValues
+    if (inventory.approValues && Array.isArray(inventory.approValues)) {
+      inventory.approValues.forEach((av: any) => {
+        values[av.fieldConfig.name] = av.value;
+      });
+    }
+    // Fallback to legacy fields for backward compatibility
+    if (Object.keys(values).length === 0) {
+      if (inventory.butanier != null) values.butanier = inventory.butanier;
+      if (inventory.recuperation != null) values.recuperation = inventory.recuperation;
+      if (inventory.approSAR != null) values.approSAR = inventory.approSAR;
+    }
+    return values;
+  };
+
+  const initSortieValues = () => {
+    const values: Record<string, number> = {};
+    // Load from saved sortieValues
+    if (inventory.sortieValues && Array.isArray(inventory.sortieValues)) {
+      inventory.sortieValues.forEach((sv: any) => {
+        values[sv.fieldConfig.name] = sv.value;
+      });
+    }
+    // Fallback to legacy fields for backward compatibility
+    if (Object.keys(values).length === 0) {
+      if (inventory.ngabou != null) values.ngabou = inventory.ngabou;
+      if (inventory.exports != null) values.exports = inventory.exports;
+      if (inventory.divers != null) values.divers = inventory.divers;
+    }
+    return values;
+  };
+
   const [formData, setFormData] = useState({
-    butanier: inventory.butanier || 0,
-    recuperation: inventory.recuperation || 0,
-    approSAR: inventory.approSAR || 0,
-    ngabou: inventory.ngabou || 0,
-    exports: inventory.exports || 0,
-    divers: inventory.divers || 0,
+    approValues: initApproValues(),
+    sortieValues: initSortieValues(),
     observations: inventory.observations || '',
     heureDebut: inventory.heureDebut || '',
     heureFin: inventory.heureFin || '',
@@ -96,6 +127,22 @@ export default function ProductionForm({
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setAutoSaveStatus('idle');
+  };
+
+  const updateApproValue = (field: string, value: number) => {
+    setFormData(prev => ({
+      ...prev,
+      approValues: { ...prev.approValues, [field]: value }
+    }));
+    setAutoSaveStatus('idle');
+  };
+
+  const updateSortieValue = (field: string, value: number) => {
+    setFormData(prev => ({
+      ...prev,
+      sortieValues: { ...prev.sortieValues, [field]: value }
+    }));
     setAutoSaveStatus('idle');
   };
 
@@ -145,14 +192,16 @@ export default function ProductionForm({
     0
   );
 
+  // Calculate total approvisionnement from dynamic values
+  const totalAppro = Object.values(formData.approValues).reduce((sum, val) => sum + val, 0);
+
+  // Calculate total sorties from dynamic values
+  const totalSorties = Object.values(formData.sortieValues).reduce((sum, val) => sum + val, 0);
+
   const stockFinalTheorique =
     inventory.stockInitialPhysique +
-    formData.butanier +
-    formData.recuperation +
-    formData.approSAR -
-    formData.ngabou -
-    formData.exports -
-    formData.divers -
+    totalAppro -
+    totalSorties -
     remplissageTotal;
 
   const stockFinalPhysique = formData.reservoirs.reduce(
@@ -203,12 +252,16 @@ export default function ProductionForm({
     }
 
     const completeData: CompleteInventoryData = {
-      butanier: formData.butanier,
-      recuperation: formData.recuperation,
-      approSAR: formData.approSAR,
-      ngabou: formData.ngabou,
-      exports: formData.exports,
-      divers: formData.divers,
+      // Keep legacy fields for backward compatibility (set to 0 as they're now dynamic)
+      butanier: 0,
+      recuperation: 0,
+      approSAR: 0,
+      ngabou: 0,
+      exports: 0,
+      divers: 0,
+      // Add dynamic values
+      approValues: formData.approValues,
+      sortieValues: formData.sortieValues,
       stockFinalPhysique,
       observations: formData.observations,
       heureDebut: formData.heureDebut,
@@ -226,7 +279,8 @@ export default function ProductionForm({
         temperatureVapeur: s.temperatureVapeur || 20,
         volumeLiquide: s.volumeLiquide || 0,
         pressionInterne: s.pressionInterne || 0,
-        densiteA15C: s.densiteA15C || 0
+        densiteA15C: s.densiteA15C || 0,
+        poidsLiquide: s.poidsLiquide || 0
       }))
     };
 
@@ -274,11 +328,10 @@ export default function ProductionForm({
           <TabsContent value="appro" className="space-y-4 mt-6">
             <ApproSection
               stockInitial={inventory.stockInitialPhysique}
-              butanier={formData.butanier}
-              recuperation={formData.recuperation}
-              approSAR={formData.approSAR}
-              onUpdate={updateField}
+              dynamicValues={formData.approValues}
+              onUpdate={updateApproValue}
               disabled={disabled}
+              productionCenterId={inventory.productionCenterId}
             />
           </TabsContent>
 
@@ -292,11 +345,10 @@ export default function ProductionForm({
 
           <TabsContent value="exports" className="space-y-4 mt-6">
             <ExportsSection
-              ngabou={formData.ngabou}
-              exports={formData.exports}
-              divers={formData.divers}
-              onUpdate={updateField}
+              dynamicValues={formData.sortieValues}
+              onUpdate={updateSortieValue}
               disabled={disabled}
+              productionCenterId={inventory.productionCenterId}
             />
           </TabsContent>
 
@@ -314,12 +366,12 @@ export default function ProductionForm({
       {/* Calculs automatiques */}
       <AutoCalcs
         stockInitial={inventory.stockInitialPhysique}
-        butanier={formData.butanier}
-        recuperation={formData.recuperation}
-        approSAR={formData.approSAR}
-        ngabou={formData.ngabou}
-        exports={formData.exports}
-        divers={formData.divers}
+        butanier={totalAppro}
+        recuperation={0}
+        approSAR={0}
+        ngabou={totalSorties}
+        exports={0}
+        divers={0}
         remplissageTotal={remplissageTotal}
         stockFinalTheorique={stockFinalTheorique}
         stockFinalPhysique={stockFinalPhysique}

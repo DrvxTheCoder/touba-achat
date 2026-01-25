@@ -24,7 +24,8 @@
       "Bash(npm --version)",
       "Bash(grep:*)",
       "Bash(if exist nul del nul)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

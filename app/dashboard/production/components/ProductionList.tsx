@@ -10,7 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Eye, AlertCircle, CheckCircle, Clock, List } from 'lucide-react';
 import { ProductionInventory, STATUS_LABELS, formatDuration } from '@/lib/types/production';
 
-export default function ProductionList() {
+interface ProductionListProps {
+  selectedCenterId?: number;
+}
+
+export default function ProductionList({ selectedCenterId }: ProductionListProps) {
   const router = useRouter();
   const isInitialMount = useRef(true);
   const [inventories, setInventories] = useState<ProductionInventory[]>([]);
@@ -26,7 +30,7 @@ useEffect(() => {
   }, 5000);
 
   return () => clearInterval(interval);
-}, [page]);
+}, [page, selectedCenterId]);
 
 
 const loadInventories = async () => {
@@ -35,7 +39,13 @@ const loadInventories = async () => {
       setLoading(true);
     }
 
-    const res = await fetch(`/api/production?page=${page}&limit=4`);
+    // Build query string with center filter if provided
+    let url = `/api/production?page=${page}&limit=4`;
+    if (selectedCenterId) {
+      url += `&centerId=${selectedCenterId}`;
+    }
+
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Erreur lors du chargement');
 
     const data = await res.json();
@@ -126,6 +136,12 @@ const loadInventories = async () => {
               </div>
 
               <div className="flex flex-row gap-4 text-sm text-muted-foreground">
+                {inventory.productionCenter && (
+                  <div>
+                    <span className="font-medium">Centre:</span>{' '}
+                    <b className='font-bold'>{inventory.productionCenter.name}</b>
+                  </div>
+                )}
                 <div>
                   <span className="font-medium">Démarré par:</span>{' '}
                   {inventory.startedBy?.name}

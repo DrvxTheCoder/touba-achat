@@ -8,13 +8,14 @@ import { CheckCircle, AlertCircle, Info, Calculator } from 'lucide-react';
 import { calculateSphereData, validateSphereInput, SphereInputData } from '@/lib/utils/sphereCalculations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { ReservoirType } from '@prisma/client';
+import { ReservoirType, CalculationMode } from '@prisma/client';
 
 interface ReservoirConfig {
   id: number;
   name: string;
   type: ReservoirType;
   capacity: number;
+  calculationMode: CalculationMode;
 }
 
 interface Reservoir {
@@ -253,7 +254,7 @@ export default function ReservoirSection({
       <div>
         <h3 className="text-lg font-semibold mb-2">Pesée des réservoirs de GPL</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Saisir les mesures pour chaque réservoir. Les calculs se font automatiquement.
+          Saisir les mesures pour chaque réservoir.
         </p>
         {/* <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
           <Info className="h-4 w-4 text-blue-600" />
@@ -277,6 +278,7 @@ export default function ReservoirSection({
           const config = reservoirConfigs.find(c => c.id === reservoir.reservoirConfigId);
           const capacity = config?.capacity || 0;
           const isCigare = config?.type === 'CIGARE';
+          const isManualMode = config?.calculationMode === 'MANUAL';
 
           return (
             <Card key={reservoir.name} className={`p-6 ${hasErrors ? 'border-red-300' : isCalculated ? 'border-green-300' : ''}`}>
@@ -287,13 +289,20 @@ export default function ReservoirSection({
                       {reservoir.name}
                     </h4>
                     {config && (
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        config.type === 'SPHERE' ? 'bg-blue-100 text-blue-800' :
-                        config.type === 'CIGARE' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {config.type}
-                      </span>
+                      <>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          config.type === 'SPHERE' ? 'bg-blue-100 text-blue-800' :
+                          config.type === 'CIGARE' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {config.type}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          isManualMode ? 'bg-orange-100 text-orange-800' : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {isManualMode ? 'Manuel' : 'Auto'}
+                        </span>
+                      </>
                     )}
                     <span className="text-xs text-muted-foreground">
                       (Capacité: {capacity.toFixed(2)} m³)
@@ -307,8 +316,41 @@ export default function ReservoirSection({
                   )}
                 </div>
 
-                {/* 5 champs de saisie */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Conditional rendering based on calculation mode */}
+                {isManualMode ? (
+                  // MANUAL MODE: Simple tonnage input
+                  <div className="space-y-4">
+                    <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/30">
+                      <Info className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-xs text-orange-900 dark:text-orange-100">
+                        <strong>Mode manuel:</strong> Saisir directement le poids liquide en tonnes.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Poids liquide (T)
+                        <span className="text-xs text-muted-foreground ml-1">- Saisie manuelle</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        value={reservoir.poidsLiquide || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          const updated = [...reservoirs];
+                          updated[index] = { ...updated[index], poidsLiquide: value };
+                          onUpdate(updated);
+                        }}
+                        disabled={disabled}
+                        className="font-mono text-lg"
+                        placeholder="0.000"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  // AUTOMATIC MODE: All input fields
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Hauteur */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
@@ -431,6 +473,7 @@ export default function ReservoirSection({
                     />
                   </div>
                 </div>
+                )}
 
                 {/* Affichage des erreurs de validation */}
                 {hasErrors && (
@@ -447,7 +490,7 @@ export default function ReservoirSection({
                 )}
 
                 {/* Affichage des résultats calculés */}
-                {isCalculated && !hasErrors && (
+                {isCalculated && !hasErrors && !isManualMode && (
                   <div className="mt-4 pt-4 border-t">
                     <h5 className="text-sm font-semibold mb-3 text-blue-600 dark:text-blue-400">
                       📊 Résultats calculés automatiquement
@@ -482,6 +525,18 @@ export default function ReservoirSection({
                         <div className="font-mono font-bold text-lg text-green-700 dark:text-green-300">
                           {reservoir.poidsTotal?.toFixed(3)} T
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual mode simple confirmation */}
+                {isCalculated && !hasErrors && isManualMode && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="bg-green-100 dark:bg-green-950 p-4 rounded">
+                      <div className="text-muted-foreground font-semibold mb-1">Poids liquide saisi</div>
+                      <div className="font-mono font-bold text-2xl text-green-700 dark:text-green-300">
+                        {reservoir.poidsLiquide?.toFixed(3)} T
                       </div>
                     </div>
                   </div>

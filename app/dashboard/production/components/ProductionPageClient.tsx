@@ -133,9 +133,9 @@ export default function ProductionPageClient({
             <ProductionStart selectedCenterId={selectedCenter?.id} />
           </Suspense>
         )}
-        
+
       <Suspense fallback={<div>Chargement...</div>}>
-        <ProductionList />
+        <ProductionList selectedCenterId={selectedCenter?.id} />
       </Suspense>
       </div>
 

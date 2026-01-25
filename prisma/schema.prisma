@@ -235,6 +235,11 @@ enum ReservoirType {
   AUTRE
 }
 
+enum CalculationMode {
+  AUTOMATIC  // Calculs automatiques avec tous les champs de saisie
+  MANUAL     // Saisie manuelle directe du poids liquide
+}
+
 model User {
   id                    Int             @id @default(autoincrement())
   email                 String          @unique
@@ -508,7 +513,7 @@ model BonDeCaisseAuditLog {
 
 model ProductionInventory {
   id                    Int                  @id @default(autoincrement())
-  date                  DateTime             @unique
+  date                  DateTime
   status                ProductionStatus     @default(EN_COURS)
 
   // Centre de production
@@ -536,9 +541,19 @@ model ProductionInventory {
 
   // Stocks
   stockInitialPhysique  Float                // Auto depuis veille
+
+  // LEGACY - Keep for backward compatibility
   butanier              Float?
   recuperation          Float                @default(0)
   approSAR              Float                @default(0)
+  ngabou                Float                @default(0)
+  exports               Float                @default(0)
+  divers                Float                @default(0)
+
+  // NEW - Dynamic field values
+  approValues           ApproValue[]
+  sortieValues          SortieValue[]
+  useDynamicFields      Boolean              @default(false)
 
   // Calculés
   cumulSortie           Float                @default(0)
@@ -551,11 +566,6 @@ model ProductionInventory {
   bottles               BottleProduction[]
   totalBottlesProduced  Int                  @default(0)
 
-  // Exports
-  ngabou                Float                @default(0)
-  exports               Float                @default(0)
-  divers                Float                @default(0)
-
   // Réservoirs
   reservoirs            Reservoir[]
 
@@ -563,6 +573,8 @@ model ProductionInventory {
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
   observations          String?
+
+  @@unique([date, productionCenterId])
 }
 
 model ProductionArret {
@@ -626,6 +638,15 @@ model ProductionCenter {
   chefProductionId      Int
   chefProduction        User                 @relation("ChefProduction", fields: [chefProductionId], references: [id])
 
+  // Production capacity configuration
+  numberOfLines         Int                  @default(2)
+  capacityPerLine       Float                @default(12.0)  // T/h per line
+  totalHourlyCapacity   Float                @default(24.0)  // T/h total
+
+  // Field configurations
+  approFieldConfigs     ApproFieldConfig[]
+  sortieFieldConfigs    SortieFieldConfig[]
+
   reservoirs            ReservoirConfig[]
   inventories           ProductionInventory[]
 
@@ -638,6 +659,7 @@ model ReservoirConfig {
   name                  String               // D100, SO2, SO3, etc.
   type                  ReservoirType        // SPHERE, CIGARE, AUTRE
   capacity              Float                // Capacité en m³
+  calculationMode       CalculationMode      @default(AUTOMATIC) // Mode de calcul
 
   productionCenterId    Int
   productionCenter      ProductionCenter     @relation(fields: [productionCenterId], references: [id], onDelete: Cascade)
@@ -709,4 +731,82 @@ model NotificationRecipient {
   emailSent      Boolean      @default(false)
 
   @@unique([notificationId, userId])
+}
+
+// ==================================
+// Dynamic Production Fields
+// ==================================
+
+model ApproFieldConfig {
+  id                    Int                  @id @default(autoincrement())
+  productionCenterId    Int
+  productionCenter      ProductionCenter     @relation(fields: [productionCenterId], references: [id], onDelete: Cascade)
+
+  name                  String               // Internal key: "butanier", "recuperation", "approSAR", etc.
+  label                 String               // Display name: "Butanier", "Récupération", "Appro SAR", etc.
+  order                 Int                  @default(0)
+  isActive              Boolean              @default(true)
+  isRequired            Boolean              @default(false)
+
+  values                ApproValue[]
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([productionCenterId, name])
+  @@index([productionCenterId, isActive])
+}
+
+model SortieFieldConfig {
+  id                    Int                  @id @default(autoincrement())
+  productionCenterId    Int
+  productionCenter      ProductionCenter     @relation(fields: [productionCenterId], references: [id], onDelete: Cascade)
+
+  name                  String               // Internal key: "ngabou", "vrac_local", "exports", "divers", etc.
+  label                 String               // Display name: "Ngabou", "Vrac Local", "Exports", "Divers", etc.
+  order                 Int                  @default(0)
+  isActive              Boolean              @default(true)
+  isRequired            Boolean              @default(false)
+
+  values                SortieValue[]
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([productionCenterId, name])
+  @@index([productionCenterId, isActive])
+}
+
+model ApproValue {
+  id                    Int                  @id @default(autoincrement())
+  inventoryId           Int
+  inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  fieldConfigId         Int
+  fieldConfig           ApproFieldConfig     @relation(fields: [fieldConfigId], references: [id], onDelete: Restrict)
+
+  value                 Float                @default(0)
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([inventoryId, fieldConfigId])
+  @@index([inventoryId])
+}
+
+model SortieValue {
+  id                    Int                  @id @default(autoincrement())
+  inventoryId           Int
+  inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  fieldConfigId         Int
+  fieldConfig           SortieFieldConfig    @relation(fields: [fieldConfigId], references: [id], onDelete: Restrict)
+
+  value                 Float                @default(0)
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([inventoryId, fieldConfigId])
+  @@index([inventoryId])
 }

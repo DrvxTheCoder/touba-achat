@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const todayInventory = await prisma.productionInventory.findUnique({
+    const todayInventory = await prisma.productionInventory.findFirst({
       where: { date: today },
       include: {
         _count: { select: { arrets: true } }
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const yesterdayInventory = await prisma.productionInventory.findUnique({
+    const yesterdayInventory = await prisma.productionInventory.findFirst({
       where: { date: yesterday, status: 'TERMINE' }
     });
 

@@ -70,13 +70,22 @@ export async function POST(
       // Subtract 60 minutes (1 hour) for lunch break
       tempsTotal = Math.max(0, tempsTotal - 60);
 
+      // Calculate total appro and sorties from dynamic values
+      const totalAppro = data.approValues
+        ? Object.values(data.approValues).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
+        : (data.butanier || 0) + (data.recuperation || 0) + (data.approSAR || 0);
+
+      const totalSorties = data.sortieValues
+        ? Object.values(data.sortieValues).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
+        : (data.ngabou || 0) + (data.exports || 0) + (data.divers || 0);
+
       // Créer les bouteilles
       let totalBottles = 0;
-      let cumulSortie = data.ngabou + data.exports + data.divers;
+      let cumulSortie = totalSorties;
 
       for (const bottle of data.bottles as Bottle[]) {
         const tonnage = (bottle.quantity * BOTTLE_WEIGHTS[bottle.type]) / 1000;
-        
+
         await tx.bottleProduction.create({
           data: {
             inventoryId,
@@ -93,25 +102,59 @@ export async function POST(
       // Créer les réservoirs avec validation et calculs automatiques
       let stockFinalPhysique = 0;
       for (const reservoirInput of data.reservoirs) {
-        // Valider le schéma Zod
-        const parsedSphere = sphereInputSchema.parse(reservoirInput);
+        // Fetch reservoir configuration to check calculation mode
+        const reservoirConfig = await tx.reservoirConfig.findUnique({
+          where: { id: reservoirInput.reservoirConfigId }
+        });
 
-        // Valider les règles métier
-        const validationErrors = validateSphereInput(parsedSphere as SphereInputData);
-        if (validationErrors.length > 0) {
-          throw new Error(`Erreur validation sphère ${parsedSphere.name}: ${validationErrors.join(', ')}`);
+        if (!reservoirConfig) {
+          throw new Error(`Configuration réservoir non trouvée pour ${reservoirInput.name}`);
         }
 
-        // Calculer toutes les valeurs dérivées
-        const calculatedSphere = calculateSphereData(parsedSphere as SphereInputData);
+        let reservoirData;
 
-        // Créer dans la DB avec toutes les valeurs (5 inputs + 6 calculées)
-        await tx.reservoir.create({
-          data: {
+        if (reservoirConfig.calculationMode === 'MANUAL') {
+          // MANUAL MODE: Use poidsLiquide directly, no validation or calculations
+          reservoirData = {
+            inventoryId,
+            name: reservoirInput.name,
+            reservoirConfigId: reservoirInput.reservoirConfigId,
+            // Store input values as-is (will be 0 or defaults)
+            hauteur: reservoirInput.hauteur || 0,
+            temperature: reservoirInput.temperature || 20,
+            temperatureVapeur: reservoirInput.temperatureVapeur || 20,
+            volumeLiquide: reservoirInput.volumeLiquide || 0,
+            pressionInterne: reservoirInput.pressionInterne || 0,
+            densiteA15C: reservoirInput.densiteA15C || 0.5,
+            // Use provided weight directly
+            poidsLiquide: reservoirInput.poidsLiquide || 0,
+            poidsGaz: 0,
+            poidsTotal: reservoirInput.poidsLiquide || 0,
+            facteurCorrectionLiquide: 1,
+            facteurCorrectionVapeur: 1,
+            densiteAmbiante: 0.5
+          };
+
+          stockFinalPhysique += reservoirInput.poidsLiquide || 0;
+        } else {
+          // AUTOMATIC MODE: Validate and calculate
+          // Valider le schéma Zod
+          const parsedSphere = sphereInputSchema.parse(reservoirInput);
+
+          // Valider les règles métier
+          const validationErrors = validateSphereInput(parsedSphere as SphereInputData);
+          if (validationErrors.length > 0) {
+            throw new Error(`Erreur validation sphère ${parsedSphere.name}: ${validationErrors.join(', ')}`);
+          }
+
+          // Calculer toutes les valeurs dérivées
+          const calculatedSphere = calculateSphereData(parsedSphere as SphereInputData);
+
+          reservoirData = {
             inventoryId,
             name: calculatedSphere.name,
             reservoirConfigId: reservoirInput.reservoirConfigId,
-            // 5 champs d'entrée
+            // 6 champs d'entrée
             hauteur: calculatedSphere.hauteur,
             temperature: calculatedSphere.temperature,
             temperatureVapeur: calculatedSphere.temperatureVapeur,
@@ -125,19 +168,19 @@ export async function POST(
             poidsLiquide: calculatedSphere.poidsLiquide,
             poidsGaz: calculatedSphere.poidsGaz,
             poidsTotal: calculatedSphere.poidsTotal
-          }
-        });
+          };
 
-        // Utiliser le poids total calculé pour le stock final
-        stockFinalPhysique += calculatedSphere.poidsLiquide;
+          stockFinalPhysique += calculatedSphere.poidsLiquide;
+        }
+
+        // Créer dans la DB
+        await tx.reservoir.create({ data: reservoirData });
       }
 
       // Calculs finaux
       const stockFinalTheorique =
         inventory.stockInitialPhysique +
-        (data.butanier || 0) +
-        data.recuperation +
-        data.approSAR -
+        totalAppro -
         cumulSortie;
 
       const ecart = stockFinalPhysique - stockFinalTheorique;
@@ -148,6 +191,74 @@ export async function POST(
       const rendement = tempsTotal > 0
         ? ((tempsTotal - inventory.tempsArret) / tempsTotal) * 100
         : 0;
+
+      // Save dynamic approValues
+      if (data.approValues && typeof data.approValues === 'object') {
+        // Get field configs for this center
+        const approFields = await tx.approFieldConfig.findMany({
+          where: { productionCenterId: inventory.productionCenterId || undefined }
+        });
+
+        // Create a map of field names to IDs
+        const fieldMap = new Map(approFields.map(f => [f.name, f.id]));
+
+        // Upsert each value (update if exists, create if not)
+        for (const [fieldName, value] of Object.entries(data.approValues)) {
+          const fieldConfigId = fieldMap.get(fieldName);
+          if (fieldConfigId) {
+            await tx.approValue.upsert({
+              where: {
+                inventoryId_fieldConfigId: {
+                  inventoryId,
+                  fieldConfigId
+                }
+              },
+              create: {
+                inventoryId,
+                fieldConfigId,
+                value: Number(value) || 0
+              },
+              update: {
+                value: Number(value) || 0
+              }
+            });
+          }
+        }
+      }
+
+      // Save dynamic sortieValues
+      if (data.sortieValues && typeof data.sortieValues === 'object') {
+        // Get field configs for this center
+        const sortieFields = await tx.sortieFieldConfig.findMany({
+          where: { productionCenterId: inventory.productionCenterId || undefined }
+        });
+
+        // Create a map of field names to IDs
+        const fieldMap = new Map(sortieFields.map(f => [f.name, f.id]));
+
+        // Upsert each value (update if exists, create if not)
+        for (const [fieldName, value] of Object.entries(data.sortieValues)) {
+          const fieldConfigId = fieldMap.get(fieldName);
+          if (fieldConfigId) {
+            await tx.sortieValue.upsert({
+              where: {
+                inventoryId_fieldConfigId: {
+                  inventoryId,
+                  fieldConfigId
+                }
+              },
+              create: {
+                inventoryId,
+                fieldConfigId,
+                value: Number(value) || 0
+              },
+              update: {
+                value: Number(value) || 0
+              }
+            });
+          }
+        }
+      }
 
       // Mettre à jour l'inventaire
       const updated = await tx.productionInventory.update({
@@ -178,7 +289,17 @@ export async function POST(
         include: {
           bottles: true,
           reservoirs: true,
-          arrets: true
+          arrets: true,
+          approValues: {
+            include: {
+              fieldConfig: true
+            }
+          },
+          sortieValues: {
+            include: {
+              fieldConfig: true
+            }
+          }
         }
       });
 
@@ -187,9 +308,9 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Erreur clôture inventaire:', error);
+    console.error('Erreur clôture inventaire:', error?.message || error);
     return NextResponse.json(
-      { error: error.message || 'Erreur serveur' },
+      { error: error?.message || 'Erreur serveur' },
       { status: 500 }
     );
   }
