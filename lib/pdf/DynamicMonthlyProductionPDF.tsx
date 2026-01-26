@@ -37,6 +37,7 @@ interface ReservoirConfig {
   name: string;
   type: string;
   capacity: number;
+  capacityTonnes?: number | null;
 }
 
 interface CenterConfig {
@@ -228,11 +229,14 @@ const DynamicMonthlyProductionPDF = ({
     )
   ).sort();
 
-  // Use the capaciteTotale passed from the API (already in tonnes)
-  let totalCapacityTonnes = capaciteTotale || 0;
-  if (!totalCapacityTonnes && inventories.length > 0) {
-    totalCapacityTonnes = 4993.47;
-  }
+  // Calculate total capacity in tonnes from reservoir configurations
+  // Use capacityTonnes from reservoirs, fallback to estimating from m³ (capacity * 0.5), then to capaciteTotale prop
+  const calculatedCapacity = reservoirs.reduce((sum, res) => {
+    // Use capacityTonnes if available, otherwise estimate from m³ (roughly 0.5 T/m³ for LPG)
+    const tonnes = res.capacityTonnes ?? (res.capacity * 0.5);
+    return sum + tonnes;
+  }, 0);
+  const totalCapacityTonnes = calculatedCapacity > 0 ? calculatedCapacity : (capaciteTotale || 0);
 
   // Hourly capacity for rendement calculation
   const hourlyCapacity = productionCenter.totalHourlyCapacity || 24;

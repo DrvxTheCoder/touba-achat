@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, CheckCircle, AlertCircle, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import ApproSection from './ApproSection';
 import BottlesSection from './BottlesSection';
@@ -25,6 +25,7 @@ interface ProductionFormProps {
   completing: boolean;
   disabled: boolean;
   onTempsCalculated?: (temps: number) => void;
+  isEditMode?: boolean;
 }
 
 export default function ProductionForm({
@@ -33,7 +34,8 @@ export default function ProductionForm({
   onComplete,
   completing,
   disabled,
-  onTempsCalculated
+  onTempsCalculated,
+  isEditMode = false
 }: ProductionFormProps) {
   // Transform reservoirs from Prisma format (with 6 input + 6 calculated fields) to component format
   const transformedReservoirs = (inventory.reservoirs || []).map((s: any) => ({
@@ -410,10 +412,15 @@ export default function ProductionForm({
               onClick={handleComplete}
               disabled={completing}
               size="lg"
-              className="min-w-[200px]"
+              className={`min-w-[200px] ${isEditMode ? 'bg-orange-600 hover:bg-orange-700' : ''}`}
             >
               {completing ? (
-                'Clôture en cours...'
+                isEditMode ? 'Sauvegarde en cours...' : 'Clôture en cours...'
+              ) : isEditMode ? (
+                <>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Sauvegarder les modifications
+                </>
               ) : (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
             },
             reservoirs: {
               orderBy: { name: 'asc' },
-              select: { id: true, name: true, type: true, capacity: true }
+              select: { id: true, name: true, type: true, capacity: true, capacityTonnes: true }
             }
           }
         })

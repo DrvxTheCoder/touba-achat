@@ -10,6 +10,7 @@ const reservoirConfigSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
   type: z.nativeEnum(ReservoirType),
   capacity: z.number().positive('La capacité doit être positive'),
+  capacityTonnes: z.number().positive('La capacité en tonnes doit être positive'),
   calculationMode: z.enum(['AUTOMATIC', 'MANUAL']).optional().default('AUTOMATIC'),
   productionCenterId: z.number().int().positive(),
 });

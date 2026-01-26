@@ -56,7 +56,10 @@ export async function GET(req: NextRequest) {
       where: reservoirWhere,
     });
 
-    const capaciteTotale = reservoirConfigs.reduce((sum, r) => sum + r.capacity, 0);
+    // Use capacityTonnes if available, otherwise estimate from m³
+    const capaciteTotaleEnTonnes = reservoirConfigs.reduce((sum, r) => {
+      return sum + (r.capacityTonnes ?? (r.capacity * 0.51));
+    }, 0);
 
     // Calculate metrics
     const stockPhysiqueActuel = latestInventory?.stockFinalPhysique || 0;
@@ -104,7 +107,6 @@ export async function GET(req: NextRequest) {
       : 0;
 
     // Creux Moyen (in tonnes)
-    const capaciteTotaleEnTonnes = capaciteTotale * 0.51;
     const creuxMoyen = inventories.length > 0
       ? inventories.reduce((sum, inv) => {
           const creux = capaciteTotaleEnTonnes - (inv.stockFinalPhysique || 0);

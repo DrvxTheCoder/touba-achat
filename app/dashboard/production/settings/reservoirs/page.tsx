@@ -39,6 +39,7 @@ interface ReservoirConfig {
   name: string;
   type: ReservoirType;
   capacity: number;
+  capacityTonnes: number | null;
   calculationMode: CalculationMode;
   productionCenter: {
     id: number;
@@ -79,6 +80,7 @@ export default function ReservoirsSettings() {
     name: '',
     type: '' as ReservoirType | '',
     capacity: '',
+    capacityTonnes: '',
     calculationMode: 'AUTOMATIC' as CalculationMode,
     productionCenterId: '',
   });
@@ -124,12 +126,13 @@ export default function ReservoirsSettings() {
         name: reservoir.name,
         type: reservoir.type,
         capacity: reservoir.capacity.toString(),
+        capacityTonnes: reservoir.capacityTonnes?.toString() || '',
         calculationMode: reservoir.calculationMode,
         productionCenterId: reservoir.productionCenter.id.toString(),
       });
     } else {
       setSelectedReservoir(null);
-      setFormData({ name: '', type: '', capacity: '', calculationMode: 'AUTOMATIC', productionCenterId: '' });
+      setFormData({ name: '', type: '', capacity: '', capacityTonnes: '', calculationMode: 'AUTOMATIC', productionCenterId: '' });
     }
     setDialogOpen(true);
   };
@@ -137,11 +140,11 @@ export default function ReservoirsSettings() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedReservoir(null);
-    setFormData({ name: '', type: '', capacity: '', calculationMode: 'AUTOMATIC', productionCenterId: '' });
+    setFormData({ name: '', type: '', capacity: '', capacityTonnes: '', calculationMode: 'AUTOMATIC', productionCenterId: '' });
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.type || !formData.capacity || !formData.productionCenterId) {
+    if (!formData.name || !formData.type || !formData.capacity || !formData.capacityTonnes || !formData.productionCenterId) {
       toast.error('Veuillez remplir tous les champs');
       return;
     }
@@ -150,6 +153,7 @@ export default function ReservoirsSettings() {
       name: formData.name,
       type: formData.type as ReservoirType,
       capacity: parseFloat(formData.capacity),
+      capacityTonnes: parseFloat(formData.capacityTonnes),
       calculationMode: formData.calculationMode,
       productionCenterId: parseInt(formData.productionCenterId),
     };
@@ -293,7 +297,8 @@ export default function ReservoirsSettings() {
                   <TableHead>Type</TableHead>
                   <TableHead className="hidden xl:table-cell">Mode de calcul</TableHead>
                   <TableHead className="hidden md:table-cell">Centre</TableHead>
-                  <TableHead className="text-right">Capacité (m³)</TableHead>
+                  <TableHead className="text-right hidden lg:table-cell">Capacité (m³)</TableHead>
+                  <TableHead className="text-right">Capacité (T)</TableHead>
                   <TableHead className="hidden lg:table-cell text-center">Utilisations</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -322,8 +327,11 @@ export default function ReservoirsSettings() {
                       <TableCell className="hidden md:table-cell text-muted-foreground">
                         {reservoir.productionCenter.name}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono hidden lg:table-cell">
                         {reservoir.capacity.toFixed(3)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {reservoir.capacityTonnes?.toFixed(3) || '-'}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-center">
                         <Badge variant="secondary">{reservoir._count.reservoirs}</Badge>
@@ -450,19 +458,35 @@ export default function ReservoirsSettings() {
                 <strong>Manuel:</strong> Saisie directe du poids liquide uniquement.
               </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="capacity">Capacité (m³)</Label>
-              <Input
-                id="capacity"
-                type="number"
-                step="0.001"
-                min="0"
-                value={formData.capacity}
-                onChange={(e) =>
-                  setFormData({ ...formData, capacity: e.target.value })
-                }
-                placeholder="Ex: 3304.491"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacité (m³)</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={formData.capacity}
+                  onChange={(e) =>
+                    setFormData({ ...formData, capacity: e.target.value })
+                  }
+                  placeholder="Ex: 3304.491"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacityTonnes">Capacité (Tonnes) <span className="text-destructive">*</span></Label>
+                <Input
+                  id="capacityTonnes"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={formData.capacityTonnes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, capacityTonnes: e.target.value })
+                  }
+                  placeholder="Ex: 1664.745"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

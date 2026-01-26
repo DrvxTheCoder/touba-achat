@@ -2,9 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, CheckCircle, Download, FileSpreadsheet, FileText, Printer } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, Download, FileSpreadsheet, FileText, Printer, Edit, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -13,6 +13,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import ProductionTimer from '../components/ProductionTimer';
 import ArretDialog from '../components/ArretDialog';
 import ProductionForm from '../components/ProductionForm';
@@ -23,11 +33,21 @@ import DynamicBreadcrumbs from '@/components/DynamicBreadcrumbs';
 export default function ProductionDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [inventory, setInventory] = useState<ProductionInventory | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [calculatedTempsTotal, setCalculatedTempsTotal] = useState(0);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  // Check if edit mode was requested via URL param
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true') {
+      setIsEditMode(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     loadInventory();
@@ -68,7 +88,7 @@ export default function ProductionDetailPage() {
       });
 
       if (!res.ok) throw new Error('Erreur sauvegarde automatique');
-      
+
       const data = await res.json();
       return data.savedAt;
     } catch (error) {
@@ -100,6 +120,45 @@ export default function ProductionDetailPage() {
     } finally {
       setCompleting(false);
     }
+  };
+
+  const handleEdit = async (formData: any) => {
+    try {
+      setCompleting(true);
+      const res = await fetch(`/api/production/${params.id}/edit`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Erreur lors de la modification');
+      }
+
+      const data = await res.json();
+      toast.success('Inventaire modifié avec succès');
+      setIsEditMode(false);
+      setInventory(data);
+      // Remove edit query param from URL
+      router.replace(`/dashboard/production/${params.id}`);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || 'Erreur lors de la modification');
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancelEdit = () => {
+    setIsEditMode(false);
+    setShowCancelDialog(false);
+    loadInventory(); // Reload original data
+    router.replace(`/dashboard/production/${params.id}`);
   };
 
   const handleExport = async (format: 'excel' | 'pdf') => {
@@ -215,6 +274,7 @@ export default function ProductionDetailPage() {
           <div>
             <h1 className="text-2xl font-bold">
               Inventaire du {new Date(inventory.date).toLocaleDateString('fr-FR')}
+              {isEditMode && <span className="ml-2 text-orange-600">(Mode édition)</span>}
             </h1>
             <p className="text-sm text-muted-foreground">
               Démarré par {inventory.startedBy?.name}
@@ -223,8 +283,31 @@ export default function ProductionDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Edit mode controls */}
+          {isEditMode && (
+            <Button
+              variant="outline"
+              onClick={handleCancelEdit}
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Annuler
+            </Button>
+          )}
+
+          {/* Edit button for completed inventories */}
+          {isTermine && !isEditMode && (
+            <Button
+              variant="outline"
+              onClick={() => setIsEditMode(true)}
+              className="text-orange-600 border-orange-200 hover:bg-orange-50"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Modifier
+            </Button>
+          )}
+
           {/* Export button */}
-          
           {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -244,7 +327,7 @@ export default function ProductionDetailPage() {
             </DropdownMenuContent>
           </DropdownMenu> */}
 
-          {isTermine && (
+          {isTermine && !isEditMode && (
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
               <span className="font-semibold">Terminé</span>
@@ -252,6 +335,23 @@ export default function ProductionDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Edit mode banner */}
+      {isEditMode && (
+        <Card className="p-4 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800">
+          <div className="flex items-center gap-3">
+            <Edit className="h-5 w-5 text-orange-600" />
+            <div>
+              <p className="font-medium text-orange-800 dark:text-orange-200">
+                Mode édition activé
+              </p>
+              <p className="text-sm text-orange-600 dark:text-orange-400">
+                Vous pouvez modifier les valeurs de l&apos;inventaire. Les calculs seront recalculés automatiquement.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Timer et Arrêts */}
       {(() => {
@@ -318,11 +418,30 @@ export default function ProductionDetailPage() {
       <ProductionForm
         inventory={inventory}
         onAutoSave={handleAutoSave}
-        onComplete={handleComplete}
+        onComplete={isEditMode ? handleEdit : handleComplete}
         completing={completing}
-        disabled={isTermine}
+        disabled={isTermine && !isEditMode}
         onTempsCalculated={setCalculatedTempsTotal}
+        isEditMode={isEditMode}
       />
+
+      {/* Cancel edit dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Annuler les modifications ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Toutes les modifications non sauvegardées seront perdues. Êtes-vous sûr de vouloir annuler ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuer l&apos;édition</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancelEdit} className="bg-red-600 hover:bg-red-700">
+              Annuler les modifications
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

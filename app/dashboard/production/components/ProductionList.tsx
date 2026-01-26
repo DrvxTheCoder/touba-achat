@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, AlertCircle, CheckCircle, Clock, List } from 'lucide-react';
+import { Eye, AlertCircle, CheckCircle, Clock, List, Edit } from 'lucide-react';
 import { ProductionInventory, STATUS_LABELS, formatDuration } from '@/lib/types/production';
 
 interface ProductionListProps {
@@ -176,14 +176,27 @@ const loadInventories = async () => {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/dashboard/production/${inventory.id}`)}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Voir
-            </Button>
+            <div className="flex items-center gap-2">
+              {inventory.status === 'TERMINE' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/dashboard/production/${inventory.id}?edit=true`)}
+                  className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/dashboard/production/${inventory.id}`)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Voir
+              </Button>
+            </div>
           </div>
         </Card>
       ))}

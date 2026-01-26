@@ -659,6 +659,7 @@ model ReservoirConfig {
   name                  String               // D100, SO2, SO3, etc.
   type                  ReservoirType        // SPHERE, CIGARE, AUTRE
   capacity              Float                // Capacité en m³
+  capacityTonnes        Float?               // Capacité en tonnes (optional in DB, required in API/UI)
   calculationMode       CalculationMode      @default(AUTOMATIC) // Mode de calcul
 
   productionCenterId    Int
