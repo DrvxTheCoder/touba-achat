@@ -12,9 +12,10 @@ import { ProductionInventory, STATUS_LABELS, formatDuration } from '@/lib/types/
 
 interface ProductionListProps {
   selectedCenterId?: number;
+  isAdmin?: boolean;
 }
 
-export default function ProductionList({ selectedCenterId }: ProductionListProps) {
+export default function ProductionList({ selectedCenterId, isAdmin = false }: ProductionListProps) {
   const router = useRouter();
   const isInitialMount = useRef(true);
   const [inventories, setInventories] = useState<ProductionInventory[]>([]);
@@ -177,7 +178,7 @@ const loadInventories = async () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {inventory.status === 'TERMINE' && (
+              {inventory.status === 'TERMINE' && isAdmin && (
                 <Button
                   variant="outline"
                   size="sm"

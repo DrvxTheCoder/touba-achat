@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, CheckCircle, Download, FileSpreadsheet, FileText, Printer, Edit, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export default function ProductionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [inventory, setInventory] = useState<ProductionInventory | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,12 +44,15 @@ export default function ProductionDetailPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
-  // Check if edit mode was requested via URL param
+  // Check if user is admin
+  const isAdmin = session?.user?.role && ['ADMIN', 'IT_ADMIN'].includes(session.user.role);
+
+  // Check if edit mode was requested via URL param (only if admin)
   useEffect(() => {
-    if (searchParams.get('edit') === 'true') {
+    if (searchParams.get('edit') === 'true' && isAdmin) {
       setIsEditMode(true);
     }
-  }, [searchParams]);
+  }, [searchParams, isAdmin]);
 
   useEffect(() => {
     loadInventory();
@@ -295,8 +300,8 @@ export default function ProductionDetailPage() {
             </Button>
           )}
 
-          {/* Edit button for completed inventories */}
-          {isTermine && !isEditMode && (
+          {/* Edit button for completed inventories (admin only) */}
+          {isTermine && !isEditMode && isAdmin && (
             <Button
               variant="outline"
               onClick={() => setIsEditMode(true)}

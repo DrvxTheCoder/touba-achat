@@ -79,6 +79,10 @@ export async function POST(
         ? Object.values(data.sortieValues).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
         : (data.ngabou || 0) + (data.exports || 0) + (data.divers || 0);
 
+      // Delete any existing bottles/reservoirs from autosave before recreating
+      await tx.bottleProduction.deleteMany({ where: { inventoryId } });
+      await tx.reservoir.deleteMany({ where: { inventoryId } });
+
       // Créer les bouteilles
       let totalBottles = 0;
       let cumulSortie = totalSorties;
