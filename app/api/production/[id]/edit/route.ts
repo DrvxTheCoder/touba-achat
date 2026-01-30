@@ -6,7 +6,7 @@ import { calculateSphereData, validateSphereInput, SphereInputData } from '@/lib
 import { z } from 'zod';
 
 // Poids unitaires des bouteilles
-const BOTTLE_WEIGHTS = {
+const BOTTLE_WEIGHTS: Record<string, number> = {
   B2_7: 2.7,
   B6: 6,
   B9: 9,
@@ -15,25 +15,8 @@ const BOTTLE_WEIGHTS = {
   B38: 38
 };
 
-type BottleType = 'B2_7' | 'B6' | 'B9' | 'B12_5' | 'B12_5K' | 'B38';
-
-interface Bottle {
-  type: BottleType;
-  quantity: number;
-}
-
-// Schéma de validation pour les sphères
-const sphereInputSchema = z.object({
-  name: z.string().min(1), // Accept any reservoir name (D100, SO2, SO3, RO1, RO2, etc.)
-  hauteur: z.number().min(0).max(30000),
-  temperature: z.number().min(15.0).max(36.0),
-  temperatureVapeur: z.number().min(15.0).max(36.0),
-  volumeLiquide: z.number().min(0),
-  pressionInterne: z.number().min(0).max(20),
-  densiteA15C: z.number().min(0.4).max(0.6)
-});
-
-export async function POST(
+// PUT /api/production/[id]/edit - Edit a completed inventory
+export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -43,32 +26,37 @@ export async function POST(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
+    // Check if user has admin access
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Permission refusée - Seuls les administrateurs peuvent modifier les inventaires clôturés' }, { status: 403 });
+    }
+
     const inventoryId = parseInt(params.id);
+    if (isNaN(inventoryId)) {
+      return NextResponse.json({ error: 'ID invalide' }, { status: 400 });
+    }
+
     const data = await req.json();
 
     // Transaction pour garantir la cohérence
     const result = await prisma.$transaction(async (tx) => {
-      // Vérifier inventaire
+      // Vérifier inventaire existe
       const inventory = await tx.productionInventory.findUnique({
-        where: { id: inventoryId }
+        where: { id: inventoryId },
+        include: {
+          bottles: true,
+          reservoirs: true,
+          approValues: true,
+          sortieValues: true
+        }
       });
 
       if (!inventory) {
         throw new Error('Inventaire non trouvé');
       }
 
-      if (inventory.status === 'TERMINE') {
-        throw new Error('Inventaire déjà terminé');
-      }
-
-      // Use manual time fields if provided, otherwise calculate from timestamps
-      const now = new Date();
-      let tempsTotal = data.tempsTotal || Math.floor(
-        (now.getTime() - inventory.startedAt.getTime()) / 60000
-      );
-
-      // Subtract 60 minutes (1 hour) for lunch break
-      tempsTotal = Math.max(0, tempsTotal - 60);
+      // Use manual time fields if provided
+      const tempsTotal = data.tempsTotal || inventory.tempsTotal;
 
       // Calculate total appro and sorties from dynamic values
       const totalAppro = data.approValues
@@ -79,16 +67,19 @@ export async function POST(
         ? Object.values(data.sortieValues).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
         : (data.ngabou || 0) + (data.exports || 0) + (data.divers || 0);
 
-      // Delete any existing bottles/reservoirs from autosave before recreating
-      await tx.bottleProduction.deleteMany({ where: { inventoryId } });
-      await tx.reservoir.deleteMany({ where: { inventoryId } });
+      // Delete existing bottles and recreate
+      await tx.bottleProduction.deleteMany({
+        where: { inventoryId }
+      });
 
-      // Créer les bouteilles
       let totalBottles = 0;
       let cumulSortie = totalSorties;
 
-      for (const bottle of data.bottles as Bottle[]) {
-        const tonnage = (bottle.quantity * BOTTLE_WEIGHTS[bottle.type]) / 1000;
+      for (const bottle of data.bottles || []) {
+        const weight = BOTTLE_WEIGHTS[bottle.type];
+        if (!weight) continue;
+
+        const tonnage = (bottle.quantity * weight) / 1000;
 
         await tx.bottleProduction.create({
           data: {
@@ -103,9 +94,13 @@ export async function POST(
         cumulSortie += tonnage;
       }
 
-      // Créer les réservoirs avec validation et calculs automatiques
+      // Delete existing reservoirs and recreate
+      await tx.reservoir.deleteMany({
+        where: { inventoryId }
+      });
+
       let stockFinalPhysique = 0;
-      for (const reservoirInput of data.reservoirs) {
+      for (const reservoirInput of data.reservoirs || []) {
         // Fetch reservoir configuration to check calculation mode
         const reservoirConfig = await tx.reservoirConfig.findUnique({
           where: { id: reservoirInput.reservoirConfigId }
@@ -118,19 +113,17 @@ export async function POST(
         let reservoirData;
 
         if (reservoirConfig.calculationMode === 'MANUAL') {
-          // MANUAL MODE: Use poidsLiquide directly, no validation or calculations
+          // MANUAL MODE: Use poidsLiquide directly
           reservoirData = {
             inventoryId,
             name: reservoirInput.name,
             reservoirConfigId: reservoirInput.reservoirConfigId,
-            // Store input values as-is (will be 0 or defaults)
             hauteur: reservoirInput.hauteur || 0,
             temperature: reservoirInput.temperature || 20,
             temperatureVapeur: reservoirInput.temperatureVapeur || 20,
             volumeLiquide: reservoirInput.volumeLiquide || 0,
             pressionInterne: reservoirInput.pressionInterne || 0,
             densiteA15C: reservoirInput.densiteA15C || 0.5,
-            // Use provided weight directly
             poidsLiquide: reservoirInput.poidsLiquide || 0,
             poidsGaz: 0,
             poidsTotal: reservoirInput.poidsLiquide || 0,
@@ -142,30 +135,23 @@ export async function POST(
           stockFinalPhysique += reservoirInput.poidsLiquide || 0;
         } else {
           // AUTOMATIC MODE: Validate and calculate
-          // Valider le schéma Zod
-          const parsedSphere = sphereInputSchema.parse(reservoirInput);
-
-          // Valider les règles métier
-          const validationErrors = validateSphereInput(parsedSphere as SphereInputData);
+          const validationErrors = validateSphereInput(reservoirInput as SphereInputData);
           if (validationErrors.length > 0) {
-            throw new Error(`Erreur validation sphère ${parsedSphere.name}: ${validationErrors.join(', ')}`);
+            throw new Error(`Erreur validation réservoir ${reservoirInput.name}: ${validationErrors.join(', ')}`);
           }
 
-          // Calculer toutes les valeurs dérivées
-          const calculatedSphere = calculateSphereData(parsedSphere as SphereInputData);
+          const calculatedSphere = calculateSphereData(reservoirInput as SphereInputData);
 
           reservoirData = {
             inventoryId,
             name: calculatedSphere.name,
             reservoirConfigId: reservoirInput.reservoirConfigId,
-            // 6 champs d'entrée
             hauteur: calculatedSphere.hauteur,
             temperature: calculatedSphere.temperature,
             temperatureVapeur: calculatedSphere.temperatureVapeur,
             volumeLiquide: calculatedSphere.volumeLiquide,
             pressionInterne: calculatedSphere.pressionInterne,
             densiteA15C: calculatedSphere.densiteA15C,
-            // 6 champs calculés
             facteurCorrectionLiquide: calculatedSphere.facteurCorrectionLiquide,
             facteurCorrectionVapeur: calculatedSphere.facteurCorrectionVapeur,
             densiteAmbiante: calculatedSphere.densiteAmbiante,
@@ -177,7 +163,6 @@ export async function POST(
           stockFinalPhysique += calculatedSphere.poidsLiquide;
         }
 
-        // Créer dans la DB
         await tx.reservoir.create({ data: reservoirData });
       }
 
@@ -188,25 +173,23 @@ export async function POST(
         cumulSortie;
 
       const ecart = stockFinalPhysique - stockFinalTheorique;
-      const ecartPourcentage = stockFinalTheorique !== 0 
-        ? (ecart / stockFinalTheorique) * 100 
+      const ecartPourcentage = stockFinalTheorique !== 0
+        ? (ecart / stockFinalTheorique) * 100
         : 0;
 
+      const tempsArret = inventory.tempsArret || 0;
       const rendement = tempsTotal > 0
-        ? ((tempsTotal - inventory.tempsArret) / tempsTotal) * 100
+        ? ((tempsTotal - tempsArret) / tempsTotal) * 100
         : 0;
 
-      // Save dynamic approValues
+      // Update dynamic approValues
       if (data.approValues && typeof data.approValues === 'object') {
-        // Get field configs for this center
         const approFields = await tx.approFieldConfig.findMany({
           where: { productionCenterId: inventory.productionCenterId || undefined }
         });
 
-        // Create a map of field names to IDs
         const fieldMap = new Map(approFields.map(f => [f.name, f.id]));
 
-        // Upsert each value (update if exists, create if not)
         for (const [fieldName, value] of Object.entries(data.approValues)) {
           const fieldConfigId = fieldMap.get(fieldName);
           if (fieldConfigId) {
@@ -230,17 +213,14 @@ export async function POST(
         }
       }
 
-      // Save dynamic sortieValues
+      // Update dynamic sortieValues
       if (data.sortieValues && typeof data.sortieValues === 'object') {
-        // Get field configs for this center
         const sortieFields = await tx.sortieFieldConfig.findMany({
           where: { productionCenterId: inventory.productionCenterId || undefined }
         });
 
-        // Create a map of field names to IDs
         const fieldMap = new Map(sortieFields.map(f => [f.name, f.id]));
 
-        // Upsert each value (update if exists, create if not)
         for (const [fieldName, value] of Object.entries(data.sortieValues)) {
           const fieldConfigId = fieldMap.get(fieldName);
           if (fieldConfigId) {
@@ -264,19 +244,16 @@ export async function POST(
         }
       }
 
-      // Mettre à jour l'inventaire
+      // Update the inventory
       const updated = await tx.productionInventory.update({
         where: { id: inventoryId },
         data: {
-          status: 'TERMINE',
-          completedAt: now,
-          completedById: parseInt(session.user.id),
-          butanier: data.butanier,
-          recuperation: data.recuperation,
-          approSAR: data.approSAR,
-          ngabou: data.ngabou,
-          exports: data.exports,
-          divers: data.divers,
+          butanier: data.butanier ?? inventory.butanier,
+          recuperation: data.recuperation ?? inventory.recuperation,
+          approSAR: data.approSAR ?? inventory.approSAR,
+          ngabou: data.ngabou ?? inventory.ngabou,
+          exports: data.exports ?? inventory.exports,
+          divers: data.divers ?? inventory.divers,
           cumulSortie,
           stockFinalTheorique,
           stockFinalPhysique,
@@ -284,11 +261,11 @@ export async function POST(
           ecartPourcentage,
           rendement,
           totalBottlesProduced: totalBottles,
-          heureDebut: data.heureDebut,
-          heureFin: data.heureFin,
+          heureDebut: data.heureDebut ?? inventory.heureDebut,
+          heureFin: data.heureFin ?? inventory.heureFin,
           tempsTotal,
-          tempsUtile: tempsTotal - inventory.tempsArret,
-          observations: data.observations
+          tempsUtile: tempsTotal - tempsArret,
+          observations: data.observations ?? inventory.observations
         },
         include: {
           bottles: true,
@@ -303,7 +280,10 @@ export async function POST(
             include: {
               fieldConfig: true
             }
-          }
+          },
+          productionCenter: true,
+          startedBy: { select: { id: true, name: true, email: true } },
+          completedBy: { select: { id: true, name: true, email: true } }
         }
       });
 
@@ -312,7 +292,7 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Erreur clôture inventaire:', error?.message || error);
+    console.error('Erreur modification inventaire:', error?.message || error);
     return NextResponse.json(
       { error: error?.message || 'Erreur serveur' },
       { status: 500 }

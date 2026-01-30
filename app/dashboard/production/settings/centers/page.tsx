@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, Building, ArrowLeft, User } from 'lucide-react';
+import { Plus, Pencil, Trash2, Building, ArrowLeft, User, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -303,6 +303,14 @@ export default function ProductionCentersSettings() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push(`/dashboard/production/settings/centers/${center.id}`)}
+                            title="Configurer le centre"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

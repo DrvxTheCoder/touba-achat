@@ -20,9 +20,15 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
   const [loadingStock, setLoadingStock] = useState(false);
   const router = useRouter();
 
-  // Fetch previous day's stock final when date changes
+  // Fetch previous day's stock final when date changes or center changes
   useEffect(() => {
     const fetchPreviousStock = async () => {
+      // Only fetch if a center is selected
+      if (!selectedCenterId) {
+        setStockInitial('');
+        return;
+      }
+
       setLoadingStock(true);
       try {
         // Calculate previous day
@@ -30,9 +36,9 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
         previousDay.setDate(previousDay.getDate() - 1);
         previousDay.setHours(0, 0, 0, 0);
 
-        // Fetch inventories to find previous day's inventory
+        // Fetch inventories to find previous day's inventory FOR THE SAME CENTER
         const response = await fetch(
-          `/api/production?dateFrom=${previousDay.toISOString()}&dateTo=${previousDay.toISOString()}&status=TERMINE`
+          `/api/production?dateFrom=${previousDay.toISOString()}&dateTo=${previousDay.toISOString()}&status=TERMINE&centerId=${selectedCenterId}`
         );
 
         if (response.ok) {
@@ -45,6 +51,9 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
                 description: `Stock final de la veille: ${previousInventory.stockFinalPhysique.toFixed(2)} tonnes`
               });
             }
+          } else {
+            // No previous inventory for this center
+            setStockInitial('');
           }
         }
       } catch (error) {
@@ -55,7 +64,7 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
     };
 
     fetchPreviousStock();
-  }, [date]);
+  }, [date, selectedCenterId]);
 
   const handleStart = async () => {
     if (!selectedCenterId) {

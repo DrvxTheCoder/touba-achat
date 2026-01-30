@@ -43,6 +43,36 @@ export interface ProductionInventory {
   completedById?: number | null;
   heureDebut?: string | null;
   heureFin?: string | null;
+  productionCenter?: {
+    id: number;
+    name: string;
+    address: string;
+  };
+  approValues?: Array<{
+    fieldConfigId: number;
+    value: number;
+    fieldConfig: {
+      id: number;
+      name: string;
+      label: string;
+      order: number;
+      isActive: boolean;
+      isRequired: boolean;
+    };
+  }>;
+  sortieValues?: Array<{
+    fieldConfigId: number;
+    value: number;
+    fieldConfig: {
+      id: number;
+      name: string;
+      label: string;
+      order: number;
+      isActive: boolean;
+      isRequired: boolean;
+    };
+  }>;
+
 
   // Temps de production
   tempsTotal: number; // En minutes
@@ -141,6 +171,8 @@ export interface CompleteInventoryData {
   heureDebut?: string;
   heureFin?: string;
   tempsTotal?: number;
+  approValues?: Record<string, number>;
+  sortieValues?: Record<string, number>;
   bottles: Array<{
     type: BottleType;
     quantity: number;
@@ -154,6 +186,7 @@ export interface CompleteInventoryData {
     volumeLiquide: number;
     pressionInterne: number;
     densiteA15C: number;
+    poidsLiquide?: number;
   }>;
 }
 

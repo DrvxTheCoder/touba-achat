@@ -10,6 +10,8 @@ const reservoirConfigSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
   type: z.nativeEnum(ReservoirType),
   capacity: z.number().positive('La capacité doit être positive'),
+  capacityTonnes: z.number().positive('La capacité en tonnes doit être positive'),
+  calculationMode: z.enum(['AUTOMATIC', 'MANUAL']).optional().default('AUTOMATIC'),
   productionCenterId: z.number().int().positive(),
 });
 
@@ -72,7 +74,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log('📥 Received body:', body);
+
     const validated = reservoirConfigSchema.parse(body);
+    console.log('✅ Validated data:', validated);
 
     // Check if production center exists
     const center = await prisma.productionCenter.findUnique({
@@ -86,6 +91,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log('🏭 Creating reservoir with data:', validated);
     const reservoir = await prisma.reservoirConfig.create({
       data: validated,
       include: {
@@ -101,13 +107,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(reservoir);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
+      console.error('❌ Zod validation error:', error.errors);
       return NextResponse.json(
         { error: 'Données invalides', details: error.errors },
         { status: 400 }
       );
     }
 
-    console.error('Erreur création configuration de réservoir:', error);
+    console.error('❌ Erreur création configuration de réservoir:', error);
+    console.error('Stack trace:', error.stack);
     return NextResponse.json(
       { error: error.message || 'Erreur serveur' },
       { status: 500 }

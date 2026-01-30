@@ -28,6 +28,7 @@ interface ReservoirStock {
   reservoirName: string;
   reservoirType: string;
   capacity: number;
+  capacityTonnes: number;
   stockActuel: number;
   pourcentageRemplissage: number;
   derniereMAJ: string;
@@ -202,7 +203,7 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
             <div className="space-y-2">
               <div className="flex justify-end text-sm">
                 <span className="text-muted-foreground">
-                  {(stockData.capacity * 0.51).toFixed(2)} T
+                  {stockData.capacityTonnes.toFixed(2)} T
                 </span>
               </div>
               <Progress

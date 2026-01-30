@@ -61,7 +61,8 @@ export default function AutoCalcs({
             +{totalEntrees.toFixed(3)}
           </div>
           <div className="text-xs text-muted-foreground">
-            {butanier.toFixed(0)} + {recuperation.toFixed(0)} + {approSAR.toFixed(0)}
+            {/* {butanier.toFixed(0)} + {recuperation.toFixed(0)} + {approSAR.toFixed(0)} */}
+            tonnes
           </div>
         </Card>
 
@@ -72,7 +73,8 @@ export default function AutoCalcs({
             -{totalSorties.toFixed(3)}
           </div>
           <div className="text-xs text-muted-foreground">
-            {ngabou.toFixed(3)} + {exports.toFixed(3)} + {divers.toFixed(3)} + {remplissageTotal.toFixed(3)}
+            tonnes
+            {/* {ngabou.toFixed(3)} + {exports.toFixed(3)} + {divers.toFixed(3)} + {remplissageTotal.toFixed(3)} */}
           </div>
         </Card>
 

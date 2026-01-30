@@ -50,11 +50,14 @@ export async function GET(
     });
 
     if (!latestInventory || latestInventory.reservoirs.length === 0) {
+      // Use capacityTonnes if available, otherwise estimate from m³
+      const capacityInTonnes = reservoirConfig.capacityTonnes ?? (reservoirConfig.capacity * 0.51);
       return NextResponse.json(
         {
           reservoirName: reservoirConfig.name,
           reservoirType: reservoirConfig.type,
           capacity: reservoirConfig.capacity,
+          capacityTonnes: capacityInTonnes,
           stockActuel: 0,
           pourcentageRemplissage: 0,
           derniereMAJ: new Date().toISOString(),
@@ -64,7 +67,8 @@ export async function GET(
 
     const reservoir = latestInventory.reservoirs[0];
     const stockActuel = reservoir.poidsLiquide || 0;
-    const capacityInTonnes = reservoirConfig.capacity * 0.51; // Convert m³ to tonnes
+    // Use capacityTonnes if available, otherwise estimate from m³
+    const capacityInTonnes = reservoirConfig.capacityTonnes ?? (reservoirConfig.capacity * 0.51);
     const pourcentageRemplissage = capacityInTonnes > 0
       ? (stockActuel / capacityInTonnes) * 100
       : 0;
@@ -73,6 +77,7 @@ export async function GET(
       reservoirName: reservoirConfig.name,
       reservoirType: reservoirConfig.type,
       capacity: reservoirConfig.capacity,
+      capacityTonnes: capacityInTonnes,
       stockActuel,
       pourcentageRemplissage,
       derniereMAJ: latestInventory.completedAt?.toISOString() || new Date().toISOString(),

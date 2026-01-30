@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import * as XLSX from 'xlsx';
 import { renderToBuffer } from '@react-pdf/renderer';
 import MonthlyProductionPDF from '@/lib/pdf/MonthlyProductionPDF';
+import DynamicMonthlyProductionPDF from '@/lib/pdf/DynamicMonthlyProductionPDF';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,11 +30,26 @@ export async function POST(req: NextRequest) {
     const start = startDate ? new Date(startDate) : new Date(new Date().setMonth(new Date().getMonth() - 1));
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Get production center if specified
+    // Get production center with full configuration if specified
     const productionCenter = productionCenterId
       ? await prisma.productionCenter.findUnique({
           where: { id: parseInt(productionCenterId) },
-          select: { id: true, name: true, address: true }
+          include: {
+            approFieldConfigs: {
+              where: { isActive: true },
+              orderBy: { order: 'asc' },
+              select: { id: true, name: true, label: true, order: true }
+            },
+            sortieFieldConfigs: {
+              where: { isActive: true },
+              orderBy: { order: 'asc' },
+              select: { id: true, name: true, label: true, order: true }
+            },
+            reservoirs: {
+              orderBy: { name: 'asc' },
+              select: { id: true, name: true, type: true, capacity: true, capacityTonnes: true }
+            }
+          }
         })
       : null;
 
@@ -57,6 +73,16 @@ export async function POST(req: NextRequest) {
         arrets: {
           include: {
             createdBy: { select: { id: true, name: true } }
+          }
+        },
+        approValues: {
+          include: {
+            fieldConfig: true
+          }
+        },
+        sortieValues: {
+          include: {
+            fieldConfig: true
           }
         },
         startedBy: { select: { name: true } },
@@ -135,17 +161,51 @@ export async function POST(req: NextRequest) {
         }
       });
     } else if (format === 'pdf') {
-      // Generate PDF using MonthlyProductionPDF
-      const pdfBuffer = await renderToBuffer(
-        MonthlyProductionPDF({
-          inventories,
-          startDate: start,
-          endDate: end,
-          productionCenter,
-          capaciteTotale,
-          exportedByUser: session.user.name || undefined
-        })
+      // Determine if we should use the dynamic template
+      const hasDynamicConfig = productionCenter && (
+        (productionCenter.approFieldConfigs?.length ?? 0) > 0 ||
+        (productionCenter.sortieFieldConfigs?.length ?? 0) > 0 ||
+        (productionCenter.reservoirs?.length ?? 0) > 0
       );
+
+      let pdfBuffer;
+
+      if (hasDynamicConfig && productionCenter) {
+        // Use dynamic template for configured centers
+        pdfBuffer = await renderToBuffer(
+          DynamicMonthlyProductionPDF({
+            inventories,
+            startDate: start,
+            endDate: end,
+            productionCenter: {
+              id: productionCenter.id,
+              name: productionCenter.name,
+              totalHourlyCapacity: productionCenter.totalHourlyCapacity,
+              approFieldConfigs: productionCenter.approFieldConfigs,
+              sortieFieldConfigs: productionCenter.sortieFieldConfigs,
+              reservoirs: productionCenter.reservoirs
+            },
+            capaciteTotale,
+            exportedByUser: session.user.name || undefined
+          })
+        );
+      } else {
+        // Use legacy template for unconfigured centers
+        pdfBuffer = await renderToBuffer(
+          MonthlyProductionPDF({
+            inventories,
+            startDate: start,
+            endDate: end,
+            productionCenter: productionCenter ? {
+              id: productionCenter.id,
+              name: productionCenter.name,
+              address: productionCenter.address
+            } : undefined,
+            capaciteTotale,
+            exportedByUser: session.user.name || undefined
+          })
+        );
+      }
 
       const filename = `production_mensuelle_${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}.pdf`;
 

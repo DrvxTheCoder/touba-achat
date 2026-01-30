@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const inventory = await prisma.productionInventory.findUnique({
+    const inventory = await prisma.productionInventory.findFirst({
       where: { date: today },
       include: {
         productionCenter: {

@@ -37,14 +37,26 @@ export async function POST(req: NextRequest) {
     const date = new Date(data.date);
     date.setHours(0, 0, 0, 0);
 
-    // Vérifier si un inventaire existe déjà pour cette date
-    const existing = await prisma.productionInventory.findUnique({
-      where: { date }
-    });
+    // Vérifier si un inventaire existe déjà pour cette date ET ce centre
+    const existing = data.productionCenterId
+      ? await prisma.productionInventory.findUnique({
+          where: {
+            date_productionCenterId: {
+              date,
+              productionCenterId: data.productionCenterId
+            }
+          }
+        })
+      : await prisma.productionInventory.findFirst({
+          where: {
+            date,
+            productionCenterId: null
+          }
+        });
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Un inventaire existe déjà pour cette date', inventory: existing },
+        { error: 'Un inventaire existe déjà pour cette date et ce centre', inventory: existing },
         { status: 409 }
       );
     }
@@ -114,6 +126,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    const centerId = searchParams.get('centerId');
 
     const skip = (page - 1) * limit;
 
@@ -134,6 +147,11 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Filter by production center if specified
+    if (centerId) {
+      where.productionCenterId = parseInt(centerId);
+    }
+
     // Récupérer les données avec pagination
     const [inventories, total] = await Promise.all([
       prisma.productionInventory.findMany({
@@ -142,6 +160,12 @@ export async function GET(req: NextRequest) {
         take: limit,
         orderBy: { date: 'desc' },
         include: {
+          productionCenter: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
           startedBy: {
             select: {
               id: true,
