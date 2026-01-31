@@ -106,9 +106,9 @@ export default function ProductionForm({
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [lastSaved, setLastSaved] = useState<string>('');
 
-  // Auto-save toutes les 30 secondes si des changements
+  // Auto-save toutes les 30 secondes si des changements (désactivé en mode édition)
   useEffect(() => {
-    if (disabled) return;
+    if (disabled || isEditMode) return;
 
     const timer = setTimeout(async () => {
       if (autoSaveStatus === 'idle') {
@@ -125,7 +125,7 @@ export default function ProductionForm({
     }, 30000);
 
     return () => clearTimeout(timer);
-  }, [formData, disabled]);
+  }, [formData, disabled, isEditMode]);
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));

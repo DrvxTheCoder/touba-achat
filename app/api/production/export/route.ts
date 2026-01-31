@@ -90,6 +90,15 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    // Debug logging for dynamic field values
+    console.log('=== EXPORT DEBUG ===');
+    console.log('Inventories count:', inventories.length);
+    if (inventories.length > 0) {
+      console.log('First inventory approValues:', JSON.stringify(inventories[0].approValues, null, 2));
+      console.log('First inventory sortieValues:', JSON.stringify(inventories[0].sortieValues, null, 2));
+    }
+    console.log('====================');
+
     if (format === 'excel') {
       // Créer un workbook Excel
       const workbook = XLSX.utils.book_new();
@@ -171,10 +180,17 @@ export async function POST(req: NextRequest) {
       let pdfBuffer;
 
       if (hasDynamicConfig && productionCenter) {
+        // Serialize inventories to ensure all nested data is properly passed to PDF
+        // This is necessary because react-pdf/renderer may not handle Prisma objects correctly
+        const serializedInventories = JSON.parse(JSON.stringify(inventories));
+
+        console.log('[Export API] Before serialization - first inventory sortieValues:', inventories[0]?.sortieValues);
+        console.log('[Export API] After serialization - first inventory sortieValues:', serializedInventories[0]?.sortieValues);
+
         // Use dynamic template for configured centers
         pdfBuffer = await renderToBuffer(
           DynamicMonthlyProductionPDF({
-            inventories,
+            inventories: serializedInventories,
             startDate: start,
             endDate: end,
             productionCenter: {

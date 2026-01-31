@@ -210,6 +210,14 @@ const DynamicMonthlyProductionPDF = ({
   capaciteTotale,
   exportedByUser
 }: DynamicMonthlyProductionPDFProps): React.ReactElement<DocumentProps> => {
+  // Debug: Log what we received
+  console.log('[PDF Component] Received inventories count:', inventories?.length);
+  if (inventories && inventories.length > 0) {
+    console.log('[PDF Component] First inventory has approValues?', !!inventories[0].approValues);
+    console.log('[PDF Component] First inventory has sortieValues?', !!inventories[0].sortieValues);
+    console.log('[PDF Component] First inventory approValues:', inventories[0].approValues);
+    console.log('[PDF Component] First inventory sortieValues:', inventories[0].sortieValues);
+  }
 
   // Dynamic section visibility
   const approFields = productionCenter.approFieldConfigs || [];
@@ -285,6 +293,15 @@ const DynamicMonthlyProductionPDF = ({
     const value = inventory.approValues?.find(
       (av: any) => av.fieldConfig?.name === fieldName
     );
+    // Debug logging
+    if (fieldName === 'butanier' && inventory.approValues) {
+      console.log(`[PDF] Checking approValue for ${fieldName}:`, {
+        approValuesCount: inventory.approValues.length,
+        approValues: inventory.approValues,
+        foundValue: value,
+        result: value?.value ?? 0
+      });
+    }
     return value?.value ?? 0;
   };
 
@@ -292,6 +309,15 @@ const DynamicMonthlyProductionPDF = ({
     const value = inventory.sortieValues?.find(
       (sv: any) => sv.fieldConfig?.name === fieldName
     );
+    // Debug logging
+    if (fieldName === 'ngabou' && inventory.sortieValues) {
+      console.log(`[PDF] Checking sortieValue for ${fieldName}:`, {
+        sortieValuesCount: inventory.sortieValues.length,
+        sortieValues: inventory.sortieValues,
+        foundValue: value,
+        result: value?.value ?? 0
+      });
+    }
     return value?.value ?? 0;
   };
 
