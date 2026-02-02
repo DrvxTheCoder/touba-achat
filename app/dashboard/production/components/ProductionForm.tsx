@@ -49,6 +49,7 @@ export default function ProductionForm({
     volumeLiquide: s.volumeLiquide || 0,
     pressionInterne: s.pressionInterne || 0,
     densiteA15C: s.densiteA15C || 0,
+    tankPercentage: s.tankPercentage || 0,
     // 6 calculated fields (optional, will be recalculated in UI)
     facteurCorrectionLiquide: s.facteurCorrectionLiquide,
     facteurCorrectionVapeur: s.facteurCorrectionVapeur,
@@ -100,7 +101,8 @@ export default function ProductionForm({
     heureDebut: inventory.heureDebut || '',
     heureFin: inventory.heureFin || '',
     bottles: inventory.bottles || [],
-    reservoirs: transformedReservoirs
+    reservoirs: transformedReservoirs,
+    densiteAmbiante: (inventory as any).densiteAmbiante || 0
   });
 
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -273,6 +275,7 @@ export default function ProductionForm({
         type: b.type,
         quantity: b.quantity || 0
       })),
+      densiteAmbiante: formData.densiteAmbiante,
       reservoirs: formData.reservoirs.map((s: any) => ({
         name: s.name,
         reservoirConfigId: s.reservoirConfigId,
@@ -282,6 +285,7 @@ export default function ProductionForm({
         volumeLiquide: s.volumeLiquide || 0,
         pressionInterne: s.pressionInterne || 0,
         densiteA15C: s.densiteA15C || 0,
+        tankPercentage: s.tankPercentage || 0,
         poidsLiquide: s.poidsLiquide || 0
       }))
     };
@@ -360,6 +364,11 @@ export default function ProductionForm({
               onUpdate={updateReservoirs}
               disabled={disabled}
               productionCenterId={inventory.productionCenterId}
+              densiteAmbiante={formData.densiteAmbiante}
+              onDensiteAmbianteChange={(value) => {
+                setFormData(prev => ({ ...prev, densiteAmbiante: value }));
+                setAutoSaveStatus('idle');
+              }}
             />
           </TabsContent>
         </Tabs>

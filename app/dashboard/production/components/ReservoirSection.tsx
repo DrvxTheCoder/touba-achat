@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, Info, Calculator } from 'lucide-react';
-import { calculateSphereData, validateSphereInput, SphereInputData } from '@/lib/utils/sphereCalculations';
+import { calculateSphereData, validateSphereInput, SphereInputData, calculatePercentageBased } from '@/lib/utils/sphereCalculations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ReservoirType, CalculationMode } from '@prisma/client';
@@ -29,6 +29,7 @@ interface Reservoir {
   volumeLiquide: number;
   pressionInterne: number;
   densiteA15C: number;
+  tankPercentage: number;
   // 6 champs calculés
   facteurCorrectionLiquide?: number;
   facteurCorrectionVapeur?: number;
@@ -43,13 +44,17 @@ interface ReservoirsSectionProps {
   onUpdate: (reservoirs: Reservoir[]) => void;
   disabled: boolean;
   productionCenterId?: number | null;
+  densiteAmbiante?: number;
+  onDensiteAmbianteChange?: (value: number) => void;
 }
 
 export default function ReservoirSection({
   reservoirs,
   onUpdate,
   disabled,
-  productionCenterId
+  productionCenterId,
+  densiteAmbiante: sharedDensiteAmbiante,
+  onDensiteAmbianteChange
 }: ReservoirsSectionProps) {
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
   const [reservoirConfigs, setReservoirConfigs] = useState<ReservoirConfig[]>([]);
@@ -80,6 +85,7 @@ export default function ReservoirSection({
               volumeLiquide: 0,
               pressionInterne: 0,
               densiteA15C: 0,
+              tankPercentage: 0,
             }));
             onUpdate(initialReservoirs);
           }
@@ -213,6 +219,53 @@ export default function ReservoirSection({
     }
   };
 
+  // Check if any reservoir uses PERCENTAGE_BASED mode
+  const hasPercentageBasedReservoirs = reservoirConfigs.some(c => c.calculationMode === 'PERCENTAGE_BASED');
+
+  const updatePercentageReservoir = (index: number, tankPercentage: number) => {
+    const updated = [...reservoirs];
+    const reservoir = updated[index];
+    const config = reservoirConfigs.find(c => c.id === reservoir.reservoirConfigId);
+    const capacity = config?.capacity || 0;
+
+    const poidsLiquide = (sharedDensiteAmbiante && tankPercentage > 0 && capacity > 0)
+      ? calculatePercentageBased(tankPercentage, capacity, sharedDensiteAmbiante)
+      : undefined;
+
+    updated[index] = {
+      ...reservoir,
+      tankPercentage,
+      poidsLiquide,
+      poidsTotal: poidsLiquide,
+      densiteAmbiante: sharedDensiteAmbiante,
+    };
+    onUpdate(updated);
+  };
+
+  // Recalculate all percentage-based reservoirs when shared DA changes
+  const handleDensiteAmbianteChange = (value: number) => {
+    onDensiteAmbianteChange?.(value);
+
+    // Recalculate all percentage-based reservoirs
+    const updated = reservoirs.map(reservoir => {
+      const config = reservoirConfigs.find(c => c.id === reservoir.reservoirConfigId);
+      if (config?.calculationMode !== 'PERCENTAGE_BASED') return reservoir;
+
+      const capacity = config.capacity || 0;
+      const poidsLiquide = (value > 0 && reservoir.tankPercentage > 0 && capacity > 0)
+        ? calculatePercentageBased(reservoir.tankPercentage, capacity, value)
+        : undefined;
+
+      return {
+        ...reservoir,
+        poidsLiquide,
+        poidsTotal: poidsLiquide,
+        densiteAmbiante: value,
+      };
+    });
+    onUpdate(updated);
+  };
+
   const totalStockFinal = reservoirs.reduce((sum, r) => sum + (r.poidsLiquide || 0), 0);
   const allReservoirsCalculated = reservoirs.every(r => r.poidsLiquide !== undefined && r.poidsLiquide > 0);
 
@@ -271,6 +324,32 @@ export default function ReservoirSection({
         </Alert> */}
       </div>
 
+      {/* Shared Densité Ambiante input for PERCENTAGE_BASED reservoirs */}
+      {hasPercentageBasedReservoirs && (
+        <Card className="p-6 border-indigo-200 bg-indigo-50/50 dark:bg-indigo-950/20">
+          <div className="space-y-3">
+            <h4 className="font-semibold text-indigo-700 dark:text-indigo-300">
+              Densité ambiante (partagée)
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Cette valeur est utilisée pour le calcul du poids liquide de tous les réservoirs en mode pourcentage.
+            </p>
+            <div className="max-w-xs">
+              <Input
+                type="number"
+                step="0.001"
+                min="0"
+                value={sharedDensiteAmbiante || 0}
+                onChange={(e) => handleDensiteAmbianteChange(parseFloat(e.target.value) || 0)}
+                disabled={disabled}
+                className="font-mono text-lg"
+                placeholder="0.000"
+              />
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="space-y-6">
         {reservoirs.map((reservoir, index) => {
           const hasErrors = validationErrors[reservoir.name]?.length > 0;
@@ -279,6 +358,7 @@ export default function ReservoirSection({
           const capacity = config?.capacity || 0;
           const isCigare = config?.type === 'CIGARE';
           const isManualMode = config?.calculationMode === 'MANUAL';
+          const isPercentageMode = config?.calculationMode === 'PERCENTAGE_BASED';
 
           return (
             <Card key={reservoir.name} className={`p-6 ${hasErrors ? 'border-red-300' : isCalculated ? 'border-green-300' : ''}`}>
@@ -298,14 +378,16 @@ export default function ReservoirSection({
                           {config.type}
                         </span>
                         <span className={`text-xs px-2 py-1 rounded ${
-                          isManualMode ? 'bg-orange-100 text-orange-800' : 'bg-purple-100 text-purple-800'
+                          isManualMode ? 'bg-orange-100 text-orange-800' :
+                          isPercentageMode ? 'bg-indigo-100 text-indigo-800' :
+                          'bg-purple-100 text-purple-800'
                         }`}>
-                          {isManualMode ? 'Manuel' : 'Auto'}
+                          {isManualMode ? 'Manuel' : isPercentageMode ? '%' : 'Auto'}
                         </span>
                       </>
                     )}
                     <span className="text-xs text-muted-foreground">
-                      (Capacité: {capacity.toFixed(2)} m³)
+                      (Capacité: {capacity.toFixed(2)} m³{isPercentageMode ? ` / ${(capacity * 1000).toFixed(0)} L` : ''})
                     </span>
                   </div>
                   {isCalculated && !hasErrors && (
@@ -317,7 +399,49 @@ export default function ReservoirSection({
                 </div>
 
                 {/* Conditional rendering based on calculation mode */}
-                {isManualMode ? (
+                {isPercentageMode ? (
+                  // PERCENTAGE_BASED MODE: Tank percentage input
+                  <div className="space-y-4">
+                    <Alert className="border-indigo-200 bg-indigo-50 dark:bg-indigo-950/30">
+                      <Info className="h-4 w-4 text-indigo-600" />
+                      <AlertDescription className="text-xs text-indigo-900 dark:text-indigo-100">
+                        <strong>Mode pourcentage:</strong> Saisir le pourcentage du réservoir. Le poids liquide est calculé automatiquement avec la densité ambiante partagée.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Pourcentage réservoir (%)
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={reservoir.tankPercentage || 0}
+                        onChange={(e) => updatePercentageReservoir(index, parseFloat(e.target.value) || 0)}
+                        disabled={disabled}
+                        className="font-mono text-lg"
+                        placeholder="0.0"
+                      />
+                    </div>
+                    {isCalculated && !hasErrors && (
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-muted p-2 rounded">
+                            <div className="text-muted-foreground">Densité ambiante</div>
+                            <div className="font-mono font-semibold">{sharedDensiteAmbiante?.toFixed(4)}</div>
+                          </div>
+                          <div className="bg-green-100 dark:bg-green-950 p-3 rounded">
+                            <div className="text-muted-foreground font-semibold">POIDS LIQUIDE</div>
+                            <div className="font-mono font-bold text-lg text-green-700 dark:text-green-300">
+                              {reservoir.poidsLiquide?.toFixed(3)} T
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : isManualMode ? (
                   // MANUAL MODE: Simple tonnage input
                   <div className="space-y-4">
                     <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/30">
@@ -490,7 +614,7 @@ export default function ReservoirSection({
                 )}
 
                 {/* Affichage des résultats calculés */}
-                {isCalculated && !hasErrors && !isManualMode && (
+                {isCalculated && !hasErrors && !isManualMode && !isPercentageMode && (
                   <div className="mt-4 pt-4 border-t">
                     <h5 className="text-sm font-semibold mb-3 text-blue-600 dark:text-blue-400">
                       📊 Résultats calculés automatiquement

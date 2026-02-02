@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, FileSpreadsheet, FileText, Printer, Eye } from 'lucide-react';
+import { Download, FileText, Printer, Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -15,9 +16,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useSession } from 'next-auth/react';
+
+const ITEMS_PER_PAGE = 15;
 
 export default function ListeInventairesPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isExporting, setIsExporting] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
@@ -26,6 +31,17 @@ export default function ListeInventairesPage() {
   const [productionCenters, setProductionCenters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCenters, setLoadingCenters] = useState(true);
+  const [isPrivileged, setIsPrivileged] = useState(true);
+  const [userCenterId, setUserCenterId] = useState<number | null>(null);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  // Search
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Generate years (current year and 5 years back)
   const currentYear = new Date().getFullYear();
@@ -46,17 +62,61 @@ export default function ListeInventairesPage() {
     { value: '12', label: 'Décembre' },
   ];
 
+  // Fetch user's center assignment
   useEffect(() => {
-    loadInventories();
+    const fetchUserCenter = async () => {
+      try {
+        const res = await fetch('/api/production/settings/centers/mine');
+        if (!res.ok) return;
+        const data = await res.json();
+        setIsPrivileged(data.isPrivileged);
+        if (!data.isPrivileged && data.center) {
+          setUserCenterId(data.center.id);
+          setSelectedCenterId(data.center.id.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching user center:', error);
+      }
+    };
+    fetchUserCenter();
+  }, []);
+
+  useEffect(() => {
     loadProductionCenters();
   }, []);
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Reload inventories when filters change
+  useEffect(() => {
+    loadInventories();
+  }, [page, selectedCenterId, searchQuery]);
+
   const loadInventories = async () => {
     try {
-      const res = await fetch('/api/production?limit=100');
+      setLoading(true);
+      let url = `/api/production?page=${page}&limit=${ITEMS_PER_PAGE}`;
+
+      if (selectedCenterId && selectedCenterId !== 'all') {
+        url += `&centerId=${selectedCenterId}`;
+      }
+      if (searchQuery) {
+        url += `&search=${encodeURIComponent(searchQuery)}`;
+      }
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Erreur de chargement');
       const response = await res.json();
       setInventories(response.data || []);
+      setTotalPages(response.pagination?.totalPages || 1);
+      setTotal(response.pagination?.total || 0);
     } catch (error) {
       console.error(error);
       toast.error('Erreur lors du chargement des inventaires');
@@ -77,6 +137,11 @@ export default function ListeInventairesPage() {
     } finally {
       setLoadingCenters(false);
     }
+  };
+
+  const handleCenterChange = (value: string) => {
+    setSelectedCenterId(value);
+    setPage(1);
   };
 
   const handleExport = async (format: 'excel' | 'pdf') => {
@@ -100,6 +165,10 @@ export default function ListeInventairesPage() {
       }
       const metrics = await metricsRes.json();
 
+      const exportCenterId = !isPrivileged && userCenterId
+        ? userCenterId
+        : (selectedCenterId !== 'all' ? parseInt(selectedCenterId) : undefined);
+
       const response = await fetch('/api/production/export', {
         method: 'POST',
         headers: {
@@ -110,13 +179,13 @@ export default function ListeInventairesPage() {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           capaciteTotale: metrics.capaciteTotale,
-          ...(selectedCenterId !== 'all' && { productionCenterId: parseInt(selectedCenterId) }),
+          ...(exportCenterId && { productionCenterId: exportCenterId }),
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Erreur lors de l&apos;export');
+        throw new Error(error.error || 'Erreur lors de l\'export');
       }
 
       // Download file
@@ -142,7 +211,7 @@ export default function ListeInventairesPage() {
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Erreur', {
-        description: error instanceof Error ? error.message : 'Erreur lors de l&apos;export',
+        description: error instanceof Error ? error.message : 'Erreur lors de l\'export',
         id: loadingToast,
       });
     } finally {
@@ -169,6 +238,10 @@ export default function ListeInventairesPage() {
       }
       const metrics = await metricsRes.json();
 
+      const exportCenterId = !isPrivileged && userCenterId
+        ? userCenterId
+        : (selectedCenterId !== 'all' ? parseInt(selectedCenterId) : undefined);
+
       const response = await fetch('/api/production/export', {
         method: 'POST',
         headers: {
@@ -179,7 +252,7 @@ export default function ListeInventairesPage() {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           capaciteTotale: metrics.capaciteTotale,
-          ...(selectedCenterId !== 'all' && { productionCenterId: parseInt(selectedCenterId) }),
+          ...(exportCenterId && { productionCenterId: exportCenterId }),
         }),
       });
 
@@ -236,7 +309,7 @@ export default function ListeInventairesPage() {
               <Label htmlFor="year">Année</Label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger id="year">
-                  <SelectValue placeholder="Sélectionner l&apos;année" />
+                  <SelectValue placeholder="Sélectionner l'année" />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((year) => (
@@ -268,12 +341,18 @@ export default function ListeInventairesPage() {
             {/* Production Center Selection */}
             <div className="space-y-2">
               <Label htmlFor="center">Centre de Production</Label>
-              <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
+              <Select
+                value={selectedCenterId}
+                onValueChange={handleCenterChange}
+                disabled={!isPrivileged}
+              >
                 <SelectTrigger id="center">
                   <SelectValue placeholder="Sélectionner un centre" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les centres</SelectItem>
+                  {isPrivileged && (
+                    <SelectItem value="all">Tous les centres</SelectItem>
+                  )}
                   {productionCenters.map((center) => (
                     <SelectItem key={center.id} value={center.id.toString()}>
                       {center.name}
@@ -281,20 +360,16 @@ export default function ListeInventairesPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {!isPrivileged && (
+                <p className="text-xs text-muted-foreground">
+                  Vous ne pouvez exporter que pour votre centre assigné.
+                </p>
+              )}
             </div>
           </div>
 
           {/* Export Buttons */}
           <div className="flex flex-wrap gap-3 pt-2">
-            {/* <Button
-              onClick={() => handleExport('excel')}
-              disabled={isExporting}
-              className="flex items-center gap-2"
-              variant="outline"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Exporter en Excel
-            </Button> */}
             <Button
               onClick={() => handleExport('pdf')}
               disabled={isExporting}
@@ -323,7 +398,18 @@ export default function ListeInventairesPage() {
       {/* Inventory List */}
       <Card>
         <CardHeader>
-          <CardTitle>Liste des Inventaires</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle>Liste des Inventaires ({total})</CardTitle>
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par date (jj/mm) ou nom..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -336,79 +422,133 @@ export default function ListeInventairesPage() {
               <p>Aucun inventaire trouvé.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-semibold">Date</th>
-                    <th className="text-left p-3 font-semibold">Centre</th>
-                    <th className="text-left p-3 font-semibold">Statut</th>
-                    <th className="text-left p-3 font-semibold">Stock Final (T)</th>
-                    <th className="text-left p-3 font-semibold">Écart (%)</th>
-                    <th className="text-left p-3 font-semibold">Rendement (%)</th>
-                    <th className="text-left p-3 font-semibold">Bouteilles</th>
-                    <th className="text-right p-3 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {inventories.map((inventory) => (
-                    <tr key={inventory.id} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className="p-3">
-                        {new Date(inventory.date).toLocaleDateString('fr-FR')}
-                      </td>
-                      <td className="p-3">
-                        {inventory.productionCenter?.name || 'Non spécifié'}
-                      </td>
-                      <td className="p-3">
-                        <Badge
-                          variant={
-                            inventory.status === 'TERMINE'
-                              ? 'default'
-                              : inventory.status === 'EN_COURS'
-                              ? 'secondary'
-                              : 'outline'
-                          }
-                        >
-                          {inventory.status === 'TERMINE'
-                            ? 'Terminé'
-                            : inventory.status === 'EN_COURS'
-                            ? 'En cours'
-                            : 'Archivé'}
-                        </Badge>
-                      </td>
-                      <td className="p-3">
-                        {inventory.stockFinalPhysique?.toFixed(3) || '0.000'}
-                      </td>
-                      <td className="p-3">
-                        <span
-                          className={
-                            Math.abs(inventory.ecartPourcentage || 0) > 5
-                              ? 'text-red-600 font-semibold'
-                              : ''
-                          }
-                        >
-                          {inventory.ecartPourcentage?.toFixed(2) || '0.00'}%
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        {inventory.rendement?.toFixed(2) || '0.00'}%
-                      </td>
-                      <td className="p-3">{inventory.totalBottlesProduced || 0}</td>
-                      <td className="p-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/dashboard/production/${inventory.id}`)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Voir
-                        </Button>
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-semibold">Date</th>
+                      <th className="text-left p-3 font-semibold">Centre</th>
+                      <th className="text-left p-3 font-semibold">Démarré par</th>
+                      <th className="text-left p-3 font-semibold">Statut</th>
+                      <th className="text-left p-3 font-semibold">Stock Final (T)</th>
+                      <th className="text-left p-3 font-semibold">Écart (%)</th>
+                      <th className="text-left p-3 font-semibold">Rendement (%)</th>
+                      <th className="text-left p-3 font-semibold">Bouteilles</th>
+                      <th className="text-right p-3 font-semibold">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {inventories.map((inventory) => (
+                      <tr key={inventory.id} className="border-b hover:bg-muted/50 transition-colors">
+                        <td className="p-3">
+                          {new Date(inventory.date).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="p-3">
+                          {inventory.productionCenter?.name || 'Non spécifié'}
+                        </td>
+                        <td className="p-3 text-sm">
+                          {inventory.startedBy?.name || '-'}
+                        </td>
+                        <td className="p-3">
+                          <Badge
+                            variant={
+                              inventory.status === 'TERMINE'
+                                ? 'default'
+                                : inventory.status === 'EN_COURS'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                          >
+                            {inventory.status === 'TERMINE'
+                              ? 'Terminé'
+                              : inventory.status === 'EN_COURS'
+                              ? 'En cours'
+                              : 'Archivé'}
+                          </Badge>
+                        </td>
+                        <td className="p-3">
+                          {inventory.stockFinalPhysique?.toFixed(3) || '0.000'}
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={
+                              Math.abs(inventory.ecartPourcentage || 0) > 5
+                                ? 'text-red-600 font-semibold'
+                                : Math.abs(inventory.ecartPourcentage || 0) > 2
+                                ? 'text-yellow-600'
+                                : 'text-green-600'
+                            }
+                          >
+                            {inventory.ecartPourcentage?.toFixed(2) || '0.00'}%
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          {inventory.rendement?.toFixed(2) || '0.00'}%
+                        </td>
+                        <td className="p-3">{inventory.totalBottlesProduced || 0}</td>
+                        <td className="p-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push(`/dashboard/production/${inventory.id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Voir
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    Page {page} sur {totalPages} ({total} inventaires)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(1)}
+                      disabled={page === 1}
+                    >
+                      Début
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm font-medium px-2">
+                      {page}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(totalPages)}
+                      disabled={page === totalPages}
+                    >
+                      Fin
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

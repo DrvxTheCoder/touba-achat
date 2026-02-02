@@ -173,6 +173,7 @@ export interface CompleteInventoryData {
   tempsTotal?: number;
   approValues?: Record<string, number>;
   sortieValues?: Record<string, number>;
+  densiteAmbiante?: number;
   bottles: Array<{
     type: BottleType;
     quantity: number;
@@ -186,6 +187,7 @@ export interface CompleteInventoryData {
     volumeLiquide: number;
     pressionInterne: number;
     densiteA15C: number;
+    tankPercentage?: number;
     poidsLiquide?: number;
   }>;
 }

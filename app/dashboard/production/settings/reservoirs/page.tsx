@@ -66,6 +66,7 @@ const RESERVOIR_TYPES = [
 const CALCULATION_MODES = [
   { value: 'AUTOMATIC', label: 'Automatique', description: 'Calculs automatiques avec tous les champs de saisie', color: 'bg-purple-100 text-purple-800' },
   { value: 'MANUAL', label: 'Manuel', description: 'Saisie manuelle directe du poids liquide', color: 'bg-orange-100 text-orange-800' },
+  { value: 'PERCENTAGE_BASED', label: 'Pourcentage', description: 'Calcul basé sur % réservoir × capacité × densité ambiante', color: 'bg-indigo-100 text-indigo-800' },
 ];
 
 export default function ReservoirsSettings() {

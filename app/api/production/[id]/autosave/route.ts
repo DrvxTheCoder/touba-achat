@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { prisma } from '@/lib/prisma';
-import { calculateSphereData, validateSphereInput, SphereInputData } from '@/lib/utils/sphereCalculations';
+import { calculateSphereData, validateSphereInput, SphereInputData, calculatePercentageBased } from '@/lib/utils/sphereCalculations';
 
 // Poids unitaires des bouteilles
 const BOTTLE_WEIGHTS: Record<string, number> = {
@@ -62,6 +62,7 @@ export async function PATCH(
       // Time fields
       if (data.heureDebut !== undefined) updateData.heureDebut = data.heureDebut;
       if (data.heureFin !== undefined) updateData.heureFin = data.heureFin;
+      if (data.densiteAmbiante !== undefined) updateData.densiteAmbiante = data.densiteAmbiante;
 
       await tx.productionInventory.update({
         where: { id: inventoryId },
@@ -182,12 +183,41 @@ export async function PATCH(
               volumeLiquide: reservoirInput.volumeLiquide || 0,
               pressionInterne: reservoirInput.pressionInterne || 0,
               densiteA15C: reservoirInput.densiteA15C || 0.5,
+              tankPercentage: 0,
               poidsLiquide: reservoirInput.poidsLiquide || 0,
               poidsGaz: 0,
               poidsTotal: reservoirInput.poidsLiquide || 0,
               facteurCorrectionLiquide: 1,
               facteurCorrectionVapeur: 1,
               densiteAmbiante: 0.5
+            };
+          } else if (reservoirConfig.calculationMode === 'PERCENTAGE_BASED') {
+            // PERCENTAGE_BASED MODE: Calculate from tank percentage, capacity, and shared densité ambiante
+            const tankPercentage = reservoirInput.tankPercentage || 0;
+            const sharedDensiteAmbiante = data.densiteAmbiante || 0;
+            const capacityM3 = reservoirConfig.capacity;
+
+            const poidsLiquide = (tankPercentage > 0 && sharedDensiteAmbiante > 0)
+              ? calculatePercentageBased(tankPercentage, capacityM3, sharedDensiteAmbiante)
+              : (reservoirInput.poidsLiquide || 0);
+
+            reservoirData = {
+              inventoryId,
+              name: reservoirInput.name,
+              reservoirConfigId: reservoirInput.reservoirConfigId,
+              hauteur: 0,
+              temperature: 20,
+              temperatureVapeur: 20,
+              volumeLiquide: 0,
+              pressionInterne: 0,
+              densiteA15C: 0,
+              tankPercentage,
+              poidsLiquide,
+              poidsGaz: 0,
+              poidsTotal: poidsLiquide,
+              facteurCorrectionLiquide: 0,
+              facteurCorrectionVapeur: 0,
+              densiteAmbiante: sharedDensiteAmbiante
             };
           } else {
             // AUTOMATIC MODE: Try to calculate if all fields are valid
@@ -215,6 +245,7 @@ export async function PATCH(
                     volumeLiquide: calculatedSphere.volumeLiquide,
                     pressionInterne: calculatedSphere.pressionInterne,
                     densiteA15C: calculatedSphere.densiteA15C,
+                    tankPercentage: 0,
                     facteurCorrectionLiquide: calculatedSphere.facteurCorrectionLiquide,
                     facteurCorrectionVapeur: calculatedSphere.facteurCorrectionVapeur,
                     densiteAmbiante: calculatedSphere.densiteAmbiante,
@@ -240,6 +271,7 @@ export async function PATCH(
                 volumeLiquide: reservoirInput.volumeLiquide || 0,
                 pressionInterne: reservoirInput.pressionInterne || 0,
                 densiteA15C: reservoirInput.densiteA15C || 0,
+                tankPercentage: reservoirInput.tankPercentage || 0,
                 poidsLiquide: reservoirInput.poidsLiquide || 0,
                 poidsGaz: reservoirInput.poidsGaz || 0,
                 poidsTotal: reservoirInput.poidsTotal || 0,

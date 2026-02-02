@@ -68,7 +68,7 @@ export default function AutoCalcs({
 
         {/* Total sorties */}
         <Card className="p-4 bg-red-50 dark:bg-red-950/30">
-          <div className="text-xs text-muted-foreground mb-1">Total sorties</div>
+          <div className="text-xs text-muted-foreground mb-1">Cumul Sortie</div>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
             -{totalSorties.toFixed(3)}
           </div>
@@ -80,7 +80,7 @@ export default function AutoCalcs({
 
         {/* Remplissage total */}
         <Card className="p-4 bg-primary/10">
-          <div className="text-xs text-muted-foreground mb-1">Production totale</div>
+          <div className="text-xs text-muted-foreground mb-1">Cumul Conditionné</div>
           <div className="text-2xl font-bold text-primary">
             {remplissageTotal.toFixed(3)}
           </div>

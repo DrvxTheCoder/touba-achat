@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { prisma } from '@/lib/prisma';
-import { calculateSphereData, validateSphereInput, SphereInputData } from '@/lib/utils/sphereCalculations';
+import { calculateSphereData, validateSphereInput, SphereInputData, calculatePercentageBased } from '@/lib/utils/sphereCalculations';
 import { z } from 'zod';
 
 // Poids unitaires des bouteilles
@@ -130,6 +130,7 @@ export async function POST(
             volumeLiquide: reservoirInput.volumeLiquide || 0,
             pressionInterne: reservoirInput.pressionInterne || 0,
             densiteA15C: reservoirInput.densiteA15C || 0.5,
+            tankPercentage: 0,
             // Use provided weight directly
             poidsLiquide: reservoirInput.poidsLiquide || 0,
             poidsGaz: 0,
@@ -140,6 +141,34 @@ export async function POST(
           };
 
           stockFinalPhysique += reservoirInput.poidsLiquide || 0;
+        } else if (reservoirConfig.calculationMode === 'PERCENTAGE_BASED') {
+          // PERCENTAGE_BASED MODE: Calculate from tank percentage, capacity, and shared densité ambiante
+          const tankPercentage = reservoirInput.tankPercentage || 0;
+          const sharedDensiteAmbiante = data.densiteAmbiante || 0;
+          const capacityM3 = reservoirConfig.capacity;
+
+          const poidsLiquide = calculatePercentageBased(tankPercentage, capacityM3, sharedDensiteAmbiante);
+
+          reservoirData = {
+            inventoryId,
+            name: reservoirInput.name,
+            reservoirConfigId: reservoirInput.reservoirConfigId,
+            hauteur: 0,
+            temperature: 20,
+            temperatureVapeur: 20,
+            volumeLiquide: 0,
+            pressionInterne: 0,
+            densiteA15C: 0,
+            tankPercentage,
+            poidsLiquide,
+            poidsGaz: 0,
+            poidsTotal: poidsLiquide,
+            facteurCorrectionLiquide: 0,
+            facteurCorrectionVapeur: 0,
+            densiteAmbiante: sharedDensiteAmbiante
+          };
+
+          stockFinalPhysique += poidsLiquide;
         } else {
           // AUTOMATIC MODE: Validate and calculate
           // Valider le schéma Zod
@@ -165,6 +194,7 @@ export async function POST(
             volumeLiquide: calculatedSphere.volumeLiquide,
             pressionInterne: calculatedSphere.pressionInterne,
             densiteA15C: calculatedSphere.densiteA15C,
+            tankPercentage: 0,
             // 6 champs calculés
             facteurCorrectionLiquide: calculatedSphere.facteurCorrectionLiquide,
             facteurCorrectionVapeur: calculatedSphere.facteurCorrectionVapeur,
@@ -288,7 +318,8 @@ export async function POST(
           heureFin: data.heureFin,
           tempsTotal,
           tempsUtile: tempsTotal - inventory.tempsArret,
-          observations: data.observations
+          observations: data.observations,
+          densiteAmbiante: data.densiteAmbiante || null
         },
         include: {
           bottles: true,
