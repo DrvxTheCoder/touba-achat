@@ -64,7 +64,6 @@ const getStatusLabel = (status: BDCStatus) => {
 };
 
 export function BDCTableRow({ bdc, onClick, isSelected }: BDCTableRowProps) {
-    // console.log('BDC in row:', bdc); // For debugging
 
     const truncatedTitle = truncateText(bdc?.title, 40);
     

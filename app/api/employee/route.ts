@@ -177,19 +177,15 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  console.log('DELETE request received for employee ID:', params.id);
 
   try {
     const id = parseInt(params.id);
 
-    console.log('Attempting to delete employee with ID:', id);
 
     // Delete the employee without checking if it exists first
     const deletedEmployee = await prisma.employee.delete({
       where: { id },
     });
-
-    console.log('Employee deleted:', deletedEmployee);
 
     return NextResponse.json({ message: 'Employee deleted successfully', employee: deletedEmployee }, { status: 200 });
   } catch (error) {

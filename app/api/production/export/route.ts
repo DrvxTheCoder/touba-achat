@@ -105,15 +105,6 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Debug logging for dynamic field values
-    console.log('=== EXPORT DEBUG ===');
-    console.log('Inventories count:', inventories.length);
-    if (inventories.length > 0) {
-      console.log('First inventory approValues:', JSON.stringify(inventories[0].approValues, null, 2));
-      console.log('First inventory sortieValues:', JSON.stringify(inventories[0].sortieValues, null, 2));
-    }
-    console.log('====================');
-
     if (format === 'excel') {
       // Créer un workbook Excel
       const workbook = XLSX.utils.book_new();

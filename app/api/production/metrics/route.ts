@@ -134,7 +134,30 @@ export async function GET(req: NextRequest) {
       }
     });
     const rendementHoraireMoyen = validRHCount > 0 ? totalRH / validRHCount : 0;
-    const pourcentage24TMoyen = rendementHoraireMoyen > 0 ? (rendementHoraireMoyen / 24) * 100 : 0;
+
+    // Fetch center hourly capacity for percentage calculation
+    let totalHourlyCapacity = 24; // default fallback
+    if (centerId && centerId !== 'null') {
+      const center = await prisma.productionCenter.findUnique({
+        where: { id: parseInt(centerId) },
+        select: { totalHourlyCapacity: true },
+      });
+      if (center) {
+        totalHourlyCapacity = center.totalHourlyCapacity;
+      }
+    } else {
+      // "All centers" — sum capacities across all centers
+      const allCenters = await prisma.productionCenter.findMany({
+        select: { totalHourlyCapacity: true },
+      });
+      if (allCenters.length > 0) {
+        totalHourlyCapacity = allCenters.reduce((sum, c) => sum + c.totalHourlyCapacity, 0);
+      }
+    }
+
+    const pourcentageCapaciteMoyen = rendementHoraireMoyen > 0 && totalHourlyCapacity > 0
+      ? (rendementHoraireMoyen / totalHourlyCapacity) * 100
+      : 0;
 
     const tempsTotal = inventories.reduce((sum, inv) => sum + inv.tempsTotal, 0);
     const tempsUtile = inventories.reduce((sum, inv) => sum + inv.tempsUtile, 0);
@@ -179,7 +202,9 @@ export async function GET(req: NextRequest) {
       totalBottlesProduced,
       cumulConditionee,
       rendementHoraireMoyen,
-      pourcentage24TMoyen,
+      pourcentageCapaciteMoyen,
+      totalHourlyCapacity,
+      pourcentage24TMoyen: pourcentageCapaciteMoyen, // backward compat alias
       tempsTotal,
       tempsUtile,
       ecartMoyenTonnes,
@@ -214,6 +239,8 @@ function emptyMetrics() {
     totalBottlesProduced: 0,
     cumulConditionee: 0,
     rendementHoraireMoyen: 0,
+    pourcentageCapaciteMoyen: 0,
+    totalHourlyCapacity: 24,
     pourcentage24TMoyen: 0,
     tempsTotal: 0,
     tempsUtile: 0,

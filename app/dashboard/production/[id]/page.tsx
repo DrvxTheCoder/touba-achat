@@ -30,6 +30,7 @@ import ProductionForm from '../components/ProductionForm';
 import { ProductionInventory } from '@/lib/types/production';
 import { ContentLayout } from '@/components/user-panel/content-layout';
 import DynamicBreadcrumbs from '@/components/DynamicBreadcrumbs';
+import { SpinnerCircular } from 'spinners-react';
 
 export default function ProductionDetailPage() {
   const params = useParams();
@@ -235,12 +236,16 @@ export default function ProductionDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Chargement...</p>
-        </div>
-      </div>
+            <main className="flex flex-1 flex-col gap-4 p-1 lg:gap-6 lg:p-6">
+              <div className="flex items-center justify-center rounded-lg h-[42rem] border border-dashed">
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <SpinnerCircular size={70} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
+                  <h3 className="text-2xl font-bold tracking-tight">
+                    Chargement...
+                  </h3>
+                </div>
+              </div>
+            </main>
     );
   }
 

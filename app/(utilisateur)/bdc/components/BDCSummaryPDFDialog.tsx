@@ -61,7 +61,6 @@ export function BDCSummaryPDFDialog({ bdc, onRefresh }: BDCSummaryPDFDialogProps
     setIsGenerating(true);
     setError(null);
     try {
-      console.log('Generating PDF...');
       const timelineEvents = bdc.auditLogs?.map(log => ({
         eventAt: log.eventAt.toString(),
         status: translateEvent(log.eventType),

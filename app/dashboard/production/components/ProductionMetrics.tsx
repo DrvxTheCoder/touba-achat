@@ -24,6 +24,8 @@ interface MetricsData {
   totalBottlesProduced: number;
   cumulConditionee: number;
   rendementHoraireMoyen: number;
+  pourcentageCapaciteMoyen: number;
+  totalHourlyCapacity: number;
   pourcentage24TMoyen: number;
   tempsTotal: number;
   tempsUtile: number;
@@ -130,7 +132,7 @@ export default function ProductionMetrics({ selectedCenterId, period, dateFrom, 
                 <div className="flex items-center gap-2 mt-1">
                   <Gauge className="h-3 w-3 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">
-                    {metrics.pourcentage24TMoyen.toFixed(2)}% {"(24T/h)"}
+                    {metrics.pourcentageCapaciteMoyen.toFixed(2)}% ({metrics.totalHourlyCapacity}T/h)
                   </p>
                 </div>
               </div>

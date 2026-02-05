@@ -121,7 +121,7 @@ const loadInventories = async () => {
 
       {inventories.map((inventory) => (
         <Card key={inventory.id} className="p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <h3 className="text-lg font-semibold">
@@ -136,15 +136,15 @@ const loadInventories = async () => {
                 </Badge>
               </div>
 
-              <div className="flex flex-row gap-4 text-sm text-muted-foreground">
+              <div className="flex md:flex-row flex-col md:gap-4 text-sm text-muted-foreground">
                 {inventory.productionCenter && (
                   <div>
-                    <span className="font-medium">Centre:</span>{' '}
-                    <b className='font-bold'>{inventory.productionCenter.name}</b>
+                    <span className="font-bold">Centre:</span>{' '}
+                    <b className='font-medium'>{inventory.productionCenter.name}</b>
                   </div>
                 )}
                 <div>
-                  <span className="font-medium">Démarré par:</span>{' '}
+                  <span className="font-bold">Démarré par:</span>{' '}
                   {inventory.startedBy?.name}
                 </div>
                 {/* <div className="flex items-center gap-1">
@@ -154,7 +154,7 @@ const loadInventories = async () => {
                     ? `${inventory.rendement.toFixed(1)}% rendement`
                     : 'En cours...'}
                 </div> */}
-                {inventory.status === 'TERMINE' && (
+                {/* {inventory.status === 'TERMINE' && (
                   <>
                     <div>
                       <span className="font-medium">Bouteilles:</span>{' '}
@@ -173,22 +173,12 @@ const loadInventories = async () => {
                     <span className="font-medium">Arrêts:</span>{' '}
                     {inventory.arrets.length} ({formatDuration(inventory.tempsArret)})
                   </div>
-                )}
+                )} */}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {inventory.status === 'TERMINE' && isAdmin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/dashboard/production/${inventory.id}?edit=true`)}
-                  className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
-                </Button>
-              )}
+
               <Button
                 variant="outline"
                 size="sm"
@@ -197,6 +187,16 @@ const loadInventories = async () => {
                 <Eye className="h-4 w-4 mr-2" />
                 Voir
               </Button>
+            {inventory.status === 'TERMINE' && isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/dashboard/production/${inventory.id}?edit=true`)}
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             </div>
           </div>
         </Card>

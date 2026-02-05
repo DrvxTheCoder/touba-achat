@@ -114,7 +114,6 @@ export const authOptions: NextAuthOptions = {
             status: user.status,
             isSimpleUser: user.role === Role.USER,
           } as User;
-          console.log(userInfo);
           return {
             id: user.id.toString(),
             email: user.email,

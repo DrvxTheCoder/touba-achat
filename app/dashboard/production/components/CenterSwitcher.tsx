@@ -117,10 +117,12 @@ export default function CenterSwitcher({ className, onCenterChange }: CenterSwit
       const data: ProductionCenter[] = await response.json();
 
       // If user can manage multiple centers, add "All Centers" option
+      // Auto-select the first actual center to avoid confusion
       if (canManageMultipleCenters) {
         setCenters([ALL_CENTERS, ...data]);
-        setSelectedCenter(ALL_CENTERS);
-        onCenterChange && onCenterChange(null);
+        const defaultCenter = data.length > 0 ? data[0] : ALL_CENTERS;
+        setSelectedCenter(defaultCenter);
+        onCenterChange && onCenterChange(defaultCenter.id === -1 ? null : defaultCenter);
       } else {
         // Find the center where user is chef
         const userCenter = data.find(

@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error) {
       try {
         const parsedError = JSON.parse(error.message);
-        console.log(parsedError);
         return NextResponse.json(          { 
           error: 'server_error',
           message: 'Une erreur interne du serveur s\'est produite. Veuillez ressayer plus tard.'
@@ -39,7 +38,6 @@ export async function POST(req: NextRequest) {
         { status: 401 });
       } catch {
         // If parsing fails, it's not one of our custom errors
-        console.log(error.message)
         return NextResponse.json(
           { 
             error: 'unknown_error',

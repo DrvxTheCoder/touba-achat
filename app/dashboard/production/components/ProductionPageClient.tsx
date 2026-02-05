@@ -119,7 +119,7 @@ export default function ProductionPageClient({
 
   return (
     <TooltipProvider>
-      <main className="px-4 sm:px-8 mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <main className="px-4 sm:px-8 mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6 mb-80">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div>
