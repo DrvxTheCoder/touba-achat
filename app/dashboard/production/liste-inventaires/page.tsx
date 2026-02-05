@@ -360,11 +360,6 @@ export default function ListeInventairesPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {!isPrivileged && (
-                <p className="text-xs text-muted-foreground">
-                  Vous ne pouvez exporter que pour votre centre assigné.
-                </p>
-              )}
             </div>
           </div>
 

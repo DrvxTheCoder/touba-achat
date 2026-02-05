@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Package } from 'lucide-react';
 
 interface BottleProductionPieChartProps {
   selectedCenterId?: number | null;
+  period?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface BottleData {
@@ -21,8 +17,6 @@ interface BottleData {
   quantity: number;
   tonnage: number;
 }
-
-type TimePeriod = 'week' | 'month' | 'year';
 
 const COLORS = [
   '#3b82f6', // blue
@@ -34,21 +28,26 @@ const COLORS = [
   '#f97316', // orange
 ];
 
-export default function BottleProductionPieChart({ selectedCenterId }: BottleProductionPieChartProps) {
+export default function BottleProductionPieChart({ selectedCenterId, period, dateFrom, dateTo }: BottleProductionPieChartProps) {
   const [bottleData, setBottleData] = useState<BottleData[]>([]);
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('month');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchBottleData();
-  }, [selectedCenterId, timePeriod]);
+  }, [selectedCenterId, period, dateFrom, dateTo]);
 
   const fetchBottleData = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ period: timePeriod });
-      if (selectedCenterId) {
-        params.append('centerId', selectedCenterId.toString());
+      const params = new URLSearchParams();
+      if (selectedCenterId) params.set('centerId', selectedCenterId.toString());
+      if (dateFrom) {
+        params.set('dateFrom', dateFrom);
+        if (dateTo) params.set('dateTo', dateTo);
+      } else if (period) {
+        params.set('period', period);
+      } else {
+        params.set('period', 'month');
       }
 
       const response = await fetch(`/api/production/bottle-stats?${params}`);
@@ -64,7 +63,6 @@ export default function BottleProductionPieChart({ selectedCenterId }: BottlePro
     }
   };
 
-  // Format bottle names: replace underscores with dots
   const formatBottleName = (name: string): string => {
     return name.replace(/_/g, '.');
   };
@@ -124,22 +122,10 @@ export default function BottleProductionPieChart({ selectedCenterId }: BottlePro
   return (
     <Card className="h-full">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Bouteilles
-          </CardTitle>
-          <Select value={timePeriod} onValueChange={(value) => setTimePeriod(value as TimePeriod)}>
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">Cette semaine</SelectItem>
-              <SelectItem value="month">Ce mois</SelectItem>
-              <SelectItem value="year">Cette année</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Bouteilles
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
@@ -148,7 +134,6 @@ export default function BottleProductionPieChart({ selectedCenterId }: BottlePro
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Donut Chart */}
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -171,7 +156,6 @@ export default function BottleProductionPieChart({ selectedCenterId }: BottlePro
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Summary Stats */}
             <div className="flex flex-row items-center justify-center gap-3 pt-4 border-t">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Types</p>
