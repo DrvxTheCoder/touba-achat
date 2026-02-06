@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Package, Clock, TrendingUp, AlertTriangle, Gauge, DropletIcon } from 'lucide-react';
 import StockLiquidGauge from './StockLiquidGauge';
 import ReservoirStockCard from './ReservoirStockCard';
+import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 
 interface ProductionMetricsProps {
   selectedCenterId?: number | null;
@@ -217,7 +218,7 @@ function MetricCard({ title, value, icon, subtitle }: MetricCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-2">{value}</p>
+            <AnimatedNumber className='font-mono text-2xl font-bold mt-2' value={parseFloat(value)} />
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
@@ -245,7 +246,7 @@ function InfoCard({ title, value, description, className, icon }: InfoCardProps)
           <h4 className="text-sm font-medium text-muted-foreground">{title}</h4>
           {icon && <div>{icon}</div>}
         </div>
-        <p className="text-2xl font-bold mb-1">{value}</p>
+        <AnimatedNumber className='font-mono text-2xl font-bold' value={parseFloat(value)} />
         <p className="text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>

@@ -170,7 +170,7 @@ export default function ProductionPageClient({
         {canView && (
           <div className="flex flex-wrap items-center gap-2">
             {/* Time Preset Buttons */}
-            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 border-muted">
               {PRESETS.map(({ value, label, icon: Icon }) => (
                 <Tooltip key={value}>
                   <TooltipTrigger asChild>
