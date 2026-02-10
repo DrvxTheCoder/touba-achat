@@ -208,10 +208,16 @@ enum ProductionStatus {
 }
 
 enum ArretType {
-  INCIDENT_TECHNIQUE
-  PANNE
-  MAINTENANCE
-  AUTRE
+  BASCULES              // Problèmes de bascules
+  CHANGEMENT_FORMAT     // Changement de format de bouteilles
+  SENSIBILISATION       // Session de sensibilisation
+  VEHICULE_MANQUANT     // Véhicule manquant
+  VEHICULE_EN_PANNE     // Véhicule en panne
+  BOUTEILLES_MANQUANTES // Bouteilles manquantes
+  INCIDENT_TECHNIQUE    // Incident technique
+  PANNE                 // Panne équipement
+  MAINTENANCE           // Maintenance préventive/curative
+  AUTRE                 // Autre raison
 }
 
 enum BottleType {

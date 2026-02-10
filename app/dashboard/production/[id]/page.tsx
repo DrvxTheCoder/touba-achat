@@ -45,6 +45,22 @@ export default function ProductionDetailPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
+  const arretTypeLabels: Record<string, string> = {
+  BASCULES: "Problèmes de bascules",
+  CHANGEMENT_FORMAT: "Changement de format de bouteilles",
+  SENSIBILISATION: "Arret Sensibilisation",
+  VEHICULE_MANQUANT: "Véhicule manquant",
+  VEHICULE_EN_PANNE: "Véhicule en panne",
+  BOUTEILLES_MANQUANTES: "Bouteilles manquantes",
+  INCIDENT_TECHNIQUE: "Incident technique",
+  PANNE: "Panne équipement",
+  MAINTENANCE: "Maintenance préventive/curative",
+  AUTRE: "Autre raison",
+};
+
+const formatArretType = (type?: string) =>
+  type ? arretTypeLabels[type] ?? type : "";
+
   // Check if user is admin
   const isAdmin = session?.user?.role && ['ADMIN', 'IT_ADMIN'].includes(session.user.role);
 
@@ -401,7 +417,7 @@ export default function ProductionDetailPage() {
                 className="flex items-center justify-between p-3 bg-muted rounded-lg"
               >
                 <div className="flex-1">
-                  <div className="font-medium">{arret.type}</div>
+                  <div className="font-medium">{formatArretType(arret.type)}</div>
                   <div className="text-sm text-muted-foreground">
                     Ajouté le {new Date(arret.createdAt).toLocaleString('fr-FR')}
                   </div>

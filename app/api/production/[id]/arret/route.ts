@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const arretSchema = z.object({
-  type: z.enum(['INCIDENT_TECHNIQUE', 'PANNE', 'MAINTENANCE', 'AUTRE']),
+  type: z.enum(['INCIDENT_TECHNIQUE', 'PANNE', 'MAINTENANCE', 'AUTRE', 'BASCULES', 'CHANGEMENT_FORMAT', 'SENSIBILISATION', 'VEHICULE_MANQUANT', 'VEHICULE_EN_PANNE', 'BOUTEILLES_MANQUANTES']),
   duree: z.number().int().positive(),
   remarque: z.string().optional()
 });
