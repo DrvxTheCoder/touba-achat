@@ -270,50 +270,41 @@ export default function ProductionDetailPage() {
   const isTermine = inventory.status === 'TERMINE';
 
   return (
-    <div className="container mx-auto py-6 space-y-6 pb-20">
+    <div className="container px-2 md:px-6 py-6 space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => router.push('/dashboard/production')}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
+            <ArrowLeft className="h-4 w-4 md:mr-2" />
+            <span className='hidden md:block'>Retour</span>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">
-              Inventaire du {new Date(inventory.date).toLocaleDateString('fr-FR')}
-              {isEditMode && <span className="ml-2 text-orange-600">(Mode édition)</span>}
+            <h1 className="text-lg md:text-2xl font-bold wrap">
+              INV/{new Date(inventory.date).toLocaleDateString('fr-FR')}
+              {/* {isEditMode && <span className="ml-2 text-orange-600">(Mode édition)</span>} */}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Démarré par {inventory.startedBy?.name}
+              Cloturé par {inventory.startedBy?.name}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Edit mode controls */}
-          {isEditMode && (
-            <Button
-              variant="outline"
-              onClick={handleCancelEdit}
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Annuler
-            </Button>
-          )}
+
 
           {/* Edit button for completed inventories (admin only) */}
           {isTermine && !isEditMode && isAdmin && (
             <Button
               variant="outline"
+              size={'icon'}
               onClick={() => setIsEditMode(true)}
               className="text-orange-600 border-orange-200 hover:bg-orange-50"
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Modifier
+              <Edit className="h-4 w-4" />
             </Button>
           )}
 
@@ -340,7 +331,7 @@ export default function ProductionDetailPage() {
           {isTermine && !isEditMode && (
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-semibold">Terminé</span>
+              <span className="font-semibold hidden md:inline">Terminé</span>
             </div>
           )}
         </div>
@@ -348,19 +339,27 @@ export default function ProductionDetailPage() {
 
       {/* Edit mode banner */}
       {isEditMode && (
-        <Card className="p-4 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800">
-          <div className="flex items-center gap-3">
-            <Edit className="h-5 w-5 text-orange-600" />
-            <div>
+        <div className="flex flex-wrap gap-2 items-center w-full md:justify-end">
+          <Card className="p-2 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800">
+            <div className="flex items-center gap-3">
+              <Edit className="h-5 w-5 text-orange-600" />
               <p className="font-medium text-orange-800 dark:text-orange-200">
                 Mode édition activé
               </p>
-              <p className="text-sm text-orange-600 dark:text-orange-400">
-                Vous pouvez modifier les valeurs de l&apos;inventaire. Les calculs seront recalculés automatiquement.
-              </p>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Button
+              variant="outline"
+              onClick={handleCancelEdit}
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <X className="h-4 w-4 md:mr-2" />
+              <span className='hidden md:inline'>Annuler</span>
+          </Button>
+
+        </div>
+
       )}
 
       {/* Timer et Arrêts */}

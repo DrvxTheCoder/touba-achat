@@ -18,7 +18,7 @@ export default function ProductionTimer({
   const tempsProductif = tempsTotal - totalArrets;
 
   return (
-    <div className="flex items-center gap-8">
+    <div className="flex flex-wrap items-center gap-8">
       <div className="flex items-center gap-3">
         <div className="p-3 bg-primary/10 rounded-lg">
           <Clock className="h-6 w-6 text-primary" />

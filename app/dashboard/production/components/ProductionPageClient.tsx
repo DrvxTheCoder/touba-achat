@@ -28,14 +28,6 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 type TimePreset = 'day' | 'week' | 'month' | 'trimester' | 'year';
 
@@ -119,7 +111,7 @@ export default function ProductionPageClient({
 
   return (
     <TooltipProvider>
-      <main className="px-4 sm:px-8 mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6 mb-80">
+      <main className="px-2 mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6 mb-80">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div>
@@ -136,32 +128,11 @@ export default function ProductionPageClient({
             />
 
             {isAdmin && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="shrink-0">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Configuration</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/production/settings/bottle-types">
-                      Types de bouteilles
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/production/settings/centers">
-                      Centres de production
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/production/settings/reservoirs">
-                      Réservoirs GPL
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Link href="/dashboard/production/settings">
+                <Button variant="outline" size="icon" className="shrink-0">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
             )}
           </div>
         </div>

@@ -226,7 +226,7 @@ export default function CenterSwitcher({ className, onCenterChange }: CenterSwit
               />
               <AvatarFallback>GPL</AvatarFallback>
             </Avatar>
-            <span className="truncate hidden md:inline-block">
+            <span className="truncate inline-block">
               {selectedCenter ? truncateText(selectedCenter.name, MAX_DISPLAY_LENGTH) : 'Sélectionner'}
             </span>
             <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />

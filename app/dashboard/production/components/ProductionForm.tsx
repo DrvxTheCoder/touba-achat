@@ -324,12 +324,12 @@ export default function ProductionForm({
 
       <Card className="p-6">
         <Tabs defaultValue="appro" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full h-fit grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="appro">Approvisionnement</TabsTrigger>
             <TabsTrigger value="bottles">Bouteilles</TabsTrigger>
             <TabsTrigger value="exports">Sorties</TabsTrigger>
             <TabsTrigger value="reservoirs">Réservoirs</TabsTrigger>
-          </TabsList>
+            </TabsList>
 
           <TabsContent value="appro" className="space-y-4 mt-6">
             <ApproSection

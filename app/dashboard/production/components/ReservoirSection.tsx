@@ -402,10 +402,9 @@ export default function ReservoirSection({
                 {isPercentageMode ? (
                   // PERCENTAGE_BASED MODE: Tank percentage input
                   <div className="space-y-4">
-                    <Alert className="border-indigo-200 bg-indigo-50 dark:bg-indigo-950/30">
-                      <Info className="h-4 w-4 text-indigo-600" />
+                    <Alert className="border-indigo-200 bg-indigo-50 dark:bg-indigo-950/30 p-2">
                       <AlertDescription className="text-xs text-indigo-900 dark:text-indigo-100">
-                        <strong>Mode pourcentage:</strong> Saisir le pourcentage du réservoir. Le poids liquide est calculé automatiquement avec la densité ambiante partagée.
+                        <strong>Mode pourcentage</strong>
                       </AlertDescription>
                     </Alert>
                     <div className="space-y-2">

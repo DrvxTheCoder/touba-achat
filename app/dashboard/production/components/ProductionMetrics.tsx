@@ -117,9 +117,9 @@ export default function ProductionMetrics({ selectedCenterId, period, dateFrom, 
 
         <MetricCard
           title="Cumul Conditionné"
-          value={`${metrics.cumulConditionee.toFixed(3)} T`}
+          value={metrics.cumulConditionee.toFixed(3)}
           icon={<DropletIcon className="h-5 w-5 text-green-600" />}
-          subtitle="Bouteilles produites"
+          subtitle="Bouteilles produites en tonnes"
         />
 
         <Card className="hover:shadow-md transition-shadow">
@@ -246,7 +246,7 @@ function InfoCard({ title, value, description, className, icon }: InfoCardProps)
           <h4 className="text-sm font-medium text-muted-foreground">{title}</h4>
           {icon && <div>{icon}</div>}
         </div>
-        <AnimatedNumber className='font-mono text-2xl font-bold' value={parseFloat(value)} />
+        <p className="text-2xl font-bold mb-1">{value}</p>
         <p className="text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>

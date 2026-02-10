@@ -46,12 +46,12 @@ export default function AutoCalcs({
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-6">Calculs automatiques</h3>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Stock initial */}
         <Card className="p-4 bg-muted/50">
           <div className="text-xs text-muted-foreground mb-1">Stock initial</div>
           <div className="text-2xl font-bold">{stockInitial.toFixed(3)}</div>
-          <div className="text-xs text-muted-foreground">tonnes</div>
+          <div className="text-xs text-muted-foreground">Tonnes</div>
         </Card>
 
         {/* Total entrées */}
@@ -62,7 +62,7 @@ export default function AutoCalcs({
           </div>
           <div className="text-xs text-muted-foreground">
             {/* {butanier.toFixed(0)} + {recuperation.toFixed(0)} + {approSAR.toFixed(0)} */}
-            tonnes
+            Tonnes
           </div>
         </Card>
 
@@ -73,19 +73,18 @@ export default function AutoCalcs({
             -{totalSorties.toFixed(3)}
           </div>
           <div className="text-xs text-muted-foreground">
-            tonnes
-            {/* {ngabou.toFixed(3)} + {exports.toFixed(3)} + {divers.toFixed(3)} + {remplissageTotal.toFixed(3)} */}
+            {`VRAC : ${(ngabou + exports + divers).toFixed(3)}T | Conditionné: ${remplissageTotal.toFixed(3)}T`}
           </div>
         </Card>
 
-        {/* Remplissage total */}
+        {/* Remplissage total
         <Card className="p-4 bg-primary/10">
           <div className="text-xs text-muted-foreground mb-1">Cumul Conditionné</div>
           <div className="text-2xl font-bold text-primary">
             {remplissageTotal.toFixed(3)}
           </div>
-          <div className="text-xs text-muted-foreground">tonnes</div>
-        </Card>
+          <div className="text-xs text-muted-foreground">Tonnes</div>
+        </Card> */}
       </div>
 
       {/* Stocks finaux et écart */}
@@ -98,7 +97,7 @@ export default function AutoCalcs({
             {stockFinalTheorique.toFixed(3)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            Calculé automatiquement
+            Tonnes
           </div>
         </Card>
 
@@ -110,7 +109,7 @@ export default function AutoCalcs({
             {(stockFinalPhysique || 0).toFixed(3)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            Somme des sphères
+            Tonnes
           </div>
         </Card>
 
