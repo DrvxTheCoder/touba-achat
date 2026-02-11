@@ -208,10 +208,16 @@ enum ProductionStatus {
 }
 
 enum ArretType {
-  INCIDENT_TECHNIQUE
-  PANNE
-  MAINTENANCE
-  AUTRE
+  BASCULES              // Problèmes de bascules
+  CHANGEMENT_FORMAT     // Changement de format de bouteilles
+  SENSIBILISATION       // Session de sensibilisation
+  VEHICULE_MANQUANT     // Véhicule manquant
+  VEHICULE_EN_PANNE     // Véhicule en panne
+  BOUTEILLES_MANQUANTES // Bouteilles manquantes
+  INCIDENT_TECHNIQUE    // Incident technique
+  PANNE                 // Panne équipement
+  MAINTENANCE           // Maintenance préventive/curative
+  AUTRE                 // Autre raison
 }
 
 enum BottleType {
@@ -236,8 +242,9 @@ enum ReservoirType {
 }
 
 enum CalculationMode {
-  AUTOMATIC  // Calculs automatiques avec tous les champs de saisie
-  MANUAL     // Saisie manuelle directe du poids liquide
+  AUTOMATIC        // Calculs automatiques avec tous les champs de saisie
+  MANUAL           // Saisie manuelle directe du poids liquide
+  PERCENTAGE_BASED // Calcul basé sur pourcentage réservoir × capacité × densité ambiante
 }
 
 model User {
@@ -568,6 +575,7 @@ model ProductionInventory {
 
   // Réservoirs
   reservoirs            Reservoir[]
+  densiteAmbiante       Float?               // Densité ambiante partagée (mode PERCENTAGE_BASED)
 
   // Audit
   createdAt             DateTime             @default(now())
@@ -619,6 +627,7 @@ model Reservoir {
   volumeLiquide         Float                @default(0)     // en m³
   pressionInterne       Float                @default(0)     // en bar
   densiteA15C           Float                @default(0) // densité à 15°C (typiquement 0.508)
+  tankPercentage        Float                @default(0) // Pourcentage réservoir (mode PERCENTAGE_BASED)
 
   // 6 champs calculés automatiquement
   facteurCorrectionLiquide Float?

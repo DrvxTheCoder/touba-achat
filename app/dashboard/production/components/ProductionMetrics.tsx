@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package, Weight, Clock, TrendingUp, AlertTriangle, Gauge, DropletIcon } from 'lucide-react';
+import { Package, Clock, TrendingUp, AlertTriangle, Gauge, DropletIcon } from 'lucide-react';
 import StockLiquidGauge from './StockLiquidGauge';
 import ReservoirStockCard from './ReservoirStockCard';
+import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 
 interface ProductionMetricsProps {
   selectedCenterId?: number | null;
+  period?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface MetricsData {
-  // Legacy metrics
   stockPhysiqueActuel: number;
   capaciteTotale: number;
   productionJour: number;
@@ -19,11 +22,11 @@ interface MetricsData {
   ecartMoyen: number;
   tempsArretTotal: number;
   inventairesTermines: number;
-
-  // New metrics
   totalBottlesProduced: number;
   cumulConditionee: number;
   rendementHoraireMoyen: number;
+  pourcentageCapaciteMoyen: number;
+  totalHourlyCapacity: number;
   pourcentage24TMoyen: number;
   tempsTotal: number;
   tempsUtile: number;
@@ -39,7 +42,6 @@ interface MetricsData {
   };
 }
 
-// Helper function to convert minutes to "XHY" format
 const convertMinutesToHours = (minutes: number): string => {
   const totalHours = minutes / 60;
   const hours = Math.floor(totalHours);
@@ -47,20 +49,26 @@ const convertMinutesToHours = (minutes: number): string => {
   return `${hours}H${mins.toString().padStart(2, '0')}`;
 };
 
-export default function ProductionMetrics({ selectedCenterId }: ProductionMetricsProps) {
+export default function ProductionMetrics({ selectedCenterId, period, dateFrom, dateTo }: ProductionMetricsProps) {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchMetrics();
-  }, [selectedCenterId]);
+  }, [selectedCenterId, period, dateFrom, dateTo]);
 
   const fetchMetrics = async () => {
     try {
-      const url = selectedCenterId
-        ? `/api/production/metrics?centerId=${selectedCenterId}`
-        : '/api/production/metrics';
+      const params = new URLSearchParams();
+      if (selectedCenterId) params.set('centerId', selectedCenterId.toString());
+      if (dateFrom) {
+        params.set('dateFrom', dateFrom);
+        if (dateTo) params.set('dateTo', dateTo);
+      } else if (period) {
+        params.set('period', period);
+      }
 
+      const url = `/api/production/metrics${params.toString() ? `?${params}` : ''}`;
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -101,23 +109,19 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
     <div className="space-y-6">
       {/* Primary Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {/* Bouteilles Produites */}
         <MetricCard
           title="Bouteilles Produites"
           value={metrics.totalBottlesProduced.toLocaleString()}
           icon={<Package className="h-5 w-5 text-blue-600" />}
-          subtitle="Ce mois"
         />
 
-        {/* Cumul Conditionee */}
         <MetricCard
           title="Cumul Conditionné"
-          value={`${metrics.cumulConditionee.toFixed(3)} T`}
+          value={metrics.cumulConditionee.toFixed(3)}
           icon={<DropletIcon className="h-5 w-5 text-green-600" />}
-          subtitle="Bouteilles produites"
+          subtitle="Bouteilles produites en tonnes"
         />
 
-        {/* Rendement Horaire Moyen & % 24T */}
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
@@ -129,7 +133,7 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
                 <div className="flex items-center gap-2 mt-1">
                   <Gauge className="h-3 w-3 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">
-                    {metrics.pourcentage24TMoyen.toFixed(2)}% {"(24T/h)"}
+                    {metrics.pourcentageCapaciteMoyen.toFixed(2)}% ({metrics.totalHourlyCapacity}T/h)
                   </p>
                 </div>
               </div>
@@ -140,7 +144,6 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
           </CardContent>
         </Card>
 
-        {/* Temps Total */}
         <MetricCard
           title="Temps Total"
           value={convertMinutesToHours(metrics.tempsTotal)}
@@ -151,9 +154,7 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
 
       {/* Stock Physique avec Liquid Gauge et Additional Info Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Additional Info Cards (stacked vertically) */}
         <div className="lg:col-span-1 space-y-4">
-          {/* Écart Moyen */}
           <InfoCard
             title="Écart Total"
             value={`${metrics.ecartMoyenTonnes.toFixed(3)} T`}
@@ -172,7 +173,6 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
             }
           />
 
-          {/* Creux Moyen */}
           <InfoCard
             title="Creux Moyen"
             value={`${metrics.creuxMoyen.toFixed(3)} T`}
@@ -180,15 +180,13 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
             className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900"
           />
 
-          {/* Cumul Sortie - All in One Card */}
           <InfoCard
             title="Cumul Sortie"
             value={`${metrics.cumulSortie.total.toFixed(3)} T`}
-            description={`Bouteilles : ${metrics.cumulSortie.bottles.toFixed(2)}T | VRAC : ${metrics.cumulSortie.total - metrics.cumulSortie.bottles}T`}
+            description={`Bouteilles : ${metrics.cumulSortie.bottles.toFixed(2)}T | VRAC : ${(metrics.cumulSortie.total - metrics.cumulSortie.bottles).toFixed(2)}T`}
             className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900"
           />
         </div>
-        {/* Stock Gauges */}
         <div className="lg:col-span-1 space-y-4">
           <StockLiquidGauge
             value={metrics.stockPhysiqueActuel}
@@ -197,7 +195,6 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
             subtitle="Tous les réservoirs"
             size={180}
           />
-          
         </div>
         <div className="lg:col-span-1">
           <ReservoirStockCard selectedCenterId={selectedCenterId} />
@@ -207,7 +204,6 @@ export default function ProductionMetrics({ selectedCenterId }: ProductionMetric
   );
 }
 
-// MetricCard Component
 interface MetricCardProps {
   title: string;
   value: string;
@@ -222,7 +218,7 @@ function MetricCard({ title, value, icon, subtitle }: MetricCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-2">{value}</p>
+            <AnimatedNumber className='font-mono text-2xl font-bold mt-2' value={parseFloat(value)} />
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
@@ -234,7 +230,6 @@ function MetricCard({ title, value, icon, subtitle }: MetricCardProps) {
   );
 }
 
-// InfoCard Component
 interface InfoCardProps {
   title: string;
   value: string;

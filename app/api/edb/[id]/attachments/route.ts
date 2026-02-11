@@ -34,7 +34,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const savedAttachments = await Promise.all(
       attachments.map(async (attachment: any) => {
-        console.log('Received attachment:', attachment);
 
         const fileName = attachment.invoiceName || attachment.file?.name || extractFileNameFromUrl(attachment.url);
 
@@ -45,8 +44,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           totalAmount: parseFloat(attachment.totalAmount),
           type: AttachmentType.MAGASINIER,
         };
-
-        console.log('Processed attachment data:', attachmentData);
 
         const updatedEDB = await addAttachmentToEDB(edbId, userId, attachmentData);
 

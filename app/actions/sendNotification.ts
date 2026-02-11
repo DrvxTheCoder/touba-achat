@@ -29,7 +29,6 @@ const transporter = nodemailer.createTransport({
 
 // Function to send email
 const sendEmail = async (to: string, subject: string, html: string) => {
-  console.log('Attempting to send email to:', to);
   try {
     const info = await transporter.sendMail({
       from: '"Touba App™" <app@touba-energy.com>',
@@ -37,7 +36,6 @@ const sendEmail = async (to: string, subject: string, html: string) => {
       subject: subject,
       html: html,
     })
-    console.log('Message sent successfully:', info.messageId);
     return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('Error sending email:', error);
@@ -118,7 +116,6 @@ export async function sendNotification(payload: NotificationPayload) {
         const emailResult = await sendEmail(recipient.user.email, subject, emailHtml)
 
         if (emailResult.success) {
-          console.log(`Email sent successfully to ${recipient.user.email}`);
           await prisma.notificationRecipient.update({
             where: { id: recipient.id },
             data: { emailSent: true }

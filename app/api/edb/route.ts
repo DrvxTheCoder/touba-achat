@@ -294,7 +294,7 @@ export async function POST(request: Request) {
     // const { title, category, reference, items } = body;
     const { category, reference, items } = body;
 
-    console.log('Received body:', body);
+
 
     const newEDB = await createEDB(parseInt(userId), {
       // title,
@@ -303,7 +303,6 @@ export async function POST(request: Request) {
       items
     });
 
-    console.log('Created EDB:', newEDB);
 
     // Send notification for new EDB
     const recipients = await determineRecipients(newEDB, newEDB.status, parseInt(userId), 'EDB');

@@ -42,7 +42,7 @@ export default function TimeInputSection({
             value={heureDebut}
             onChange={(e) => onUpdate('heureDebut', e.target.value)}
             disabled={disabled}
-            className="font-mono"
+            className="font-mono w-fit"
           />
         </div>
 
@@ -58,7 +58,7 @@ export default function TimeInputSection({
             value={heureFin}
             onChange={(e) => onUpdate('heureFin', e.target.value)}
             disabled={disabled}
-            className="font-mono"
+            className="font-mono w-fit"
           />
         </div>
 

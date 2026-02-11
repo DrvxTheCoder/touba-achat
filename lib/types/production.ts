@@ -173,6 +173,7 @@ export interface CompleteInventoryData {
   tempsTotal?: number;
   approValues?: Record<string, number>;
   sortieValues?: Record<string, number>;
+  densiteAmbiante?: number;
   bottles: Array<{
     type: BottleType;
     quantity: number;
@@ -186,6 +187,7 @@ export interface CompleteInventoryData {
     volumeLiquide: number;
     pressionInterne: number;
     densiteA15C: number;
+    tankPercentage?: number;
     poidsLiquide?: number;
   }>;
 }
@@ -211,6 +213,12 @@ export const BOTTLE_WEIGHTS: Record<BottleType, number> = {
 };
 
 export const ARRET_TYPES: Record<ArretType, string> = {
+  BASCULES: 'Bascules',
+  CHANGEMENT_FORMAT: 'Changement format',
+  SENSIBILISATION: 'Sensibilisation',
+  VEHICULE_MANQUANT: 'Véhicule manquant',
+  VEHICULE_EN_PANNE: 'Véhicule en panne',
+  BOUTEILLES_MANQUANTES: 'Bouteilles manquantes',
   INCIDENT_TECHNIQUE: 'Incident technique',
   PANNE: 'Panne',
   MAINTENANCE: 'Maintenance',

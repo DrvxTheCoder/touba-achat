@@ -94,7 +94,7 @@ export default function CenterSwitcher({ className, onCenterChange }: CenterSwit
   // Check if user can manage multiple centers (ADMIN, DIRECTEUR_GENERAL, DOG)
   const canManageMultipleCenters = React.useMemo(() => {
     if (!session?.user?.role) return false;
-    return ['ADMIN', 'DIRECTEUR_GENERAL', 'DOG'].includes(session.user.role);
+    return ['ADMIN', 'DIRECTEUR_GENERAL', 'DOG', 'DIRECTEUR'].includes(session.user.role);
   }, [session?.user?.role]);
 
   // Check if user can create centers
@@ -117,10 +117,12 @@ export default function CenterSwitcher({ className, onCenterChange }: CenterSwit
       const data: ProductionCenter[] = await response.json();
 
       // If user can manage multiple centers, add "All Centers" option
+      // Auto-select the first actual center to avoid confusion
       if (canManageMultipleCenters) {
         setCenters([ALL_CENTERS, ...data]);
-        setSelectedCenter(ALL_CENTERS);
-        onCenterChange && onCenterChange(null);
+        const defaultCenter = data.length > 0 ? data[0] : ALL_CENTERS;
+        setSelectedCenter(defaultCenter);
+        onCenterChange && onCenterChange(defaultCenter.id === -1 ? null : defaultCenter);
       } else {
         // Find the center where user is chef
         const userCenter = data.find(
@@ -202,21 +204,19 @@ export default function CenterSwitcher({ className, onCenterChange }: CenterSwit
     onCenterChange && onCenterChange(center.id === -1 ? null : center);
   };
 
-  // If user is not chef and cannot manage multiple centers, don't show switcher
-  if (!canManageMultipleCenters && centers.length <= 1) {
-    return null;
-  }
+  const isRestricted = !canManageMultipleCenters;
 
   return (
     <Dialog open={showNewCenterDialog} onOpenChange={setShowNewCenterDialog}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isRestricted ? false : open} onOpenChange={isRestricted ? undefined : setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
             aria-label="Choisir un centre de production"
-            className={cn('w-16 md:w-[250px] justify-between', className)}
+            disabled={isRestricted}
+            className={cn('w-16 md:w-[250px] justify-between', isRestricted && 'opacity-60 cursor-not-allowed', className)}
           >
             <Avatar className="mr-2 h-5 w-5 flex-shrink-0">
               <AvatarImage
@@ -226,7 +226,7 @@ export default function CenterSwitcher({ className, onCenterChange }: CenterSwit
               />
               <AvatarFallback>GPL</AvatarFallback>
             </Avatar>
-            <span className="truncate hidden md:inline-block">
+            <span className="truncate inline-block">
               {selectedCenter ? truncateText(selectedCenter.name, MAX_DISPLAY_LENGTH) : 'Sélectionner'}
             </span>
             <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />

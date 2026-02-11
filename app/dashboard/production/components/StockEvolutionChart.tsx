@@ -3,33 +3,23 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Area,
-  AreaChart,
   BarChart,
   Bar,
 } from 'recharts';
-import { format, subDays, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-
-type TimeFilter = 'week' | 'month' | 'quarter' | 'year';
 
 interface StockEvolutionChartProps {
   selectedCenterId?: number | null;
+  period?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface ChartData {
@@ -39,23 +29,29 @@ interface ChartData {
   ecart: number;
 }
 
-export default function StockEvolutionChart({ selectedCenterId }: StockEvolutionChartProps) {
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
+export default function StockEvolutionChart({ selectedCenterId, period, dateFrom, dateTo }: StockEvolutionChartProps) {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchChartData();
-  }, [timeFilter, selectedCenterId]);
+  }, [selectedCenterId, period, dateFrom, dateTo]);
 
   const fetchChartData = async () => {
     setLoading(true);
     try {
-      const url = selectedCenterId
-        ? `/api/production/stock-evolution?period=${timeFilter}&centerId=${selectedCenterId}`
-        : `/api/production/stock-evolution?period=${timeFilter}`;
+      const params = new URLSearchParams();
+      if (selectedCenterId) params.set('centerId', selectedCenterId.toString());
+      if (dateFrom) {
+        params.set('dateFrom', dateFrom);
+        if (dateTo) params.set('dateTo', dateTo);
+      } else if (period) {
+        params.set('period', period);
+      } else {
+        params.set('period', 'month');
+      }
 
-      const response = await fetch(url);
+      const response = await fetch(`/api/production/stock-evolution?${params}`);
       if (response.ok) {
         const data = await response.json();
         setChartData(data);
@@ -69,13 +65,11 @@ export default function StockEvolutionChart({ selectedCenterId }: StockEvolution
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    if (timeFilter === 'week' || timeFilter === 'month') {
-      return format(date, 'dd MMM', { locale: fr });
-    } else if (timeFilter === 'quarter') {
-      return format(date, 'dd MMM', { locale: fr });
-    } else {
+    const effectivePeriod = dateFrom ? 'custom' : (period || 'month');
+    if (effectivePeriod === 'year') {
       return format(date, 'MMM yyyy', { locale: fr });
     }
+    return format(date, 'dd MMM', { locale: fr });
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -119,22 +113,9 @@ export default function StockEvolutionChart({ selectedCenterId }: StockEvolution
   return (
     <Card className="col-span-full">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <CardTitle>Évolution du Stock Physique</CardTitle>
-            <CardDescription>Comparaison stock physique vs théorique</CardDescription>
-          </div>
-          <Select value={timeFilter} onValueChange={(value) => setTimeFilter(value as TimeFilter)}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Période" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">Cette semaine</SelectItem>
-              <SelectItem value="month">Ce mois</SelectItem>
-              <SelectItem value="quarter">Ce trimestre</SelectItem>
-              <SelectItem value="year">Cette année</SelectItem>
-            </SelectContent>
-          </Select>
+        <div>
+          <CardTitle>Évolution du Stock Physique</CardTitle>
+          <CardDescription>Comparaison stock physique vs théorique</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -190,7 +171,6 @@ export default function StockEvolutionChart({ selectedCenterId }: StockEvolution
               />
             </BarChart>
           </ResponsiveContainer>
-
         )}
       </CardContent>
     </Card>

@@ -127,8 +127,13 @@ export async function GET(req: NextRequest) {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const centerId = searchParams.get('centerId');
+    const search = searchParams.get('search')?.trim();
 
     const skip = (page - 1) * limit;
+
+    // Privileged roles that can see all centers
+    const PRIVILEGED_ROLES = ['ADMIN', 'DIRECTEUR_GENERAL', 'DOG', 'DIRECTEUR'];
+    const isPrivileged = PRIVILEGED_ROLES.includes(session.user.role);
 
     // Construire le filtre
     const where: any = {};
@@ -147,9 +152,48 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Filter by production center if specified
-    if (centerId) {
+    // Center-based access control
+    if (!isPrivileged) {
+      // Restricted user: find their assigned center
+      const userCenter = await prisma.productionCenter.findFirst({
+        where: { chefProductionId: parseInt(session.user.id) },
+        select: { id: true }
+      });
+      if (userCenter) {
+        where.productionCenterId = userCenter.id;
+      } else {
+        // User is not chef of any center — return empty
+        return NextResponse.json({
+          data: [],
+          pagination: { page, limit, total: 0, totalPages: 0 }
+        });
+      }
+    } else if (centerId) {
+      // Privileged user with explicit center filter
       where.productionCenterId = parseInt(centerId);
+    }
+
+    // Search filter (by date or employee name)
+    if (search) {
+      // Try to parse as date (supports dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd, or partial)
+      const dateMatch = search.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
+      if (dateMatch) {
+        const day = parseInt(dateMatch[1]);
+        const month = parseInt(dateMatch[2]);
+        const year = dateMatch[3] ? parseInt(dateMatch[3]) : new Date().getFullYear();
+        const fullYear = year < 100 ? 2000 + year : year;
+        const searchDate = new Date(fullYear, month - 1, day);
+        searchDate.setHours(0, 0, 0, 0);
+        const nextDay = new Date(searchDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        where.date = { gte: searchDate, lt: nextDay };
+      } else {
+        // Search by employee name (startedBy or completedBy)
+        where.OR = [
+          { startedBy: { name: { contains: search, mode: 'insensitive' } } },
+          { completedBy: { name: { contains: search, mode: 'insensitive' } } }
+        ];
+      }
     }
 
     // Récupérer les données avec pagination

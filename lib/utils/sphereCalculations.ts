@@ -169,6 +169,23 @@ export function validateSphereInput(input: SphereInputData): string[] {
 }
 
 /**
+ * Calcule le poids liquide en mode PERCENTAGE_BASED
+ * Formule: ((TP × TC_liters) / 100) × DA / 1000
+ * @param tankPercentage Pourcentage du réservoir (0-100)
+ * @param capacityM3 Capacité du réservoir en m³
+ * @param densiteAmbiante Densité ambiante
+ * @returns Poids liquide en tonnes
+ */
+export function calculatePercentageBased(
+  tankPercentage: number,
+  capacityM3: number,
+  densiteAmbiante: number
+): number {
+  const capacityLiters = capacityM3 * 1000;
+  return ((tankPercentage * capacityLiters) / 100) * densiteAmbiante / 1000;
+}
+
+/**
  * Calcule le stock final physique total (somme des poids de toutes les sphères)
  */
 export function calculateStockFinalPhysique(spheres: SphereCalculatedData[]): number {

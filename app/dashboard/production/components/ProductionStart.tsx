@@ -122,9 +122,9 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
   };
 
   return (
-    <Card className='w-fit'>
-      <CardHeader>
-        <CardTitle>🌅 Démarrer une Nouvelle Journée</CardTitle>
+    <Card className='w-full mx-auto'>
+      <CardHeader className='flex flex-col items-center justify-center'>
+        <CardTitle>Démarrer un inventaire</CardTitle>
         <CardDescription>
           Créer la fiche de production pour la journée sélectionnée
         </CardDescription>
@@ -159,7 +159,7 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
             disabled={loadingStock}
           />
           <p className="text-xs text-muted-foreground">
-            Le stock est automatiquement récupéré du stock final de la veille
+            Stock final de la veille
           </p>
         </div>
         <Button
@@ -168,7 +168,7 @@ export function ProductionStart({ selectedCenterId }: ProductionStartProps) {
           className="w-full"
           size="lg"
         >
-          {loading ? 'Démarrage...' : 'Démarrer la Journée'}
+          {loading ? 'Démarrage...' : 'Démarrer'}
         </Button>
       </CardContent>
     </Card>

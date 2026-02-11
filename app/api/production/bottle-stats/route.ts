@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { prisma } from '@/lib/prisma';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
+
+type Period = 'day' | 'week' | 'month' | 'trimester' | 'quarter' | 'year';
 
 // GET /api/production/bottle-stats - Get bottle production statistics
 export async function GET(req: NextRequest) {
@@ -12,43 +15,74 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const period = searchParams.get('period') || 'month'; // week, month, year
+    const period = (searchParams.get('period') || 'month') as Period;
     const centerId = searchParams.get('centerId');
+    const dateFromParam = searchParams.get('dateFrom');
+    const dateToParam = searchParams.get('dateTo');
 
-    // Calculate date range based on period
-    const now = new Date();
+    // Build center filter
+    const centerFilter: any = {};
+    if (centerId && centerId !== 'null') {
+      centerFilter.productionCenterId = parseInt(centerId);
+    }
+
+    // Calculate date range
     let startDate: Date;
+    let endDate: Date;
 
-    switch (period) {
-      case 'week':
-        // Start of current week (Monday)
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - now.getDay() + 1);
+    if (dateFromParam) {
+      startDate = new Date(dateFromParam);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = dateToParam ? new Date(dateToParam) : new Date(dateFromParam);
+      endDate.setHours(23, 59, 59, 999);
+    } else if (period === 'day') {
+      const latest = await prisma.productionInventory.findFirst({
+        where: { status: 'TERMINE', ...centerFilter },
+        orderBy: { completedAt: 'desc' },
+        select: { date: true },
+      });
+      if (latest) {
+        startDate = new Date(latest.date);
         startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'year':
-        // Start of current year
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      case 'month':
-      default:
-        // Start of current month
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
+        endDate = new Date(latest.date);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        return NextResponse.json([]);
+      }
+    } else {
+      const now = new Date();
+      switch (period) {
+        case 'week':
+          startDate = startOfWeek(now, { weekStartsOn: 1 });
+          endDate = endOfWeek(now, { weekStartsOn: 1 });
+          break;
+        case 'trimester':
+        case 'quarter':
+          startDate = startOfQuarter(now);
+          endDate = endOfQuarter(now);
+          break;
+        case 'year':
+          startDate = startOfYear(now);
+          endDate = endOfYear(now);
+          break;
+        case 'month':
+        default:
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+          break;
+      }
     }
 
     // Build where clause
+    const dateFilter = dateFromParam
+      ? { date: { gte: startDate, lte: endDate } }
+      : { completedAt: { gte: startDate, lte: endDate } };
+
     const where: any = {
       status: 'TERMINE',
-      completedAt: {
-        gte: startDate,
-        lte: now,
-      },
+      ...dateFilter,
+      ...centerFilter,
     };
-
-    if (centerId && centerId !== 'null') {
-      where.productionCenterId = parseInt(centerId);
-    }
 
     // Fetch completed inventories for the period
     const inventories = await prisma.productionInventory.findMany({

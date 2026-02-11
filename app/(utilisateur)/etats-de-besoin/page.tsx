@@ -229,7 +229,6 @@ export default function UserStockEDBPage() {
                       </TableRow>
                     ) : (
                       stockEdbs.map((stockEdb) => {
-                        console.log("Mapping stockEdb:", stockEdb); // Add this log
                         return (
                           <StockEDBTableRow
                             key={stockEdb.id}

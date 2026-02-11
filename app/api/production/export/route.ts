@@ -20,7 +20,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Permission refusée' }, { status: 403 });
     }
 
-    const { format, startDate, endDate, productionCenterId, capaciteTotale } = await req.json();
+    const body = await req.json();
+    let { format, startDate, endDate, productionCenterId, capaciteTotale } = body;
+
+    // Center-based access control for non-privileged users
+    const PRIVILEGED_ROLES = ['ADMIN', 'DIRECTEUR_GENERAL', 'DOG', 'DIRECTEUR'];
+    if (!PRIVILEGED_ROLES.includes(session.user.role)) {
+      const userCenter = await prisma.productionCenter.findFirst({
+        where: { chefProductionId: parseInt(session.user.id) },
+        select: { id: true }
+      });
+      if (userCenter) {
+        productionCenterId = userCenter.id;
+      } else {
+        return NextResponse.json({ error: 'Aucun centre assigné' }, { status: 403 });
+      }
+    }
 
     // Validation
     if (!format || !['excel', 'pdf'].includes(format)) {
@@ -89,15 +104,6 @@ export async function POST(req: NextRequest) {
         completedBy: { select: { name: true } }
       }
     });
-
-    // Debug logging for dynamic field values
-    console.log('=== EXPORT DEBUG ===');
-    console.log('Inventories count:', inventories.length);
-    if (inventories.length > 0) {
-      console.log('First inventory approValues:', JSON.stringify(inventories[0].approValues, null, 2));
-      console.log('First inventory sortieValues:', JSON.stringify(inventories[0].sortieValues, null, 2));
-    }
-    console.log('====================');
 
     if (format === 'excel') {
       // Créer un workbook Excel

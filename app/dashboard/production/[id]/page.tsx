@@ -30,6 +30,7 @@ import ProductionForm from '../components/ProductionForm';
 import { ProductionInventory } from '@/lib/types/production';
 import { ContentLayout } from '@/components/user-panel/content-layout';
 import DynamicBreadcrumbs from '@/components/DynamicBreadcrumbs';
+import { SpinnerCircular } from 'spinners-react';
 
 export default function ProductionDetailPage() {
   const params = useParams();
@@ -43,6 +44,22 @@ export default function ProductionDetailPage() {
   const [calculatedTempsTotal, setCalculatedTempsTotal] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const arretTypeLabels: Record<string, string> = {
+  BASCULES: "Problèmes de bascules",
+  CHANGEMENT_FORMAT: "Changement de format de bouteilles",
+  SENSIBILISATION: "Arret Sensibilisation",
+  VEHICULE_MANQUANT: "Véhicule manquant",
+  VEHICULE_EN_PANNE: "Véhicule en panne",
+  BOUTEILLES_MANQUANTES: "Bouteilles manquantes",
+  INCIDENT_TECHNIQUE: "Incident technique",
+  PANNE: "Panne équipement",
+  MAINTENANCE: "Maintenance préventive/curative",
+  AUTRE: "Autre raison",
+};
+
+const formatArretType = (type?: string) =>
+  type ? arretTypeLabels[type] ?? type : "";
 
   // Check if user is admin
   const isAdmin = session?.user?.role && ['ADMIN', 'IT_ADMIN'].includes(session.user.role);
@@ -235,12 +252,16 @@ export default function ProductionDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Chargement...</p>
-        </div>
-      </div>
+            <main className="flex flex-1 flex-col gap-4 p-1 lg:gap-6 lg:p-6">
+              <div className="flex items-center justify-center rounded-lg h-[42rem] border border-dashed">
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <SpinnerCircular size={70} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
+                  <h3 className="text-2xl font-bold tracking-tight">
+                    Chargement...
+                  </h3>
+                </div>
+              </div>
+            </main>
     );
   }
 
@@ -265,50 +286,41 @@ export default function ProductionDetailPage() {
   const isTermine = inventory.status === 'TERMINE';
 
   return (
-    <div className="container mx-auto py-6 space-y-6 pb-20">
+    <div className="container px-2 md:px-6 py-6 space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => router.push('/dashboard/production')}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
+            <ArrowLeft className="h-4 w-4 md:mr-2" />
+            <span className='hidden md:block'>Retour</span>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">
-              Inventaire du {new Date(inventory.date).toLocaleDateString('fr-FR')}
-              {isEditMode && <span className="ml-2 text-orange-600">(Mode édition)</span>}
+            <h1 className="text-lg md:text-2xl font-bold wrap">
+              INV/{new Date(inventory.date).toLocaleDateString('fr-FR')}
+              {/* {isEditMode && <span className="ml-2 text-orange-600">(Mode édition)</span>} */}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Démarré par {inventory.startedBy?.name}
+              Cloturé par {inventory.startedBy?.name}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Edit mode controls */}
-          {isEditMode && (
-            <Button
-              variant="outline"
-              onClick={handleCancelEdit}
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Annuler
-            </Button>
-          )}
+
 
           {/* Edit button for completed inventories (admin only) */}
           {isTermine && !isEditMode && isAdmin && (
             <Button
               variant="outline"
+              size={'icon'}
               onClick={() => setIsEditMode(true)}
               className="text-orange-600 border-orange-200 hover:bg-orange-50"
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Modifier
+              <Edit className="h-4 w-4" />
             </Button>
           )}
 
@@ -335,7 +347,7 @@ export default function ProductionDetailPage() {
           {isTermine && !isEditMode && (
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-semibold">Terminé</span>
+              <span className="font-semibold hidden md:inline">Terminé</span>
             </div>
           )}
         </div>
@@ -343,19 +355,27 @@ export default function ProductionDetailPage() {
 
       {/* Edit mode banner */}
       {isEditMode && (
-        <Card className="p-4 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800">
-          <div className="flex items-center gap-3">
-            <Edit className="h-5 w-5 text-orange-600" />
-            <div>
+        <div className="flex flex-wrap gap-2 items-center w-full md:justify-end">
+          <Card className="p-2 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800">
+            <div className="flex items-center gap-3">
+              <Edit className="h-5 w-5 text-orange-600" />
               <p className="font-medium text-orange-800 dark:text-orange-200">
                 Mode édition activé
               </p>
-              <p className="text-sm text-orange-600 dark:text-orange-400">
-                Vous pouvez modifier les valeurs de l&apos;inventaire. Les calculs seront recalculés automatiquement.
-              </p>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Button
+              variant="outline"
+              onClick={handleCancelEdit}
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <X className="h-4 w-4 md:mr-2" />
+              <span className='hidden md:inline'>Annuler</span>
+          </Button>
+
+        </div>
+
       )}
 
       {/* Timer et Arrêts */}
@@ -397,7 +417,7 @@ export default function ProductionDetailPage() {
                 className="flex items-center justify-between p-3 bg-muted rounded-lg"
               >
                 <div className="flex-1">
-                  <div className="font-medium">{arret.type}</div>
+                  <div className="font-medium">{formatArretType(arret.type)}</div>
                   <div className="text-sm text-muted-foreground">
                     Ajouté le {new Date(arret.createdAt).toLocaleString('fr-FR')}
                   </div>
