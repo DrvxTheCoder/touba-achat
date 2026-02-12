@@ -218,7 +218,7 @@ function MetricCard({ title, value, icon, subtitle }: MetricCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <AnimatedNumber className='font-mono text-2xl font-bold mt-2' value={parseFloat(value)} />
+            <p className='font-mono text-2xl font-bold mt-2'>{value}</p>
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}

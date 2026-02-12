@@ -111,7 +111,13 @@ export async function GET(req: NextRequest) {
       where: reservoirWhere,
     });
 
-    const capaciteTotale = reservoirConfigs.reduce((sum, r) => sum + r.capacity, 0);
+    // Calculate total capacity in tonnes from reservoir configurations
+    // Use capacityTonnes if available, otherwise estimate from m³ (capacity * 0.5 for LPG)
+    // This matches the PDF export logic in DynamicMonthlyProductionPDF.tsx
+    const capaciteTotale = reservoirConfigs.reduce((sum, r) => {
+      const tonnes = r.capacityTonnes ?? (r.capacity * 0.5);
+      return sum + tonnes;
+    }, 0);
 
     // Calculate metrics
     const stockPhysiqueActuel = latestInventory?.stockFinalPhysique || 0;
@@ -122,18 +128,15 @@ export async function GET(req: NextRequest) {
       return sum + bottleTonnage;
     }, 0);
 
-    let totalRH = 0;
-    let validRHCount = 0;
-    inventories.forEach((inv) => {
-      if (inv.tempsUtile && inv.tempsUtile > 0) {
-        const bottleTonnage = inv.bottles?.reduce((sum, bottle) => sum + (bottle.tonnage || 0), 0) || 0;
-        const hoursWorked = inv.tempsUtile / 60;
-        const rh = bottleTonnage / hoursWorked;
-        totalRH += rh;
-        validRHCount++;
-      }
-    });
-    const rendementHoraireMoyen = validRHCount > 0 ? totalRH / validRHCount : 0;
+    // Calculate overall rendement horaire using total tonnage / total hours
+    // This matches the PDF export logic (total row calculation)
+    const totalBottlesTonnage = inventories.reduce((sum, inv) => {
+      const invBottlesTonnage = inv.bottles?.reduce((bSum, bottle) => bSum + (bottle.tonnage || 0), 0) || 0;
+      return sum + invBottlesTonnage;
+    }, 0);
+    const totalTempsUtileMinutes = inventories.reduce((sum, inv) => sum + (inv.tempsUtile || 0), 0);
+    const totalHoursWorked = totalTempsUtileMinutes / 60;
+    const rendementHoraireMoyen = totalHoursWorked > 0 ? totalBottlesTonnage / totalHoursWorked : 0;
 
     // Fetch center hourly capacity for percentage calculation
     let totalHourlyCapacity = 24; // default fallback
@@ -170,10 +173,10 @@ export async function GET(req: NextRequest) {
       ? inventories.reduce((sum, inv) => sum + (inv.ecartPourcentage || 0), 0) / inventories.length
       : 0;
 
-    const capaciteTotaleEnTonnes = capaciteTotale * 0.51;
+    // capaciteTotale is already in tonnes (calculated above from capacityTonnes or capacity * 0.5)
     const creuxMoyen = inventories.length > 0
       ? inventories.reduce((sum, inv) => {
-          const creux = capaciteTotaleEnTonnes - (inv.stockFinalPhysique || 0);
+          const creux = capaciteTotale - (inv.stockFinalPhysique || 0);
           return sum + creux;
         }, 0) / inventories.length
       : 0;
@@ -193,7 +196,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       stockPhysiqueActuel,
-      capaciteTotale: capaciteTotaleEnTonnes,
+      capaciteTotale,
       productionJour: totalBottlesProduced,
       rendementMoyen,
       ecartMoyen: ecartMoyenPourcentage,
