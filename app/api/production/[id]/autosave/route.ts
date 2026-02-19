@@ -232,9 +232,9 @@ export async function PATCH(
 
             if (hasValidInputs) {
               try {
-                const validationErrors = validateSphereInput(reservoirInput as SphereInputData);
+                const validationErrors = validateSphereInput(reservoirInput as SphereInputData, reservoirConfig.capacity);
                 if (validationErrors.length === 0) {
-                  const calculatedSphere = calculateSphereData(reservoirInput as SphereInputData);
+                  const calculatedSphere = calculateSphereData(reservoirInput as SphereInputData, reservoirConfig.capacity);
                   reservoirData = {
                     inventoryId,
                     name: calculatedSphere.name,

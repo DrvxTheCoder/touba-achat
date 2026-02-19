@@ -39,15 +39,18 @@ import { Icons } from '@/components/icons';
 import { toast } from 'sonner';
 import { Role } from '@prisma/client';
 
+interface ChefUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
 interface ProductionCenter {
   id: number;
   name: string;
   address: string;
-  chefProduction: {
-    id: number;
-    name: string;
-    email: string;
-  };
+  chefProduction: ChefUser; // backward compatibility - first chef
+  chefProductions?: ChefUser[]; // all chefs
 }
 
 interface User {
@@ -124,9 +127,16 @@ export default function CenterSwitcher({ className, onCenterChange }: CenterSwit
         setSelectedCenter(defaultCenter);
         onCenterChange && onCenterChange(defaultCenter.id === -1 ? null : defaultCenter);
       } else {
-        // Find the center where user is chef
+        // Find the center where user is one of the chefs
+        const userId = parseInt(session?.user?.id || '0');
         const userCenter = data.find(
-          (center) => center.chefProduction.id === parseInt(session?.user?.id || '0')
+          (center) => {
+            // Check in chefProductions array (new) or fallback to chefProduction (backward compat)
+            if (center.chefProductions && center.chefProductions.length > 0) {
+              return center.chefProductions.some(chef => chef.id === userId);
+            }
+            return center.chefProduction?.id === userId;
+          }
         );
         setCenters(data);
         setSelectedCenter(userCenter || (data.length > 0 ? data[0] : null));

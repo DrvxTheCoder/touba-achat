@@ -282,7 +282,7 @@ model User {
   ProductionStarter     ProductionInventory[] @relation("ProductionStarter")
   ProductionCompleter   ProductionInventory[] @relation("ProductionCompleter")
   ArretCreator          ProductionArret[] @relation("ArretCreator")
-  ProductionCentersManaged ProductionCenter[] @relation("ChefProduction")
+  ProductionCentersManaged ProductionCenterChef[] @relation("ProductionCenterChefs")
 }
 
 model Employee {
@@ -644,8 +644,9 @@ model ProductionCenter {
   id                    Int                  @id @default(autoincrement())
   name                  String               @unique
   address               String
-  chefProductionId      Int
-  chefProduction        User                 @relation("ChefProduction", fields: [chefProductionId], references: [id])
+
+  // Many-to-many relationship with production supervisors
+  chefProductions       ProductionCenterChef[]
 
   // Production capacity configuration
   numberOfLines         Int                  @default(2)
@@ -661,6 +662,19 @@ model ProductionCenter {
 
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+}
+
+// Junction table for many-to-many relationship between ProductionCenter and User (chefs)
+model ProductionCenterChef {
+  id                    Int                  @id @default(autoincrement())
+  productionCenterId    Int
+  productionCenter      ProductionCenter     @relation(fields: [productionCenterId], references: [id], onDelete: Cascade)
+  userId                Int
+  user                  User                 @relation("ProductionCenterChefs", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt             DateTime             @default(now())
+
+  @@unique([productionCenterId, userId])
 }
 
 model ReservoirConfig {

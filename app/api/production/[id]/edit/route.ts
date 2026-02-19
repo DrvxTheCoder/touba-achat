@@ -134,13 +134,13 @@ export async function PUT(
 
           stockFinalPhysique += reservoirInput.poidsLiquide || 0;
         } else {
-          // AUTOMATIC MODE: Validate and calculate
-          const validationErrors = validateSphereInput(reservoirInput as SphereInputData);
+          // AUTOMATIC MODE: Validate and calculate (pass reservoir capacity from config)
+          const validationErrors = validateSphereInput(reservoirInput as SphereInputData, reservoirConfig.capacity);
           if (validationErrors.length > 0) {
             throw new Error(`Erreur validation réservoir ${reservoirInput.name}: ${validationErrors.join(', ')}`);
           }
 
-          const calculatedSphere = calculateSphereData(reservoirInput as SphereInputData);
+          const calculatedSphere = calculateSphereData(reservoirInput as SphereInputData, reservoirConfig.capacity);
 
           reservoirData = {
             inventoryId,

@@ -19,11 +19,15 @@ export async function GET(
     const center = await prisma.productionCenter.findUnique({
       where: { id: centerId },
       include: {
-        chefProduction: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+        chefProductions: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
         approFieldConfigs: {
@@ -47,7 +51,15 @@ export async function GET(
       return NextResponse.json({ error: 'Centre non trouvé' }, { status: 404 });
     }
 
-    return NextResponse.json(center);
+    // Transform to include backward-compatible chefProduction field
+    const chefs = center.chefProductions?.map((cp) => cp.user) || [];
+    const transformedCenter = {
+      ...center,
+      chefProduction: chefs[0] || null,
+      chefProductions: chefs,
+    };
+
+    return NextResponse.json(transformedCenter);
   } catch (error: any) {
     console.error('Error fetching center:', error);
     return NextResponse.json(

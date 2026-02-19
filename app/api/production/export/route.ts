@@ -26,12 +26,13 @@ export async function POST(req: NextRequest) {
     // Center-based access control for non-privileged users
     const PRIVILEGED_ROLES = ['ADMIN', 'DIRECTEUR_GENERAL', 'DOG', 'DIRECTEUR'];
     if (!PRIVILEGED_ROLES.includes(session.user.role)) {
-      const userCenter = await prisma.productionCenter.findFirst({
-        where: { chefProductionId: parseInt(session.user.id) },
-        select: { id: true }
+      // Find center where user is one of the chefs
+      const centerChef = await prisma.productionCenterChef.findFirst({
+        where: { userId: parseInt(session.user.id) },
+        select: { productionCenterId: true }
       });
-      if (userCenter) {
-        productionCenterId = userCenter.id;
+      if (centerChef) {
+        productionCenterId = centerChef.productionCenterId;
       } else {
         return NextResponse.json({ error: 'Aucun centre assigné' }, { status: 403 });
       }

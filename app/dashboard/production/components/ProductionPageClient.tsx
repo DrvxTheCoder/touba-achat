@@ -31,15 +31,18 @@ import Link from 'next/link';
 
 type TimePreset = 'day' | 'week' | 'month' | 'trimester' | 'year';
 
+interface ChefUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
 interface ProductionCenter {
   id: number;
   name: string;
   address: string;
-  chefProduction: {
-    id: number;
-    name: string;
-    email: string;
-  };
+  chefProduction: ChefUser; // backward compatibility - first chef
+  chefProductions?: ChefUser[]; // all chefs
 }
 
 interface ProductionPageClientProps {
@@ -207,8 +210,14 @@ export default function ProductionPageClient({
                 <p className="text-xs text-muted-foreground">{selectedCenter.address}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs sm:text-sm text-muted-foreground">Chef de production</p>
-                <p className="font-medium text-sm sm:text-base">{selectedCenter.chefProduction.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {(selectedCenter.chefProductions?.length ?? 1) > 1 ? 'Chefs de production' : 'Chef de production'}
+                </p>
+                <p className="font-medium text-sm sm:text-base">
+                  {selectedCenter.chefProductions && selectedCenter.chefProductions.length > 0
+                    ? selectedCenter.chefProductions.map(chef => chef.name).join(', ')
+                    : selectedCenter.chefProduction.name}
+                </p>
               </div>
             </div>
           </div>

@@ -146,9 +146,14 @@ export default function ReservoirSection({
       reservoir.densiteA15C > 0
     ) {
       console.log('✅ All conditions met, proceeding with calculation');
+
+      // Find the reservoir config to get its capacity
+      const config = reservoirConfigs.find(c => c.name === reservoir.name);
+      const capacity = config?.capacity;
+
       try {
-        // Valider
-        const errors = validateSphereInput(reservoir as SphereInputData);
+        // Valider (pass custom capacity from config)
+        const errors = validateSphereInput(reservoir as SphereInputData, capacity);
         if (errors.length > 0) {
           console.log('❌ Validation errors:', errors);
           setValidationErrors({ ...validationErrors, [reservoir.name]: errors });
@@ -158,9 +163,9 @@ export default function ReservoirSection({
           delete newErrors[reservoir.name];
           setValidationErrors(newErrors);
 
-          // Calculer - Toujours recalculer si tous les champs sont valides
+          // Calculer - Toujours recalculer si tous les champs sont valides (pass custom capacity)
           console.log('🧮 Calculating sphere data...');
-          const calculated = calculateSphereData(reservoir as SphereInputData);
+          const calculated = calculateSphereData(reservoir as SphereInputData, capacity);
           console.log('✅ Calculated values:', {
             poidsLiquide: calculated.poidsLiquide,
             poidsGaz: calculated.poidsGaz,

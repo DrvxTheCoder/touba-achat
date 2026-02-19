@@ -154,13 +154,13 @@ export async function GET(req: NextRequest) {
 
     // Center-based access control
     if (!isPrivileged) {
-      // Restricted user: find their assigned center
-      const userCenter = await prisma.productionCenter.findFirst({
-        where: { chefProductionId: parseInt(session.user.id) },
-        select: { id: true }
+      // Restricted user: find their assigned center (via junction table)
+      const centerChef = await prisma.productionCenterChef.findFirst({
+        where: { userId: parseInt(session.user.id) },
+        select: { productionCenterId: true }
       });
-      if (userCenter) {
-        where.productionCenterId = userCenter.id;
+      if (centerChef) {
+        where.productionCenterId = centerChef.productionCenterId;
       } else {
         // User is not chef of any center — return empty
         return NextResponse.json({

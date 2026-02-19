@@ -33,15 +33,18 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 
+interface ChefUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
 interface ProductionCenter {
   id: number;
   name: string;
   address: string;
-  chefProduction: {
-    id: number;
-    name: string;
-    email: string;
-  };
+  chefProduction: ChefUser; // backward compatibility - first chef
+  chefProductions?: ChefUser[]; // all chefs
   reservoirs: Array<{
     id: number;
     name: string;
@@ -72,7 +75,7 @@ export default function ProductionCentersSettings() {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
-    chefProductionId: '',
+    chefProductionIds: [] as string[],
   });
 
   const fetchCenters = async () => {
@@ -113,14 +116,18 @@ export default function ProductionCentersSettings() {
   const handleOpenDialog = (center?: ProductionCenter) => {
     if (center) {
       setSelectedCenter(center);
+      // Use chefProductions array if available, fallback to chefProduction for backward compat
+      const chefIds = center.chefProductions && center.chefProductions.length > 0
+        ? center.chefProductions.map(chef => chef.id.toString())
+        : center.chefProduction ? [center.chefProduction.id.toString()] : [];
       setFormData({
         name: center.name,
         address: center.address,
-        chefProductionId: center.chefProduction.id.toString(),
+        chefProductionIds: chefIds,
       });
     } else {
       setSelectedCenter(null);
-      setFormData({ name: '', address: '', chefProductionId: '' });
+      setFormData({ name: '', address: '', chefProductionIds: [] });
     }
     setDialogOpen(true);
   };
@@ -128,11 +135,11 @@ export default function ProductionCentersSettings() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedCenter(null);
-    setFormData({ name: '', address: '', chefProductionId: '' });
+    setFormData({ name: '', address: '', chefProductionIds: [] });
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.address || !formData.chefProductionId) {
+    if (!formData.name || !formData.address || formData.chefProductionIds.length === 0) {
       toast.error('Veuillez remplir tous les champs');
       return;
     }
@@ -140,7 +147,7 @@ export default function ProductionCentersSettings() {
     const payload = {
       name: formData.name,
       address: formData.address,
-      chefProductionId: parseInt(formData.chefProductionId),
+      chefProductionIds: formData.chefProductionIds.map(id => parseInt(id)),
     };
 
     try {
@@ -264,7 +271,7 @@ export default function ProductionCentersSettings() {
                 <TableRow>
                   <TableHead>Nom</TableHead>
                   <TableHead className="hidden md:table-cell">Adresse</TableHead>
-                  <TableHead>Chef de production</TableHead>
+                  <TableHead>Chefs de production</TableHead>
                   <TableHead className="hidden lg:table-cell text-center">Réservoirs</TableHead>
                   <TableHead className="hidden lg:table-cell text-center">Inventaires</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -285,14 +292,21 @@ export default function ProductionCentersSettings() {
                         {center.address}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{center.chefProduction.name}</span>
-                            <span className="text-xs text-muted-foreground hidden sm:inline">
-                              {center.chefProduction.email}
-                            </span>
-                          </div>
+                        <div className="flex flex-col gap-1">
+                          {(center.chefProductions && center.chefProductions.length > 0
+                            ? center.chefProductions
+                            : center.chefProduction ? [center.chefProduction] : []
+                          ).map((chef) => (
+                            <div key={chef.id} className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{chef.name}</span>
+                                <span className="text-xs text-muted-foreground hidden sm:inline">
+                                  {chef.email}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-center">
@@ -375,27 +389,66 @@ export default function ProductionCentersSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="chef">Chef de production</Label>
-              <Select
-                value={formData.chefProductionId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, chefProductionId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un chef" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      <div className="flex flex-col">
-                        <span>{user.name}</span>
-                        <span className="text-xs text-muted-foreground">{user.email}</span>
+              <Label>Chefs de production</Label>
+              <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                {users.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun utilisateur disponible</p>
+                ) : (
+                  users.map((user) => {
+                    const isSelected = formData.chefProductionIds.includes(user.id.toString());
+                    return (
+                      <div
+                        key={user.id}
+                        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors ${
+                          isSelected ? 'bg-primary/10 border border-primary' : 'hover:bg-muted'
+                        }`}
+                        onClick={() => {
+                          const userId = user.id.toString();
+                          if (isSelected) {
+                            setFormData({
+                              ...formData,
+                              chefProductionIds: formData.chefProductionIds.filter(id => id !== userId),
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              chefProductionIds: [...formData.chefProductionIds, userId],
+                            });
+                          }
+                        }}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          isSelected ? 'bg-primary border-primary' : 'border-input'
+                        }`}>
+                          {isSelected && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="w-3 h-3 text-primary-foreground"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{user.name}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    );
+                  })
+                )}
+              </div>
+              {formData.chefProductionIds.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {formData.chefProductionIds.length} chef(s) sélectionné(s)
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Seuls les utilisateurs avec l&apos;accès CREATE_PRODUCTION_INVENTORY sont listés
               </p>

@@ -174,14 +174,14 @@ export async function POST(
           // Valider le schéma Zod
           const parsedSphere = sphereInputSchema.parse(reservoirInput);
 
-          // Valider les règles métier
-          const validationErrors = validateSphereInput(parsedSphere as SphereInputData);
+          // Valider les règles métier (pass reservoir capacity from config)
+          const validationErrors = validateSphereInput(parsedSphere as SphereInputData, reservoirConfig.capacity);
           if (validationErrors.length > 0) {
-            throw new Error(`Erreur validation sphère ${parsedSphere.name}: ${validationErrors.join(', ')}`);
+            throw new Error(`Erreur validation réservoir ${parsedSphere.name}: ${validationErrors.join(', ')}`);
           }
 
-          // Calculer toutes les valeurs dérivées
-          const calculatedSphere = calculateSphereData(parsedSphere as SphereInputData);
+          // Calculer toutes les valeurs dérivées (pass reservoir capacity from config)
+          const calculatedSphere = calculateSphereData(parsedSphere as SphereInputData, reservoirConfig.capacity);
 
           reservoirData = {
             inventoryId,

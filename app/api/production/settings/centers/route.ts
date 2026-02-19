@@ -4,12 +4,24 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// Schema validation
+// Schema validation - now supports multiple chefs
 const productionCenterSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
   address: z.string().min(1, 'L\'adresse est requise'),
-  chefProductionId: z.number().int().positive(),
+  chefProductionIds: z.array(z.number().int().positive()).min(1, 'Au moins un chef de production est requis'),
 });
+
+// Helper to transform center data to include chefProduction for backward compatibility
+function transformCenterResponse(center: any) {
+  const chefs = center.chefProductions?.map((cp: any) => cp.user) || [];
+  return {
+    ...center,
+    // Keep chefProduction as the first chef for backward compatibility
+    chefProduction: chefs[0] || null,
+    // Add new field with all chefs
+    chefProductions: chefs,
+  };
+}
 
 // GET /api/production/settings/centers - List all production centers
 export async function GET() {
@@ -21,11 +33,15 @@ export async function GET() {
 
     const centers = await prisma.productionCenter.findMany({
       include: {
-        chefProduction: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+        chefProductions: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
         reservoirs: {
@@ -48,7 +64,10 @@ export async function GET() {
       orderBy: { name: 'asc' },
     });
 
-    return NextResponse.json(centers);
+    // Transform to include backward-compatible chefProduction field
+    const transformedCenters = centers.map(transformCenterResponse);
+
+    return NextResponse.json(transformedCenters);
   } catch (error: any) {
     console.error('Erreur récupération centres de production:', error);
     return NextResponse.json(
@@ -72,41 +91,63 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    // Handle backward compatibility: if chefProductionId is provided, convert to array
+    if (body.chefProductionId && !body.chefProductionIds) {
+      body.chefProductionIds = [body.chefProductionId];
+    }
+
     const validated = productionCenterSchema.parse(body);
 
-    // Check if chef exists and has production access
-    const chef = await prisma.user.findUnique({
-      where: { id: validated.chefProductionId },
+    // Check if all chefs exist and have production access
+    const chefs = await prisma.user.findMany({
+      where: { id: { in: validated.chefProductionIds } },
     });
 
-    if (!chef) {
+    if (chefs.length !== validated.chefProductionIds.length) {
       return NextResponse.json(
-        { error: 'Chef de production introuvable' },
+        { error: 'Un ou plusieurs chefs de production introuvables' },
         { status: 404 }
       );
     }
 
-    if (!chef.access.includes('CREATE_PRODUCTION_INVENTORY')) {
+    const chefsWithoutAccess = chefs.filter(
+      chef => !chef.access.includes('CREATE_PRODUCTION_INVENTORY')
+    );
+
+    if (chefsWithoutAccess.length > 0) {
       return NextResponse.json(
-        { error: 'L\'utilisateur n\'a pas les droits de production' },
+        { error: `Les utilisateurs suivants n'ont pas les droits de production: ${chefsWithoutAccess.map(c => c.name).join(', ')}` },
         { status: 400 }
       );
     }
 
     const center = await prisma.productionCenter.create({
-      data: validated,
+      data: {
+        name: validated.name,
+        address: validated.address,
+        chefProductions: {
+          create: validated.chefProductionIds.map(userId => ({
+            userId,
+          })),
+        },
+      },
       include: {
-        chefProduction: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+        chefProductions: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
       },
     });
 
-    return NextResponse.json(center);
+    return NextResponse.json(transformCenterResponse(center));
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -143,44 +184,80 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'ID requis' }, { status: 400 });
     }
 
+    // Handle backward compatibility: if chefProductionId is provided, convert to array
+    if (data.chefProductionId && !data.chefProductionIds) {
+      data.chefProductionIds = [data.chefProductionId];
+    }
+
     const validated = productionCenterSchema.partial().parse(data);
 
-    // If updating chef, check if user has production access
-    if (validated.chefProductionId) {
-      const chef = await prisma.user.findUnique({
-        where: { id: validated.chefProductionId },
+    // If updating chefs, check if all users have production access
+    if (validated.chefProductionIds && validated.chefProductionIds.length > 0) {
+      const chefs = await prisma.user.findMany({
+        where: { id: { in: validated.chefProductionIds } },
       });
 
-      if (!chef) {
+      if (chefs.length !== validated.chefProductionIds.length) {
         return NextResponse.json(
-          { error: 'Chef de production introuvable' },
+          { error: 'Un ou plusieurs chefs de production introuvables' },
           { status: 404 }
         );
       }
 
-      if (!chef.access.includes('CREATE_PRODUCTION_INVENTORY')) {
+      const chefsWithoutAccess = chefs.filter(
+        chef => !chef.access.includes('CREATE_PRODUCTION_INVENTORY')
+      );
+
+      if (chefsWithoutAccess.length > 0) {
         return NextResponse.json(
-          { error: 'L\'utilisateur n\'a pas les droits de production' },
+          { error: `Les utilisateurs suivants n'ont pas les droits de production: ${chefsWithoutAccess.map(c => c.name).join(', ')}` },
           { status: 400 }
         );
       }
     }
 
-    const center = await prisma.productionCenter.update({
-      where: { id },
-      data: validated,
-      include: {
-        chefProduction: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    // Build update data
+    const updateData: any = {};
+    if (validated.name) updateData.name = validated.name;
+    if (validated.address) updateData.address = validated.address;
+
+    // Update center and chefs in a transaction
+    const center = await prisma.$transaction(async (tx) => {
+      // If chefs are being updated, delete existing and create new
+      if (validated.chefProductionIds && validated.chefProductionIds.length > 0) {
+        await tx.productionCenterChef.deleteMany({
+          where: { productionCenterId: id },
+        });
+
+        await tx.productionCenterChef.createMany({
+          data: validated.chefProductionIds.map(userId => ({
+            productionCenterId: id,
+            userId,
+          })),
+        });
+      }
+
+      // Update center basic info
+      return tx.productionCenter.update({
+        where: { id },
+        data: updateData,
+        include: {
+          chefProductions: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
           },
         },
-      },
+      });
     });
 
-    return NextResponse.json(center);
+    return NextResponse.json(transformCenterResponse(center));
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

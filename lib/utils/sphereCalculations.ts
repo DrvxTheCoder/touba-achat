@@ -69,10 +69,12 @@ export function calculateLiquidVolumeFromHeight(
 }
 
 /**
- * Calcule toutes les valeurs dérivées pour une sphère
+ * Calcule toutes les valeurs dérivées pour une sphère/réservoir
  * Formules basées sur le fichier Excel officiel
+ * @param input Les données d'entrée du réservoir
+ * @param customCapacity Capacité personnalisée en m³ (optionnel - pour les réservoirs dynamiques)
  */
-export function calculateSphereData(input: SphereInputData): SphereCalculatedData {
+export function calculateSphereData(input: SphereInputData, customCapacity?: number): SphereCalculatedData {
   // 1. Récupérer les facteurs de correction depuis la table
   // Facteur liquide basé sur température liquide
   const { facteurLiquide } = getCorrectionFactors(input.temperature);
@@ -88,9 +90,10 @@ export function calculateSphereData(input: SphereInputData): SphereCalculatedDat
   const poidsLiquide = densiteAmbiante * input.volumeLiquide;
 
   // 4. Calculer le volume de gaz (capacité totale - volume liquide)
-  const sphereCapacity = SPHERE_CAPACITIES[input.name];
+  // Use custom capacity if provided, otherwise use hardcoded capacities
+  const sphereCapacity = customCapacity ?? SPHERE_CAPACITIES[input.name];
   if (!sphereCapacity) {
-    throw new Error(`Capacité inconnue pour la sphère ${input.name}`);
+    throw new Error(`Capacité inconnue pour le réservoir ${input.name}. Veuillez configurer la capacité dans les paramètres.`);
   }
   const volumeGaz = sphereCapacity - input.volumeLiquide;
 
@@ -113,10 +116,12 @@ export function calculateSphereData(input: SphereInputData): SphereCalculatedDat
 }
 
 /**
- * Valide les données d'entrée d'une sphère
+ * Valide les données d'entrée d'une sphère/réservoir
  * Retourne un tableau d'erreurs (vide si tout est valide)
+ * @param input Les données d'entrée du réservoir
+ * @param customCapacity Capacité personnalisée en m³ (optionnel - pour les réservoirs dynamiques)
  */
-export function validateSphereInput(input: SphereInputData): string[] {
+export function validateSphereInput(input: SphereInputData, customCapacity?: number): string[] {
   const errors: string[] = [];
 
   // Validation de la hauteur
@@ -138,18 +143,26 @@ export function validateSphereInput(input: SphereInputData): string[] {
   }
 
   // Validation du volume liquide
-  const sphereCapacity = SPHERE_CAPACITIES[input.name];
-  if (!sphereCapacity) {
-    errors.push(`Nom de sphère invalide: ${input.name}. Utilisez D100, SO2 ou SO3`);
+  // Use custom capacity if provided, otherwise check hardcoded capacities
+  const sphereCapacity = customCapacity ?? SPHERE_CAPACITIES[input.name];
+  if (sphereCapacity === undefined || sphereCapacity === null) {
+    // Only error if no custom capacity AND not in hardcoded list
+    // Skip this validation for dynamic reservoirs (when customCapacity would be provided by caller)
+    // For backwards compatibility, we'll allow any reservoir name and just validate the volume if we have a capacity
   } else {
     if (input.volumeLiquide < 0) {
       errors.push('Le volume liquide ne peut pas être négatif');
     }
     if (input.volumeLiquide > sphereCapacity) {
       errors.push(
-        `Le volume liquide (${input.volumeLiquide} m³) dépasse la capacité de la sphère (${sphereCapacity} m³)`
+        `Le volume liquide (${input.volumeLiquide} m³) dépasse la capacité du réservoir (${sphereCapacity} m³)`
       );
     }
+  }
+
+  // Basic volume validation even without capacity
+  if (input.volumeLiquide < 0) {
+    errors.push('Le volume liquide ne peut pas être négatif');
   }
 
   // Validation de la pression interne

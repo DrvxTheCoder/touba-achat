@@ -53,7 +53,11 @@ async function main() {
     create: {
       name: 'Centre GPL Principal',
       address: 'Touba, Sénégal',
-      chefProductionId: adminUser.id,
+      chefProductions: {
+        create: {
+          userId: adminUser.id,
+        },
+      },
     },
   });
   console.log(`✅ Production center created: ${defaultCenter.name}`);

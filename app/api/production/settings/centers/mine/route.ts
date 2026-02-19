@@ -19,17 +19,38 @@ export async function GET() {
       return NextResponse.json({ center: null, isPrivileged: true });
     }
 
-    const center = await prisma.productionCenter.findFirst({
-      where: { chefProductionId: parseInt(session.user.id) },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        chefProduction: {
-          select: { id: true, name: true, email: true }
+    // Find center where user is one of the chefs
+    const centerChef = await prisma.productionCenterChef.findFirst({
+      where: { userId: parseInt(session.user.id) },
+      include: {
+        productionCenter: {
+          include: {
+            chefProductions: {
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true }
+                }
+              }
+            }
+          }
         }
       }
     });
+
+    if (!centerChef) {
+      return NextResponse.json({ center: null, isPrivileged: false });
+    }
+
+    // Transform the response to maintain backward compatibility
+    const center = {
+      id: centerChef.productionCenter.id,
+      name: centerChef.productionCenter.name,
+      address: centerChef.productionCenter.address,
+      // Keep chefProduction as the first chef for backward compatibility
+      chefProduction: centerChef.productionCenter.chefProductions[0]?.user || null,
+      // Add all chefs
+      chefProductions: centerChef.productionCenter.chefProductions.map(cp => cp.user),
+    };
 
     return NextResponse.json({ center, isPrivileged: false });
   } catch (error) {
