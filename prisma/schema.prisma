@@ -283,6 +283,7 @@ model User {
   ProductionCompleter   ProductionInventory[] @relation("ProductionCompleter")
   ArretCreator          ProductionArret[] @relation("ArretCreator")
   ProductionCentersManaged ProductionCenterChef[] @relation("ProductionCenterChefs")
+  inventoryAuditLogs    InventoryAuditLog[] @relation("InventoryEditor")
 }
 
 model Employee {
@@ -582,6 +583,9 @@ model ProductionInventory {
   updatedAt             DateTime             @updatedAt
   observations          String?
 
+  // Audit logs for edit tracking
+  auditLogs             InventoryAuditLog[]
+
   @@unique([date, productionCenterId])
 }
 
@@ -833,4 +837,26 @@ model SortieValue {
 
   @@unique([inventoryId, fieldConfigId])
   @@index([inventoryId])
+}
+
+// Audit log for production inventory edits
+model InventoryAuditLog {
+  id                    Int                  @id @default(autoincrement())
+  inventoryId           Int
+  inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  editedById            Int
+  editedBy              User                 @relation("InventoryEditor", fields: [editedById], references: [id])
+
+  editedAt              DateTime             @default(now())
+
+  // JSON storing array of changes: [{ field, oldValue, newValue }, ...]
+  changes               Json
+
+  // Optional summary of changes
+  summary               String?
+
+  @@index([inventoryId])
+  @@index([editedById])
+  @@index([editedAt])
 }
