@@ -39,6 +39,12 @@ enum Access {
   VIEW_PRODUCTION_DASHBOARD
   VALIDATE_PRODUCTION_INVENTORY
   EXPORT_PRODUCTION_REPORTS
+  // ODM workflow accesses
+  ODM_DIRECTOR_APPROVE    // Can approve at department level
+  ODM_DRH_APPROVE         // Can approve/reject at DRH stages
+  ODM_RH_PROCESS          // Can process ODM (add costs)
+  ODM_DOG_APPROVE         // Can give final DOG approval
+  ODM_PRINT               // Can print the final document
 }
 
 enum EmployeeStatus {
@@ -114,11 +120,16 @@ enum ODMStatus {
   DRAFT
   SUBMITTED
   AWAITING_DIRECTOR_APPROVAL
-  AWAITING_RH_PROCESSING
-  RH_PROCESSING
-  AWAITING_FINANCE_APPROVAL
-  COMPLETED
+  AWAITING_DRH_APPROVAL        // DRH marks ready for RH processing
+  RH_PROCESSING                // RH user processes (adds costs, expenses)
+  AWAITING_DRH_VALIDATION      // DRH validates RH work
+  AWAITING_DOG_APPROVAL        // DOG final approval
+  READY_FOR_PRINT              // RH user prints with DRH + DOG stamps
   REJECTED
+  // Legacy statuses (kept for migration compatibility)
+  AWAITING_RH_PROCESSING       // @deprecated - use AWAITING_DRH_APPROVAL
+  AWAITING_FINANCE_APPROVAL    // @deprecated - migrated to READY_FOR_PRINT
+  COMPLETED                    // @deprecated - use READY_FOR_PRINT
 }
 
 enum BDCStatus {
@@ -161,12 +172,18 @@ enum ODMEventType {
   DRAFT
   SUBMITTED
   AWAITING_DIRECTOR_APPROVAL
-  AWAITING_RH_PROCESSING
-  RH_PROCESSING
-  AWAITING_FINANCE_APPROVAL
-  COMPLETED
+  AWAITING_DRH_APPROVAL        // DRH marks ready for RH processing
+  RH_PROCESSING                // RH processes ODM
+  AWAITING_DRH_VALIDATION      // DRH validates RH work
+  AWAITING_DOG_APPROVAL        // DOG final approval
+  READY_FOR_PRINT              // Ready for print with dual stamps
   REJECTED
   UPDATED
+  RESTARTED                    // DRH restarts rejected ODM
+  // Legacy events (kept for compatibility)
+  AWAITING_RH_PROCESSING       // @deprecated
+  AWAITING_FINANCE_APPROVAL    // @deprecated
+  COMPLETED                    // @deprecated
 }
 
 enum BDCEventType {

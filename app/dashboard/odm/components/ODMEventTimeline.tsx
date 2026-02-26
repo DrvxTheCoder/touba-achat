@@ -1,29 +1,38 @@
 // components/ODMTimeline.tsx
 import React from 'react';
-import { User, Stamp, Plane, CheckCircle2, XCircle, FileText, Clock, Calculator } from 'lucide-react';
+import { User, Stamp, CheckCircle2, XCircle, FileText, Clock, Calculator, Printer, RotateCcw } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator"
 
-type ODMStatus = 
+type ODMStatus =
   | 'DRAFT'
   | 'SUBMITTED'
   | 'AWAITING_DIRECTOR_APPROVAL'
+  | 'AWAITING_DRH_APPROVAL'
   | 'AWAITING_RH_PROCESSING'
   | 'RH_PROCESSING'
+  | 'AWAITING_DRH_VALIDATION'
+  | 'AWAITING_DOG_APPROVAL'
+  | 'READY_FOR_PRINT'
   | 'AWAITING_FINANCE_APPROVAL'
   | 'COMPLETED'
   | 'REJECTED';
 
-type ODMEventType = 
+type ODMEventType =
   | 'DRAFT'
   | 'SUBMITTED'
   | 'AWAITING_DIRECTOR_APPROVAL'
+  | 'AWAITING_DRH_APPROVAL'
   | 'AWAITING_RH_PROCESSING'
   | 'RH_PROCESSING'
+  | 'AWAITING_DRH_VALIDATION'
+  | 'AWAITING_DOG_APPROVAL'
+  | 'READY_FOR_PRINT'
   | 'AWAITING_FINANCE_APPROVAL'
   | 'COMPLETED'
   | 'REJECTED'
-  | 'UPDATED';
+  | 'UPDATED'
+  | 'RESTARTED';
 
 type ODMTimelineProps = {
   odm: {
@@ -45,24 +54,34 @@ const eventTypeIcons: Record<ODMEventType, React.ElementType> = {
   DRAFT: User,
   SUBMITTED: FileText,
   AWAITING_DIRECTOR_APPROVAL: Clock,
+  AWAITING_DRH_APPROVAL: Clock,
   AWAITING_RH_PROCESSING: Clock,
   RH_PROCESSING: Stamp,
+  AWAITING_DRH_VALIDATION: Clock,
+  AWAITING_DOG_APPROVAL: Clock,
+  READY_FOR_PRINT: Printer,
   AWAITING_FINANCE_APPROVAL: Calculator,
-  COMPLETED: CheckCircle2,
+  COMPLETED: Printer,
   REJECTED: XCircle,
-  UPDATED: FileText
+  UPDATED: FileText,
+  RESTARTED: RotateCcw,
 };
 
 const eventTypeTranslations: Record<ODMEventType, string> = {
   DRAFT: "Brouillon créé",
   SUBMITTED: "Soumis",
-  AWAITING_DIRECTOR_APPROVAL: "En attente d'approbation",
+  AWAITING_DIRECTOR_APPROVAL: "En attente d'approbation du Directeur",
+  AWAITING_DRH_APPROVAL: "Approuvé par le Directeur - En attente DRH",
   AWAITING_RH_PROCESSING: "Approuvé par la Direction",
-  RH_PROCESSING: "Approuvé et en cours de traitement (RH)",
-  AWAITING_FINANCE_APPROVAL:"Traité par les Ressources Humaines",
-  COMPLETED: "Approuvé par la DAF",
+  RH_PROCESSING: "Envoyé pour traitement RH",
+  AWAITING_DRH_VALIDATION: "Traité par RH - En attente validation DRH",
+  AWAITING_DOG_APPROVAL: "Validé par DRH - En attente approbation DOG",
+  READY_FOR_PRINT: "Approuvé par DOG - Prêt pour impression",
+  AWAITING_FINANCE_APPROVAL: "Traité par les Ressources Humaines",
+  COMPLETED: "Imprimé",
   REJECTED: "Rejeté",
-  UPDATED: "Mis à jour"
+  UPDATED: "Mis à jour",
+  RESTARTED: "Redémarré par DRH",
 };
 
 const formatDate = (dateString: string) => {

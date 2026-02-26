@@ -4,6 +4,10 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { processODMByRH } from '@/app/api/odm/utils/odm-util';
 import prisma from '@/lib/prisma';
 
+/**
+ * RH Processing Endpoint
+ * Handles RH processing of ODM (RH_PROCESSING -> AWAITING_DRH_VALIDATION)
+ */
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -11,24 +15,44 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    if (session.user.role !== 'RH') {
+    // Check if user has RH role or ODM_RH_PROCESS access
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(session.user.id) },
+      select: { role: true, access: true }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    }
+
+    const hasAccess = user.role === 'RH' ||
+      user.role === 'DRH' ||
+      user.role === 'ADMIN' ||
+      user.access.includes('ODM_RH_PROCESS');
+
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
     const id = parseInt(params.id);
     const { missionCostPerDay, expenseItems, totalCost, accompanyingPersons } = await req.json();
 
-    const updatedODM = await processODMByRH(id, parseInt(session.user.id), { 
-      missionCostPerDay, 
-      expenseItems, 
+    const updatedODM = await processODMByRH(id, parseInt(session.user.id), {
+      missionCostPerDay,
+      expenseItems,
       totalCost,
       accompanyingPersons
     });
 
-    return NextResponse.json(updatedODM);
+    return NextResponse.json({
+      message: 'ODM traité, en attente de validation DRH',
+      odm: updatedODM
+    });
   } catch (error) {
     console.error('Erreur lors du traitement de l\'ODM:', error);
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({
+      error: (error as Error).message || 'Erreur interne du serveur'
+    }, { status: 500 });
   }
 }
 

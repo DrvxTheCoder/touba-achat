@@ -1,9 +1,26 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
-import { approveODM, approveODMByRHDirector } from '@/app/api/odm/utils/odm-util';
-import prisma from '@/lib/prisma';
+import {
+  approveODMByDirector,
+  approveDRHForProcessing,
+  validateByDRH,
+  approveByDOG,
+  restartODMToProcessing,
+  restartODMToDOGApproval
+} from '@/app/api/odm/utils/odm-util';
 
+/**
+ * ODM Approval Endpoint
+ * Handles all approval actions in the new workflow:
+ *
+ * action: 'director_approve' - Director approves (SUBMITTED -> AWAITING_DRH_APPROVAL)
+ * action: 'drh_approve' - DRH marks for processing (AWAITING_DRH_APPROVAL -> RH_PROCESSING)
+ * action: 'drh_validate' - DRH validates RH work (AWAITING_DRH_VALIDATION -> AWAITING_DOG_APPROVAL)
+ * action: 'dog_approve' - DOG final approval (AWAITING_DOG_APPROVAL -> READY_FOR_PRINT)
+ * action: 'restart_to_processing' - DRH restarts rejected ODM to RH_PROCESSING
+ * action: 'restart_to_dog' - DRH restarts rejected ODM to AWAITING_DOG_APPROVAL
+ */
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -11,10 +28,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const { role, id: userId } = session.user;
+    const { id: userId } = session.user;
     const odmId = parseInt(params.id);
 
-    // Parse the request body
+    if (isNaN(odmId)) {
+      return NextResponse.json({ error: 'ID ODM invalide' }, { status: 400 });
+    }
+
     let body;
     try {
       body = await req.json();
@@ -25,33 +45,74 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     const { action } = body || {};
 
-    if (action === 'approveRHDirector') {
-        // Check if the user is a DIRECTEUR and belongs to the "Direction Ressources Humaines" department
-        const user = await prisma.user.findUnique({
-          where: { id: parseInt(userId) },
-          include: { employee: { include: { currentDepartment: true } } },
-        });
-  
-        if (
-          user?.role !== 'DIRECTEUR' ||
-          user?.employee?.currentDepartment?.name !== 'Direction Ressources Humaines'
-        ) {
-          return NextResponse.json({ error: 'Non autorisé. Seul le Directeur des Ressources Humaines peut effectuer cette action.' }, { status: 403 });
-        }
-  
-        const updatedODM = await approveODMByRHDirector(odmId, parseInt(userId));
-        return NextResponse.json(updatedODM);
-    } else {
-      // Regular approval process
-      if (!['DIRECTEUR', 'DIRECTEUR_GENERAL', 'ADMIN', 'DAF', 'DOG', 'DCM', 'DRH'].includes(role)) {
-        return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
-      }
+    let updatedODM;
 
-      const updatedODM = await approveODM(odmId, parseInt(userId), role);
-      return NextResponse.json({ message: 'ODM approuvé avec succès', odm: updatedODM });
+    switch (action) {
+      case 'director_approve':
+        // Director approves ODM (SUBMITTED -> AWAITING_DRH_APPROVAL)
+        updatedODM = await approveODMByDirector(odmId, parseInt(userId));
+        return NextResponse.json({
+          message: 'ODM approuvé par le directeur',
+          odm: updatedODM
+        });
+
+      case 'drh_approve':
+        // DRH marks for RH processing (AWAITING_DRH_APPROVAL -> RH_PROCESSING)
+        updatedODM = await approveDRHForProcessing(odmId, parseInt(userId));
+        return NextResponse.json({
+          message: 'ODM envoyé pour traitement RH',
+          odm: updatedODM
+        });
+
+      case 'drh_validate':
+        // DRH validates RH work (AWAITING_DRH_VALIDATION -> AWAITING_DOG_APPROVAL)
+        updatedODM = await validateByDRH(odmId, parseInt(userId));
+        return NextResponse.json({
+          message: 'ODM validé par DRH, envoyé pour approbation DOG',
+          odm: updatedODM
+        });
+
+      case 'dog_approve':
+        // DOG final approval (AWAITING_DOG_APPROVAL -> READY_FOR_PRINT)
+        updatedODM = await approveByDOG(odmId, parseInt(userId));
+        return NextResponse.json({
+          message: 'ODM approuvé par DOG, prêt pour impression',
+          odm: updatedODM
+        });
+
+      case 'restart_to_processing':
+        // DRH restarts rejected ODM to RH_PROCESSING
+        updatedODM = await restartODMToProcessing(odmId, parseInt(userId));
+        return NextResponse.json({
+          message: 'ODM redémarré vers traitement RH',
+          odm: updatedODM
+        });
+
+      case 'restart_to_dog':
+        // DRH restarts rejected ODM to AWAITING_DOG_APPROVAL
+        updatedODM = await restartODMToDOGApproval(odmId, parseInt(userId));
+        return NextResponse.json({
+          message: 'ODM redémarré vers approbation DOG',
+          odm: updatedODM
+        });
+
+      // Legacy action support
+      case 'approveRHDirector':
+        updatedODM = await approveDRHForProcessing(odmId, parseInt(userId));
+        return NextResponse.json(updatedODM);
+
+      default:
+        // Legacy flow - treat as director approval
+        updatedODM = await approveODMByDirector(odmId, parseInt(userId));
+        return NextResponse.json({
+          message: 'ODM approuvé avec succès',
+          odm: updatedODM
+        });
     }
   } catch (error) {
     console.error('Erreur lors de l\'approbation de l\'ODM:', error);
-    return NextResponse.json({ error: 'Erreur interne du serveur', details: (error as Error).message }, { status: 500 });
+    return NextResponse.json({
+      error: (error as Error).message || 'Erreur interne du serveur'
+    }, { status: 500 });
   }
 }

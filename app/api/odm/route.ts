@@ -133,19 +133,31 @@ export async function GET(req: Request) {
         // Check if the director is from Direction Administrative et Financière
         switch (user?.employee?.currentDepartment.name) {
           case 'Direction Administrative et Financière':
-            // Finance director access
+            // Finance/DAF director - sees DOG approval and ready for print (legacy)
             where.OR = [
-              { status: 'AWAITING_FINANCE_APPROVAL' },
-              { status: 'COMPLETED' },
+              { status: 'AWAITING_DOG_APPROVAL' },
+              { status: 'AWAITING_FINANCE_APPROVAL' }, // Legacy
+              { status: 'READY_FOR_PRINT' },
+              { status: 'COMPLETED' }, // Legacy
               { status: 'REJECTED' },
               { departmentId: user.employee.currentDepartmentId }
             ];
             break;
-            
-          case 'Direction Ressources Humaines':
-            // RH director sees all ODMs
+
+          case 'Direction des Opérations Gaz':
+            // DOG director - sees ODMs awaiting DOG approval
+            where.OR = [
+              { status: 'AWAITING_DOG_APPROVAL' },
+              { status: 'READY_FOR_PRINT' },
+              { status: 'REJECTED' },
+              { departmentId: user.employee.currentDepartmentId }
+            ];
             break;
-            
+
+          case 'Direction Ressources Humaines':
+            // DRH director sees all ODMs (manages the workflow)
+            break;
+
           default:
             // Other directors see only their department's ODMs
             where.departmentId = user?.employee?.currentDepartmentId;
