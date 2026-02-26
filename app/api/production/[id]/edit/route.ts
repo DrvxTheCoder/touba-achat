@@ -15,6 +15,105 @@ const BOTTLE_WEIGHTS: Record<string, number> = {
   B38: 38
 };
 
+// Helper to compare values and detect changes
+interface ChangeRecord {
+  field: string;
+  oldValue: any;
+  newValue: any;
+}
+
+function detectChanges(
+  oldInventory: any,
+  newData: any,
+  oldBottles: any[],
+  newBottles: any[],
+  oldReservoirs: any[],
+  newReservoirs: any[],
+  oldApproValues: Record<string, number>,
+  newApproValues: Record<string, number>,
+  oldSortieValues: Record<string, number>,
+  newSortieValues: Record<string, number>
+): ChangeRecord[] {
+  const changes: ChangeRecord[] = [];
+
+  // Simple field comparisons
+  const simpleFields = [
+    { key: 'butanier', label: 'Butanier' },
+    { key: 'recuperation', label: 'Récupération' },
+    { key: 'approSAR', label: 'Appro SAR' },
+    { key: 'ngabou', label: 'Ngabou' },
+    { key: 'exports', label: 'Exports' },
+    { key: 'divers', label: 'Divers' },
+    { key: 'heureDebut', label: 'Heure début' },
+    { key: 'heureFin', label: 'Heure fin' },
+    { key: 'tempsTotal', label: 'Temps total' },
+    { key: 'observations', label: 'Observations' },
+  ];
+
+  for (const { key, label } of simpleFields) {
+    const oldVal = oldInventory[key];
+    const newVal = newData[key];
+    if (newVal !== undefined && newVal !== oldVal) {
+      changes.push({ field: label, oldValue: oldVal, newValue: newVal });
+    }
+  }
+
+  // Bottles comparison
+  const oldBottleMap = new Map(oldBottles.map(b => [b.type, b.quantity]));
+  const newBottleMap = new Map(newBottles.map((b: any) => [b.type, b.quantity]));
+  const allBottleTypes = new Set([...Array.from(oldBottleMap.keys()), ...Array.from(newBottleMap.keys())]);
+
+  allBottleTypes.forEach(type => {
+    const oldQty = oldBottleMap.get(type) || 0;
+    const newQty = newBottleMap.get(type) || 0;
+    if (oldQty !== newQty) {
+      changes.push({ field: `Bouteilles ${type}`, oldValue: oldQty, newValue: newQty });
+    }
+  });
+
+  // Reservoir comparison
+  const oldReservoirMap = new Map(oldReservoirs.map(r => [r.name, r]));
+  for (const newRes of newReservoirs) {
+    const oldRes = oldReservoirMap.get(newRes.name);
+    if (oldRes) {
+      const reservoirFields = ['hauteur', 'temperature', 'temperatureVapeur', 'densiteA15C', 'pressionInterne', 'poidsLiquide'];
+      for (const field of reservoirFields) {
+        if (newRes[field] !== undefined && newRes[field] !== oldRes[field]) {
+          changes.push({
+            field: `${newRes.name} - ${field}`,
+            oldValue: oldRes[field],
+            newValue: newRes[field]
+          });
+        }
+      }
+    }
+  }
+
+  // Appro values comparison
+  const allApproKeys = [...Object.keys(oldApproValues), ...Object.keys(newApproValues)];
+  const uniqueApproKeys = allApproKeys.filter((key, index) => allApproKeys.indexOf(key) === index);
+  uniqueApproKeys.forEach(key => {
+    const oldVal = oldApproValues[key] || 0;
+    const newVal = newApproValues[key] || 0;
+    if (oldVal !== newVal) {
+      changes.push({ field: `Appro: ${key}`, oldValue: oldVal, newValue: newVal });
+    }
+  });
+
+  // Sortie values comparison
+  const allSortieKeys = [...Object.keys(oldSortieValues), ...Object.keys(newSortieValues)];
+  const uniqueSortieKeys = allSortieKeys.filter((key, index) => allSortieKeys.indexOf(key) === index);
+  uniqueSortieKeys.forEach(key => {
+    const oldVal = oldSortieValues[key] || 0;
+    const newVal = newSortieValues[key] || 0;
+    if (oldVal !== newVal) {
+      changes.push({ field: `Sortie: ${key}`, oldValue: oldVal, newValue: newVal });
+    }
+  });
+
+  return changes;
+}
+
 // PUT /api/production/[id]/edit - Edit a completed inventory
 export async function PUT(
   req: NextRequest,
@@ -40,19 +139,36 @@ export async function PUT(
 
     // Transaction pour garantir la cohérence
     const result = await prisma.$transaction(async (tx) => {
-      // Vérifier inventaire existe
+      // Vérifier inventaire existe et capturer les anciennes valeurs pour l'audit
       const inventory = await tx.productionInventory.findUnique({
         where: { id: inventoryId },
         include: {
           bottles: true,
           reservoirs: true,
-          approValues: true,
-          sortieValues: true
+          approValues: {
+            include: { fieldConfig: true }
+          },
+          sortieValues: {
+            include: { fieldConfig: true }
+          }
         }
       });
 
       if (!inventory) {
         throw new Error('Inventaire non trouvé');
+      }
+
+      // Store old values for audit comparison
+      const oldInventorySnapshot = { ...inventory };
+      const oldBottles = [...inventory.bottles];
+      const oldReservoirs = [...inventory.reservoirs];
+      const oldApproValues: Record<string, number> = {};
+      for (const av of inventory.approValues) {
+        oldApproValues[av.fieldConfig.name] = av.value;
+      }
+      const oldSortieValues: Record<string, number> = {};
+      for (const sv of inventory.sortieValues) {
+        oldSortieValues[sv.fieldConfig.name] = sv.value;
       }
 
       // Use manual time fields if provided
@@ -286,6 +402,39 @@ export async function PUT(
           completedBy: { select: { id: true, name: true, email: true } }
         }
       });
+
+      // Detect changes for audit log
+      const newApproValues: Record<string, number> = data.approValues || {};
+      const newSortieValues: Record<string, number> = data.sortieValues || {};
+
+      const changes = detectChanges(
+        oldInventorySnapshot,
+        data,
+        oldBottles,
+        data.bottles || [],
+        oldReservoirs,
+        data.reservoirs || [],
+        oldApproValues,
+        newApproValues,
+        oldSortieValues,
+        newSortieValues
+      );
+
+      // Create audit log entry if there are changes
+      if (changes.length > 0) {
+        const summary = changes.length === 1
+          ? `${changes[0].field} modifié`
+          : `${changes.length} champs modifiés`;
+
+        await tx.inventoryAuditLog.create({
+          data: {
+            inventoryId,
+            editedById: parseInt(session.user.id),
+            changes: changes as unknown as any,
+            summary
+          }
+        });
+      }
 
       return updated;
     });

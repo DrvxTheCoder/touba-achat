@@ -41,6 +41,12 @@ export async function GET(
           include: {
             fieldConfig: true
           }
+        },
+        auditLogs: {
+          orderBy: { editedAt: 'desc' },
+          include: {
+            editedBy: { select: { id: true, name: true, email: true } }
+          }
         }
       }
     });
@@ -127,8 +133,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
 
+    // Only ADMIN can delete inventories
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Permission refusee' }, { status: 403 });
+      return NextResponse.json({ error: 'Permission refusée - Seuls les administrateurs peuvent supprimer des inventaires' }, { status: 403 });
     }
 
     const inventoryId = parseInt(params.id);
@@ -137,27 +144,31 @@ export async function DELETE(
     }
 
     const existing = await prisma.productionInventory.findUnique({
-      where: { id: inventoryId }
+      where: { id: inventoryId },
+      include: {
+        productionCenter: { select: { name: true } },
+        startedBy: { select: { name: true } }
+      }
     });
 
     if (!existing) {
-      return NextResponse.json({ error: 'Inventaire non trouve' }, { status: 404 });
+      return NextResponse.json({ error: 'Inventaire non trouvé' }, { status: 404 });
     }
 
-    if (existing.status === 'TERMINE') {
-      return NextResponse.json(
-        { error: 'Impossible de supprimer un inventaire termine' },
-        { status: 400 }
-      );
-    }
-
+    // Delete the inventory (cascade will handle related records)
     await prisma.productionInventory.delete({
       where: { id: inventoryId }
     });
 
-    return NextResponse.json({ success: true });
+    // Log the deletion for audit purposes
+    console.log(`[AUDIT] Inventory #${inventoryId} deleted by ${session.user.name} (${session.user.email}) - Date: ${existing.date}, Center: ${existing.productionCenter?.name || 'N/A'}, Status: ${existing.status}`);
+
+    return NextResponse.json({
+      success: true,
+      message: `Inventaire du ${new Date(existing.date).toLocaleDateString('fr-FR')} supprimé avec succès`
+    });
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Erreur suppression inventaire:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, CheckCircle, Download, FileSpreadsheet, FileText, Printer, Edit, X } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, Download, FileSpreadsheet, FileText, Printer, Edit, X, Trash2, History, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -27,7 +27,7 @@ import {
 import ProductionTimer from '../components/ProductionTimer';
 import ArretDialog from '../components/ArretDialog';
 import ProductionForm from '../components/ProductionForm';
-import { ProductionInventory } from '@/lib/types/production';
+import { ProductionInventory, AuditLogChange } from '@/lib/types/production';
 import { ContentLayout } from '@/components/user-panel/content-layout';
 import DynamicBreadcrumbs from '@/components/DynamicBreadcrumbs';
 import { SpinnerCircular } from 'spinners-react';
@@ -44,6 +44,9 @@ export default function ProductionDetailPage() {
   const [calculatedTempsTotal, setCalculatedTempsTotal] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showAuditLogs, setShowAuditLogs] = useState(false);
 
   const arretTypeLabels: Record<string, string> = {
   BASCULES: "Problèmes de bascules",
@@ -183,6 +186,30 @@ const formatArretType = (type?: string) =>
     router.replace(`/dashboard/production/${params.id}`);
   };
 
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/production/${params.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Erreur lors de la suppression');
+      }
+
+      const data = await res.json();
+      toast.success(data.message || 'Inventaire supprimé avec succès');
+      router.push('/dashboard/production/liste-inventaires');
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || 'Erreur lors de la suppression');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   const handleExport = async (format: 'excel' | 'pdf') => {
     try {
       toast.loading(`Génération du fichier ${format.toUpperCase()}...`);
@@ -312,16 +339,28 @@ const formatArretType = (type?: string) =>
           {/* Edit mode controls */}
 
 
-          {/* Edit button for completed inventories (admin only) */}
-          {isTermine && !isEditMode && isAdmin && (
-            <Button
-              variant="outline"
-              size={'icon'}
-              onClick={() => setIsEditMode(true)}
-              className="text-orange-600 border-orange-200 hover:bg-orange-50"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
+          {/* Edit and Delete buttons for admin only */}
+          {!isEditMode && isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size={'icon'}
+                onClick={() => setIsEditMode(true)}
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                title="Modifier l'inventaire"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size={'icon'}
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600 border-red-200 hover:bg-red-50"
+                title="Supprimer l'inventaire"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
           )}
 
           {/* Export button */}
@@ -450,6 +489,87 @@ const formatArretType = (type?: string) =>
         isEditMode={isEditMode}
       />
 
+      {/* Audit Logs Section - Admin only */}
+      {isAdmin && inventory.auditLogs && inventory.auditLogs.length > 0 && (
+        <Card className="p-4">
+          <button
+            onClick={() => setShowAuditLogs(!showAuditLogs)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-semibold">
+                Historique des modifications ({inventory.auditLogs.length})
+              </h3>
+            </div>
+            {showAuditLogs ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
+          </button>
+
+          {showAuditLogs && (
+            <div className="mt-4 space-y-4">
+              {inventory.auditLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="border rounded-lg p-4 bg-muted/30"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Edit className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {log.editedBy?.name || 'Utilisateur inconnu'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(log.editedAt).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                      {log.summary || `${(log.changes as AuditLogChange[]).length} modification(s)`}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {(log.changes as AuditLogChange[]).map((change, idx) => (
+                      <div
+                        key={idx}
+                        className="text-sm grid grid-cols-3 gap-2 py-2 border-b last:border-b-0"
+                      >
+                        <div className="font-medium text-muted-foreground">
+                          {change.field}
+                        </div>
+                        <div className="text-red-600 line-through">
+                          {typeof change.oldValue === 'object'
+                            ? JSON.stringify(change.oldValue)
+                            : String(change.oldValue ?? '-')}
+                        </div>
+                        <div className="text-green-600 font-medium">
+                          {typeof change.newValue === 'object'
+                            ? JSON.stringify(change.newValue)
+                            : String(change.newValue ?? '-')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
       {/* Cancel edit dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
@@ -463,6 +583,32 @@ const formatArretType = (type?: string) =>
             <AlertDialogCancel>Continuer l&apos;édition</AlertDialogCancel>
             <AlertDialogAction onClick={confirmCancelEdit} className="bg-red-600 hover:bg-red-700">
               Annuler les modifications
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l&apos;inventaire ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous êtes sur le point de supprimer définitivement l&apos;inventaire du{' '}
+              <strong>{inventory ? new Date(inventory.date).toLocaleDateString('fr-FR') : ''}</strong>.
+              <br /><br />
+              Cette action est irréversible et supprimera toutes les données associées
+              (bouteilles, réservoirs, arrêts, etc.).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? 'Suppression...' : 'Supprimer définitivement'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

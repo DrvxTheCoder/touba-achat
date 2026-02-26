@@ -1,8 +1,8 @@
 // odm/utils/odm-util.ts
 import { PrismaClient, ODMEventType, OrdreDeMission, Prisma, ODMStatus, NotificationType, Access } from '@prisma/client';
-import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
-import {  getODMEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
-import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
+// import { sendNotification, NotificationPayload } from '@/app/actions/sendNotification';
+// import { getODMEventTypeFromStatus, getNotificationTypeFromStatus, determineRecipients } from '@/app/api/utils/notificationsUtil';
+// import { generateNotificationMessage } from '@/app/api/utils/notificationMessage';
 import generateODMId from './odm-id-generator';
 import { AccompanyingPerson } from '@/app/dashboard/odm/utils/odm';
 
@@ -43,37 +43,120 @@ async function logODMEvent(
   }
 }
 
-async function sendODMNotification(
-  odm: OrdreDeMission,
-  action: ODMEventType,
-  userId: number,
-  additionalData?: Record<string, any>
-): Promise<void> {
-  const recipients = await determineRecipients(odm, odm.status, userId, 'ODM');
-  const userName = await getUserName(userId);
+// NOTE: Email notifications are temporarily disabled for ODM workflow revamp
+// Will be re-enabled after notification system is updated
+// async function sendODMNotification(
+//   odm: OrdreDeMission,
+//   action: ODMEventType,
+//   userId: number,
+//   additionalData?: Record<string, any>
+// ): Promise<void> {
+//   const recipients = await determineRecipients(odm, odm.status, userId, 'ODM');
+//   const userName = await getUserName(userId);
 
-  const { subject, body } = generateNotificationMessage({
-    id: odm.odmId,
-    status: odm.status,
-    actionInitiator: userName,
-    entityType: 'ODM'
+//   const { subject, body } = generateNotificationMessage({
+//     id: odm.odmId,
+//     status: odm.status,
+//     actionInitiator: userName,
+//     entityType: 'ODM'
+//   });
+
+//   const notificationPayload: NotificationPayload = {
+//     entityId: odm.odmId,
+//     entityType: 'ODM',
+//     newStatus: odm.status,
+//     actorId: userId,
+//     actionInitiator: userName,
+//     additionalData: {
+//       updatedBy: userId,
+//       departmentId: odm.departmentId,
+//       ...additionalData
+//     }
+//   };
+
+//   await sendNotification(notificationPayload);
+// }
+
+/**
+ * Helper to check if user has specific ODM access
+ */
+async function hasODMAccess(userId: number, requiredAccess: Access): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { access: true }
   });
+  return user?.access.includes(requiredAccess) ?? false;
+}
 
-  const notificationPayload: NotificationPayload = {
-    entityId: odm.odmId,
-    entityType: 'ODM',
-    newStatus: odm.status,
-    actorId: userId,
-    actionInitiator: userName,
-    additionalData: { 
-      updatedBy: userId, 
-      departmentId: odm.departmentId,
-      ...additionalData
-    }
-  };
+/**
+ * Check if user can approve at director level
+ * Either has ODM_DIRECTOR_APPROVE access or is a DIRECTEUR role
+ */
+async function canApproveAsDirector(userId: number): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, access: true }
+  });
+  if (!user) return false;
 
+  return user.access.includes('ODM_DIRECTOR_APPROVE' as Access) ||
+    ['DIRECTEUR', 'DAF', 'DRH', 'DOG', 'DCM', 'DIRECTEUR_GENERAL', 'ADMIN'].includes(user.role);
+}
 
-  await sendNotification(notificationPayload);
+/**
+ * Check if user can perform DRH actions
+ * Either has ODM_DRH_APPROVE access or is DRH role
+ */
+async function canApproveAsDRH(userId: number): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, access: true }
+  });
+  if (!user) return false;
+
+  return user.access.includes('ODM_DRH_APPROVE' as Access) || user.role === 'DRH' || user.role === 'ADMIN';
+}
+
+/**
+ * Check if user can process ODM (RH processing)
+ * Either has ODM_RH_PROCESS access or is RH role
+ */
+async function canProcessAsRH(userId: number): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, access: true }
+  });
+  if (!user) return false;
+
+  return user.access.includes('ODM_RH_PROCESS' as Access) || user.role === 'RH' || user.role === 'DRH' || user.role === 'ADMIN';
+}
+
+/**
+ * Check if user can give DOG final approval
+ * Either has ODM_DOG_APPROVE access or is DOG role
+ */
+async function canApproveAsDOG(userId: number): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, access: true }
+  });
+  if (!user) return false;
+
+  return user.access.includes('ODM_DOG_APPROVE' as Access) || user.role === 'DOG' || user.role === 'ADMIN';
+}
+
+/**
+ * Check if user can print ODMs
+ * Either has ODM_PRINT access or is RH role
+ */
+async function canPrintODM(userId: number): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, access: true }
+  });
+  if (!user) return false;
+
+  return user.access.includes('ODM_PRINT' as Access) || user.role === 'RH' || user.role === 'DRH' || user.role === 'ADMIN';
 }
 
 export async function createODM(
@@ -101,10 +184,12 @@ export async function createODM(
 
   const odmId = generateODMId();
 
-  // Determine initial status based on the user's role
+  // Determine initial status based on the user's role/access
+  // Directors and above bypass initial director approval
   let initialStatus: ODMStatus = 'SUBMITTED';
-  if (user.role === 'DIRECTEUR' || user.role === 'DAF' || user.role === 'DRH' || user.role === 'DCM' || user.role === 'DOG' || user.role === 'DIRECTEUR_GENERAL' || user.access.includes('APPROVE_ODM' as Access)) {
-    initialStatus = 'AWAITING_RH_PROCESSING';
+  const canBypassDirector = await canApproveAsDirector(userId);
+  if (canBypassDirector) {
+    initialStatus = 'AWAITING_DRH_APPROVAL';
   }
 
   const newODM = await prisma.ordreDeMission.create({
@@ -122,8 +207,8 @@ export async function createODM(
   // Log the ODM creation event
   await logODMEvent(newODM.id, userId, ODMEventType.SUBMITTED);
 
-  // Send notification
-  await sendODMNotification(newODM, ODMEventType.SUBMITTED, userId);
+  // Email notifications disabled
+  // await sendODMNotification(newODM, ODMEventType.SUBMITTED, userId);
 
   return newODM;
 }
@@ -190,20 +275,28 @@ export async function updateODMStatus(
   await logODMEvent(
     id,
     userId,
-    getODMEventTypeFromStatus(newStatus),
+    ODMEventType.UPDATED,
     { oldStatus: updatedODM.status, newStatus }
   );
 
-  await sendODMNotification(updatedODM, ODMEventType.UPDATED, userId);
+  // Email notifications disabled
+  // await sendODMNotification(updatedODM, ODMEventType.UPDATED, userId);
 
   return updatedODM;
 }
 
-export async function approveODM(
+/**
+ * Director approves ODM (SUBMITTED -> AWAITING_DRH_APPROVAL)
+ */
+export async function approveODMByDirector(
   odmId: number,
-  userId: number,
-  userRole: string
+  userId: number
 ): Promise<OrdreDeMission> {
+  const canApprove = await canApproveAsDirector(userId);
+  if (!canApprove) {
+    throw new Error('Non autorisé à approuver comme directeur');
+  }
+
   const odm = await prisma.ordreDeMission.findUnique({
     where: { id: odmId },
     include: { department: true },
@@ -213,44 +306,42 @@ export async function approveODM(
     throw new Error('ODM introuvable');
   }
 
-  let newStatus: ODMStatus;
-  let eventType: ODMEventType;
-
-  if (userRole === 'DIRECTEUR' || userRole === 'DAF' || userRole === 'DRH' || userRole === 'DOG' || userRole === 'DCM' && odm.status === 'SUBMITTED') {
-    newStatus = 'AWAITING_RH_PROCESSING';
-    eventType = ODMEventType.AWAITING_RH_PROCESSING;
-  } 
-  else if (userRole === 'ADMIN' && odm.status === 'SUBMITTED') {
-    newStatus = 'AWAITING_RH_PROCESSING';
-    eventType = ODMEventType.AWAITING_RH_PROCESSING;
-  }
-  else if (userRole === 'DIRECTEUR_GENERAL' && odm.status === 'SUBMITTED'){
-    newStatus = 'AWAITING_RH_PROCESSING';
-    eventType = ODMEventType.AWAITING_RH_PROCESSING;
-  } else {
-    throw new Error('Non autorisé à approuver à cette étape');
+  if (odm.status !== 'SUBMITTED') {
+    throw new Error('ODM non éligible pour approbation directeur');
   }
 
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
-    data: { 
-      status: newStatus,
+    data: {
+      status: 'AWAITING_DRH_APPROVAL',
       approverId: userId
     },
     include: { department: true }
   });
 
-  await logODMEvent(odmId, userId, eventType, { oldStatus: odm.status, newStatus });
+  await logODMEvent(odmId, userId, ODMEventType.AWAITING_DRH_APPROVAL, {
+    oldStatus: odm.status,
+    newStatus: 'AWAITING_DRH_APPROVAL'
+  });
 
-  await sendODMNotification(updatedODM, eventType, userId);
+  // Email notifications disabled
+  // await sendODMNotification(updatedODM, ODMEventType.AWAITING_DRH_APPROVAL, userId);
 
   return updatedODM;
 }
 
-export async function approveODMByRHDirector(
+/**
+ * DRH marks ODM for RH processing (AWAITING_DRH_APPROVAL -> RH_PROCESSING)
+ */
+export async function approveDRHForProcessing(
   odmId: number,
   userId: number
 ): Promise<OrdreDeMission> {
+  const canApprove = await canApproveAsDRH(userId);
+  if (!canApprove) {
+    throw new Error('Non autorisé - Seul le DRH peut effectuer cette action');
+  }
+
   const odm = await prisma.ordreDeMission.findUnique({
     where: { id: odmId },
     include: { department: true },
@@ -260,26 +351,166 @@ export async function approveODMByRHDirector(
     throw new Error('ODM introuvable');
   }
 
-  if (odm.status !== 'AWAITING_RH_PROCESSING') {
-    throw new Error('ODM non éligible pour approbation par le Directeur RH');
+  if (odm.status !== 'AWAITING_DRH_APPROVAL') {
+    throw new Error('ODM non éligible pour envoi au traitement RH');
   }
 
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
-    data: { 
+    data: {
       status: 'RH_PROCESSING',
       approverId: userId
     },
     include: { department: true }
   });
 
-  await logODMEvent(odmId, userId, ODMEventType.RH_PROCESSING, { oldStatus: odm.status, newStatus: 'RH_PROCESSING' });
-
-  await sendODMNotification(updatedODM, ODMEventType.RH_PROCESSING, userId);
+  await logODMEvent(odmId, userId, ODMEventType.RH_PROCESSING, {
+    oldStatus: odm.status,
+    newStatus: 'RH_PROCESSING'
+  });
 
   return updatedODM;
 }
 
+/**
+ * RH processes ODM and submits for DRH validation (RH_PROCESSING -> AWAITING_DRH_VALIDATION)
+ */
+export async function processODMByRH(
+  odmId: number,
+  userId: number,
+  processingData: ProcessingData
+): Promise<OrdreDeMission> {
+  const canProcess = await canProcessAsRH(userId);
+  if (!canProcess) {
+    throw new Error('Non autorisé - Seul RH peut traiter les ODMs');
+  }
+
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'RH_PROCESSING') {
+    throw new Error('ODM non éligible pour traitement RH');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: {
+      status: 'AWAITING_DRH_VALIDATION',
+      totalCost: processingData.totalCost,
+      rhProcessorId: userId,
+      accompanyingPersons: processingData.accompanyingPersons as any,
+      missionCostPerDay: processingData.missionCostPerDay,
+      expenseItems: processingData.expenseItems
+    },
+    include: { department: true }
+  });
+
+  await logODMEvent(odmId, userId, ODMEventType.AWAITING_DRH_VALIDATION, {
+    totalCost: processingData.totalCost,
+    accompanyingPersons: processingData.accompanyingPersons
+  });
+
+  return updatedODM;
+}
+
+/**
+ * DRH validates RH work and sends to DOG (AWAITING_DRH_VALIDATION -> AWAITING_DOG_APPROVAL)
+ */
+export async function validateByDRH(
+  odmId: number,
+  userId: number
+): Promise<OrdreDeMission> {
+  const canValidate = await canApproveAsDRH(userId);
+  if (!canValidate) {
+    throw new Error('Non autorisé - Seul le DRH peut valider');
+  }
+
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'AWAITING_DRH_VALIDATION') {
+    throw new Error('ODM non éligible pour validation DRH');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: {
+      status: 'AWAITING_DOG_APPROVAL',
+      approverId: userId
+    },
+    include: { department: true }
+  });
+
+  await logODMEvent(odmId, userId, ODMEventType.AWAITING_DOG_APPROVAL, {
+    oldStatus: odm.status,
+    newStatus: 'AWAITING_DOG_APPROVAL'
+  });
+
+  return updatedODM;
+}
+
+/**
+ * DOG gives final approval (AWAITING_DOG_APPROVAL -> READY_FOR_PRINT)
+ */
+export async function approveByDOG(
+  odmId: number,
+  userId: number
+): Promise<OrdreDeMission> {
+  const canApprove = await canApproveAsDOG(userId);
+  if (!canApprove) {
+    throw new Error('Non autorisé - Seul le DOG peut donner l\'approbation finale');
+  }
+
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'AWAITING_DOG_APPROVAL') {
+    throw new Error('ODM non éligible pour approbation DOG');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: {
+      status: 'READY_FOR_PRINT',
+      updatedAt: new Date()
+    },
+    include: {
+      department: true,
+      auditLogs: true,
+      creator: true,
+      userCreator: true
+    }
+  });
+
+  await logODMEvent(odmId, userId, ODMEventType.READY_FOR_PRINT, {
+    oldStatus: odm.status,
+    newStatus: 'READY_FOR_PRINT',
+    totalAmount: odm.totalCost
+  });
+
+  return updatedODM;
+}
+
+/**
+ * Reject ODM at any stage
+ */
 export async function rejectODM(
   odmId: number,
   userId: number,
@@ -287,7 +518,7 @@ export async function rejectODM(
 ): Promise<OrdreDeMission> {
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
-    data: { 
+    data: {
       status: 'REJECTED',
       rejectionReason: reason
     },
@@ -301,36 +532,136 @@ export async function rejectODM(
     { reason }
   );
 
-  await sendODMNotification(updatedODM, ODMEventType.REJECTED, userId, { reason });
+  // Email notifications disabled
+  // await sendODMNotification(updatedODM, ODMEventType.REJECTED, userId, { reason });
 
   return updatedODM;
 }
 
-export async function processODMByRH(
+/**
+ * DRH restarts a rejected ODM back to RH_PROCESSING
+ */
+export async function restartODMToProcessing(
   odmId: number,
-  userId: number,
-  processingData: ProcessingData
+  userId: number
 ): Promise<OrdreDeMission> {
+  const canRestart = await canApproveAsDRH(userId);
+  if (!canRestart) {
+    throw new Error('Non autorisé - Seul le DRH peut redémarrer les ODMs');
+  }
+
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'REJECTED') {
+    throw new Error('Seuls les ODMs rejetés peuvent être redémarrés');
+  }
+
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
     data: {
-      status: 'AWAITING_FINANCE_APPROVAL',
-      totalCost: processingData.totalCost,
-      rhProcessorId: userId,
-      accompanyingPersons: processingData.accompanyingPersons as any,
-      missionCostPerDay: processingData.missionCostPerDay,
-      expenseItems: processingData.expenseItems
+      status: 'RH_PROCESSING',
+      rejectionReason: null
     },
     include: { department: true }
   });
 
-  // Rest of the function remains the same
-  await logODMEvent(odmId, userId, ODMEventType.AWAITING_FINANCE_APPROVAL, { 
-    totalCost: processingData.totalCost,
-    accompanyingPersons: processingData.accompanyingPersons 
+  await logODMEvent(odmId, userId, ODMEventType.RESTARTED, {
+    oldStatus: odm.status,
+    newStatus: 'RH_PROCESSING',
+    action: 'RESTART_TO_PROCESSING'
   });
 
-  await sendODMNotification(updatedODM, ODMEventType.AWAITING_FINANCE_APPROVAL, userId);
+  return updatedODM;
+}
+
+/**
+ * DRH restarts a rejected ODM back to AWAITING_DOG_APPROVAL
+ */
+export async function restartODMToDOGApproval(
+  odmId: number,
+  userId: number
+): Promise<OrdreDeMission> {
+  const canRestart = await canApproveAsDRH(userId);
+  if (!canRestart) {
+    throw new Error('Non autorisé - Seul le DRH peut redémarrer les ODMs');
+  }
+
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'REJECTED') {
+    throw new Error('Seuls les ODMs rejetés peuvent être redémarrés');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: {
+      status: 'AWAITING_DOG_APPROVAL',
+      rejectionReason: null
+    },
+    include: { department: true }
+  });
+
+  await logODMEvent(odmId, userId, ODMEventType.RESTARTED, {
+    oldStatus: odm.status,
+    newStatus: 'AWAITING_DOG_APPROVAL',
+    action: 'RESTART_TO_DOG_APPROVAL'
+  });
+
+  return updatedODM;
+}
+
+/**
+ * Mark ODM as printed (READY_FOR_PRINT -> COMPLETED)
+ * Called after the user closes the print document tab
+ */
+export async function printODM(
+  odmId: number,
+  userId: number
+): Promise<OrdreDeMission> {
+  const canPrint = await canPrintODM(userId);
+  if (!canPrint) {
+    throw new Error('Non autorisé à imprimer les ODMs');
+  }
+
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  if (odm.status !== 'READY_FOR_PRINT') {
+    throw new Error('Seuls les ODMs prêts pour impression peuvent être marqués comme imprimés');
+  }
+
+  const updatedODM = await prisma.ordreDeMission.update({
+    where: { id: odmId },
+    data: {
+      status: 'COMPLETED',
+      updatedAt: new Date()
+    },
+    include: { department: true }
+  });
+
+  await logODMEvent(odmId, userId, ODMEventType.COMPLETED, {
+    oldStatus: odm.status,
+    newStatus: 'COMPLETED'
+  });
 
   return updatedODM;
 }
@@ -348,7 +679,7 @@ export async function editODMProcessing(
       expenseItems: processingData.expenseItems,
       accompanyingPersons: processingData.accompanyingPersons as any
     },
-    include: { 
+    include: {
       department: true,
       auditLogs: true
     }
@@ -358,21 +689,27 @@ export async function editODMProcessing(
     odmId,
     userId,
     ODMEventType.UPDATED,
-    { 
+    {
       totalCost: processingData.totalCost,
-      accompanyingPersons: processingData.accompanyingPersons // Log the changes
+      accompanyingPersons: processingData.accompanyingPersons
     }
   );
 
   return updatedODM;
 }
 
-// odm/utils/odm-util.ts
+// ============================================
+// LEGACY FUNCTIONS - Kept for backward compatibility
+// These will be removed after full migration
+// ============================================
 
-// Add these functions after the existing ones:
-export async function approveODMByFinance(
+/**
+ * @deprecated Use approveODMByDirector instead
+ */
+export async function approveODM(
   odmId: number,
   userId: number,
+  userRole: string
 ): Promise<OrdreDeMission> {
   const odm = await prisma.ordreDeMission.findUnique({
     where: { id: odmId },
@@ -383,95 +720,94 @@ export async function approveODMByFinance(
     throw new Error('ODM introuvable');
   }
 
-  if (odm.status !== 'AWAITING_FINANCE_APPROVAL') {
-    throw new Error('ODM non éligible pour approbation financière');
+  let newStatus: ODMStatus;
+  let eventType: ODMEventType;
+
+  // Map old flow to new flow
+  if (odm.status === 'SUBMITTED') {
+    newStatus = 'AWAITING_DRH_APPROVAL';
+    eventType = ODMEventType.AWAITING_DRH_APPROVAL;
+  } else {
+    throw new Error('Non autorisé à approuver à cette étape');
   }
 
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
-    data: { 
-      status: 'COMPLETED',
-      updatedAt: new Date()
+    data: {
+      status: newStatus,
+      approverId: userId
     },
-    include: { 
-      department: true,
-      auditLogs: true,
-      creator: true,
-      userCreator: true
-    }
+    include: { department: true }
   });
 
-  await logODMEvent(
-    odmId, 
-    userId,
-    ODMEventType.COMPLETED,
-    { 
-      oldStatus: odm.status,
-      newStatus: 'COMPLETED',
-      totalAmount: odm.totalCost
-    }
-  );
-
-  await sendODMNotification(updatedODM, ODMEventType.COMPLETED, userId);
+  await logODMEvent(odmId, userId, eventType, { oldStatus: odm.status, newStatus });
 
   return updatedODM;
 }
 
+/**
+ * @deprecated Use approveDRHForProcessing instead
+ */
+export async function approveODMByRHDirector(
+  odmId: number,
+  userId: number
+): Promise<OrdreDeMission> {
+  return approveDRHForProcessing(odmId, userId);
+}
+
+/**
+ * @deprecated Use approveByDOG instead
+ */
+export async function approveODMByFinance(
+  odmId: number,
+  userId: number,
+): Promise<OrdreDeMission> {
+  // Map old finance approval to new DOG approval
+  const odm = await prisma.ordreDeMission.findUnique({
+    where: { id: odmId },
+    include: { department: true },
+  });
+
+  if (!odm) {
+    throw new Error('ODM introuvable');
+  }
+
+  // Handle legacy status
+  if (odm.status === 'AWAITING_FINANCE_APPROVAL') {
+    const updatedODM = await prisma.ordreDeMission.update({
+      where: { id: odmId },
+      data: {
+        status: 'READY_FOR_PRINT',
+        updatedAt: new Date()
+      },
+      include: {
+        department: true,
+        auditLogs: true,
+        creator: true,
+        userCreator: true
+      }
+    });
+
+    await logODMEvent(odmId, userId, ODMEventType.READY_FOR_PRINT, {
+      oldStatus: odm.status,
+      newStatus: 'READY_FOR_PRINT',
+      totalAmount: odm.totalCost
+    });
+
+    return updatedODM;
+  }
+
+  // New flow
+  return approveByDOG(odmId, userId);
+}
+
+/**
+ * @deprecated Use rejectODM instead
+ */
 export async function rejectODMByFinance(
   odmId: number,
   userId: number,
   reason: string
 ): Promise<OrdreDeMission> {
-  const odm = await prisma.ordreDeMission.findUnique({
-    where: { id: odmId },
-    include: { department: true },
-  });
-
-  if (!odm) {
-    throw new Error('ODM introuvable');
-  }
-
-  if (odm.status !== 'AWAITING_FINANCE_APPROVAL') {
-    throw new Error('ODM non éligible pour rejet financier');
-  }
-
-  const updatedODM = await prisma.ordreDeMission.update({
-    where: { id: odmId },
-    data: { 
-      status: 'REJECTED',
-      rejectionReason: reason,
-      updatedAt: new Date()
-    },
-    include: { 
-      department: true,
-      auditLogs: true, 
-      creator: true,
-      userCreator: true
-    }
-  });
-
-  await logODMEvent(
-    odmId,
-    userId,
-    ODMEventType.REJECTED,
-    { 
-      reason,
-      oldStatus: odm.status,
-      newStatus: 'REJECTED',
-      totalAmount: odm.totalCost
-    }
-  );
-
-  await sendODMNotification(
-    updatedODM, 
-    ODMEventType.REJECTED, 
-    userId,
-    { 
-      reason,
-      rejectedBy: 'FINANCE',
-      totalAmount: odm.totalCost
-    }
-  );
-
-  return updatedODM;
+  return rejectODM(odmId, userId, reason);
 }

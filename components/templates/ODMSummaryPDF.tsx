@@ -109,7 +109,6 @@ type TimelineEvent = {
 
 type ODMSummaryPDFProps = {
   odm: {
-    
     odmId: string;
     createdAt: string | Date;
     status: string;
@@ -133,6 +132,7 @@ type ODMSummaryPDFProps = {
   
   timelineEvents: TimelineEvent[];
   isRHUser: boolean;
+  isDOGApproved?: boolean;
 };
 
 const translateCategory = (category: string): string => {
@@ -184,11 +184,15 @@ const styles = StyleSheet.create({
     tableCell: { margin: 'auto', marginTop: 2, marginBottom: 2, fontSize: 10 },
     timeline: { marginTop: 20 },
     stamp: { position: 'absolute', bottom: 50, right: 50, width: 130 },
-    stampText: { position: 'absolute', fontSize: 12, bottom: 120, right: 50},
-    footer: { marginTop: 50, fontSize: 16, fontFamily: 'Oswald'}
+    stampDRH: { position: 'absolute', bottom: 50, left: 50, width: 130 },
+    stampDOG: { position: 'absolute', bottom: 50, right: 50, width: 130 },
+    stampText: { position: 'absolute', fontSize: 12, bottom: 120, right: 50 },
+    stampTextDRH: { position: 'absolute', fontSize: 10, bottom: 185, left: 50, textAlign: 'center', width: 130 },
+    stampTextDOG: { position: 'absolute', fontSize: 10, bottom: 185, right: 50, textAlign: 'center', width: 130 },
+    footer: { marginTop: 50, fontSize: 16, fontFamily: 'Oswald' }
   });
 
-const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRHUser }) => {
+const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRHUser, isDOGApproved }) => {
 
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
@@ -231,7 +235,7 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.topSection}>
-          <View><Image style={styles.logo} src="/assets/img/touba-app192x192.png" /> <Text style={styles.tableCell}>Généré par ToubaApp™</Text></View>
+          <View><Image style={styles.logo} src="/assets/img/touba-app192x192.png" /></View>
           {qrCodeImage && <Image style={styles.qrCode} src={qrCodeImage} />}
         </View>
         <Image style={styles.watermark} src="/assets/img/touba-app512x512-1.png" />
@@ -241,7 +245,7 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
           <Text style={styles.text}>ID : {odm.odmId}</Text>
           {odm.missionCostPerDay > 0 ? (
             <Text style={styles.text}>
-              Nous soussignés, <Text style={styles.boldText}>TOUBA OIL SAU</Text>, autorisons {odm.creator.name} - {odm.creator.jobTitle}, à se
+              Nous soussignés, TOUBA OIL SAU, autorisons <Text style={styles.textbold}>{odm.creator.name} - {odm.creator.jobTitle}</Text>, à se
               rendre à {odm.location}, le {new Date(odm.startDate).toLocaleDateString('fr-FR')} pour la raison suivante: {odm.title}.
             </Text>
           ) : (
@@ -361,12 +365,17 @@ const ODMSummaryPDF: React.FC<ODMSummaryPDFProps> = ({ odm, timelineEvents, isRH
             </View>
 
         )}
-        {isRHUser && (
+        {isDOGApproved ? (
+            <>
+                <Image style={styles.stampDRH} src="/assets/img/cachet-drh.jpeg" />
+                <Image style={styles.stampDOG} src="/assets/img/cachet-dog.jpg" />
+            </>
+        ) : isRHUser ? (
             <>
                 <Text style={styles.stampText}>Direction des Ressources Humaines</Text>
                 <Image style={styles.stamp} src="/assets/img/cachet-drh.jpeg" />
             </>
-        )}
+        ) : null}
       </Page>
     </Document>
   );

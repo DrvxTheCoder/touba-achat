@@ -7,11 +7,15 @@ const statusMapping: Record<string, string[]> = {
   'Brouillon': ['DRAFT'],
   'Soumis': ['SUBMITTED'],
   'Converti':['CONVERTED'],
-  'Approuvé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG'],
+  'Approuvé': ['APPROVED_DIRECTEUR', 'IT_APPROVED', 'APPROVED_DG', 'AWAITING_DIRECTOR_APPROVAL'],
   'Approuvé DAF': ['APPROVED_DAF'],
   'Escaladé': ['ESCALATED'],
-  'En cours': ['RH_PROCESSING'],
-  'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_RH_PROCESSING', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
+  'En cours RH': ['RH_PROCESSING'],
+  'Att. DRH': ['AWAITING_DRH_APPROVAL', 'AWAITING_RH_PROCESSING'],
+  'Att. Validation DRH': ['AWAITING_DRH_VALIDATION'],
+  'Att. DOG': ['AWAITING_DOG_APPROVAL'],
+  'Prêt à imprimer': ['READY_FOR_PRINT'],
+  'En attente': ['APPROVED_RESPONSABLE', 'AWAITING_MAGASINIER', 'AWAITING_SUPPLIER_CHOICE', 'AWAITING_IT_APPROVAL', 'AWAITING_FINAL_APPROVAL'],
   'Facture Rattaché': ['MAGASINIER_ATTACHED'],
   'Fournisseur Choisi': ['SUPPLIER_CHOSEN'],
   'Livré': ['DELIVERED'],
@@ -19,7 +23,8 @@ const statusMapping: Record<string, string[]> = {
   'Décaissé': ['PRINTED'],
   'Validé': ['FINAL_APPROVAL'],
   'Rejeté': ['REJECTED'],
-  'Traité': ['COMPLETED', 'AWAITING_FINANCE_APPROVAL'],
+  'Traité': ['AWAITING_FINANCE_APPROVAL'],
+  'Imprimé': ['COMPLETED'],
 };
 
 // Function to get the display status based on internal status
@@ -53,12 +58,24 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, textSize = 'de
     ? 'outline'
     : displayStatus === 'Traité'
     ? 'default'
+    : displayStatus === 'Imprimé'
+    ? 'default'
     : displayStatus === 'Validé'
     ? 'default'
     : displayStatus === 'Décaissé'
     ? 'default'
     : displayStatus === 'Livré'
     ? 'default'
+    : displayStatus === 'Prêt à imprimer'
+    ? 'default'
+    : displayStatus === 'En cours RH'
+    ? 'secondary'
+    : displayStatus === 'Att. DRH'
+    ? 'secondary'
+    : displayStatus === 'Att. Validation DRH'
+    ? 'secondary'
+    : displayStatus === 'Att. DOG'
+    ? 'outline'
     : 'secondary';
 
   const textSizeClass = textSize === 'tiny' ? 'text-xs' : '';

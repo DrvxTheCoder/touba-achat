@@ -56,7 +56,7 @@ export async function POST(
 async function checkUserCanRejectODM(role: string, edb: any) {
     // Implement your logic here to check if the user can reject the EDB
     // This might involve checking the user's role, the EDB's current status, etc.
-    if (['DIRECTEUR', 'DIRECTEUR_GENERAL', 'ADMIN'].includes(role)){
+    if (['DIRECTEUR', 'DIRECTEUR_GENERAL', 'ADMIN', 'DOG', 'DRH', 'DAF', 'DCM'].includes(role)){
         return true;
     }
     else {

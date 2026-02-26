@@ -16,7 +16,18 @@ import {
   Building2,
   User,
   Edit,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +94,11 @@ export default function ListeInventairesPage() {
   // Search
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Delete
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [inventoryToDelete, setInventoryToDelete] = useState<Inventory | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Generate years (current year and 5 years back)
   const currentYear = new Date().getFullYear();
@@ -188,6 +204,39 @@ export default function ListeInventairesPage() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setPage(1);
+  };
+
+  const handleDeleteClick = (inventory: Inventory, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInventoryToDelete(inventory);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!inventoryToDelete) return;
+
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/production/${inventoryToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Erreur lors de la suppression');
+      }
+
+      const data = await res.json();
+      toast.success(data.message || 'Inventaire supprimé avec succès');
+      loadInventories(); // Reload the list
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la suppression');
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setInventoryToDelete(null);
+    }
   };
 
   const handleExport = async (format: 'excel' | 'pdf') => {
@@ -454,18 +503,30 @@ export default function ListeInventairesPage() {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {inventory.status === 'TERMINE' && isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/dashboard/production/${inventory.id}?edit=true`);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                    {isAdmin && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/production/${inventory.id}?edit=true`);
+                          }}
+                          title="Modifier"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={(e) => handleDeleteClick(inventory, e)}
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </TableCell>
@@ -694,6 +755,39 @@ export default function ListeInventairesPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l&apos;inventaire ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous êtes sur le point de supprimer définitivement l&apos;inventaire du{' '}
+              <strong>
+                {inventoryToDelete
+                  ? new Date(inventoryToDelete.date).toLocaleDateString('fr-FR')
+                  : ''}
+              </strong>
+              {inventoryToDelete?.productionCenter && (
+                <> du centre <strong>{inventoryToDelete.productionCenter.name}</strong></>
+              )}
+              .
+              <br /><br />
+              Cette action est irréversible et supprimera toutes les données associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? 'Suppression...' : 'Supprimer définitivement'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

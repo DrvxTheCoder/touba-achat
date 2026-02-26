@@ -16,6 +16,26 @@ export interface ProductionArret {
   };
 }
 
+export interface AuditLogChange {
+  field: string;
+  oldValue: any;
+  newValue: any;
+}
+
+export interface InventoryAuditLog {
+  id: number;
+  inventoryId: number;
+  editedById: number;
+  editedAt: Date | string;
+  changes: AuditLogChange[];
+  summary?: string | null;
+  editedBy?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
 export interface BottleProduction {
   id: number;
   inventoryId: number;
@@ -120,6 +140,7 @@ export interface ProductionInventory {
   arrets?: ProductionArret[];
   bottles?: BottleProduction[];
   reservoirs?: Reservoir[];
+  auditLogs?: InventoryAuditLog[];
 
 }
 
