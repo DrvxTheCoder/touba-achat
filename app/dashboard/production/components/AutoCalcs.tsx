@@ -17,6 +17,7 @@ interface AutoCalcsProps {
   stockFinalPhysique: number;
   ecart: number;
   ecartPourcentage: number;
+  qdnCumulSortie?: number;
 }
 
 export default function AutoCalcs({
@@ -31,7 +32,8 @@ export default function AutoCalcs({
   stockFinalTheorique,
   stockFinalPhysique,
   ecart,
-  ecartPourcentage
+  ecartPourcentage,
+  qdnCumulSortie = 0
 }: AutoCalcsProps) {
   const totalEntrees = butanier + recuperation + approSAR;
   const totalSorties = ngabou + exports + divers + remplissageTotal;
@@ -52,6 +54,11 @@ export default function AutoCalcs({
           <div className="text-xs text-muted-foreground mb-1">Stock initial</div>
           <div className="text-2xl font-bold">{stockInitial.toFixed(3)}</div>
           <div className="text-xs text-muted-foreground">Tonnes</div>
+          {qdnCumulSortie > 0 && (
+            <div className="text-xs text-indigo-600 mt-1 font-medium">
+              QDN: -{qdnCumulSortie.toFixed(3)} T
+            </div>
+          )}
         </Card>
 
         {/* Total entrées */}

@@ -31,6 +31,9 @@ export async function GET(
           include: { createdBy: { select: { id: true, name: true } } }
         },
         bottles: { orderBy: { type: 'asc' } },
+        quartDeNuitLines: {
+          include: { line: true }
+        },
         reservoirs: { orderBy: { name: 'asc' } },
         approValues: {
           include: {

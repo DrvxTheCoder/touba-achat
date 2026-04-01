@@ -246,6 +246,11 @@ enum BottleType {
   B38                   // 38kg
 }
 
+enum ShiftType {
+  JOUR
+  NUIT
+}
+
 enum SphereType {
   SO2
   SO3
@@ -595,6 +600,14 @@ model ProductionInventory {
   reservoirs            Reservoir[]
   densiteAmbiante       Float?               // Densité ambiante partagée (mode PERCENTAGE_BASED)
 
+  // Quart de Nuit (QDN)
+  isQuartDeNuit             Boolean              @default(false)
+  quartDeNuitTHT            Int?                 // Total heures travaillées (minutes)
+  quartDeNuitTA             Int?                 // Total arrêt (minutes)
+  quartDeNuitCumulSortie    Float?               // Cumul sortie QDN en tonnes (calculé depuis bouteilles NUIT)
+  quartDeNuitRendement      Float?               // Rendement horaire QDN (T/h)
+  quartDeNuitLines          QuartDeNuitLine[]
+
   // Audit
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
@@ -603,7 +616,7 @@ model ProductionInventory {
   // Audit logs for edit tracking
   auditLogs             InventoryAuditLog[]
 
-  @@unique([date, productionCenterId])
+  @@unique([date, productionCenterId, isQuartDeNuit])
 }
 
 model ProductionArret {
@@ -624,12 +637,13 @@ model BottleProduction {
   id                    Int                  @id @default(autoincrement())
   inventoryId           Int
   inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
-  
+
   type                  BottleType
+  shift                 ShiftType            @default(JOUR)
   quantity              Int
   tonnage               Float                // Calculé auto
-  
-  @@unique([inventoryId, type])
+
+  @@unique([inventoryId, type, shift])
 }
 
 model Reservoir {
@@ -674,6 +688,9 @@ model ProductionCenter {
   capacityPerLine       Float                @default(12.0)  // T/h per line
   totalHourlyCapacity   Float                @default(24.0)  // T/h total
 
+  // Production lines (individual line capacities)
+  productionLines       ProductionLine[]
+
   // Field configurations
   approFieldConfigs     ApproFieldConfig[]
   sortieFieldConfigs    SortieFieldConfig[]
@@ -683,6 +700,33 @@ model ProductionCenter {
 
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+}
+
+model ProductionLine {
+  id                    Int                  @id @default(autoincrement())
+  name                  String               // "Ligne 1", "Ligne 2", etc.
+  capacityPerHour       Float                // T/h pour cette ligne
+  isActive              Boolean              @default(true)
+
+  productionCenterId    Int
+  productionCenter      ProductionCenter     @relation(fields: [productionCenterId], references: [id], onDelete: Cascade)
+
+  quartDeNuitLines      QuartDeNuitLine[]
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([productionCenterId, name])
+}
+
+model QuartDeNuitLine {
+  id                    Int                  @id @default(autoincrement())
+  inventoryId           Int
+  inventory             ProductionInventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  lineId                Int
+  line                  ProductionLine       @relation(fields: [lineId], references: [id], onDelete: Cascade)
+
+  @@unique([inventoryId, lineId])
 }
 
 // Junction table for many-to-many relationship between ProductionCenter and User (chefs)

@@ -64,6 +64,11 @@ export async function PATCH(
       if (data.heureFin !== undefined) updateData.heureFin = data.heureFin;
       if (data.densiteAmbiante !== undefined) updateData.densiteAmbiante = data.densiteAmbiante;
 
+      // QDN fields
+      if (data.isQuartDeNuit !== undefined) updateData.isQuartDeNuit = data.isQuartDeNuit;
+      if (data.quartDeNuitTHT !== undefined) updateData.quartDeNuitTHT = data.quartDeNuitTHT;
+      if (data.quartDeNuitTA !== undefined) updateData.quartDeNuitTA = data.quartDeNuitTA;
+
       await tx.productionInventory.update({
         where: { id: inventoryId },
         data: updateData
@@ -146,10 +151,21 @@ export async function PATCH(
             data: {
               inventoryId,
               type: bottle.type,
+              shift: bottle.shift || 'JOUR',
               quantity: bottle.quantity || 0,
               tonnage
             }
           });
+        }
+
+        // Handle QDN line associations
+        if (data.quartDeNuitLineIds && Array.isArray(data.quartDeNuitLineIds)) {
+          await tx.quartDeNuitLine.deleteMany({ where: { inventoryId } });
+          for (const lineId of data.quartDeNuitLineIds) {
+            await tx.quartDeNuitLine.create({
+              data: { inventoryId, lineId }
+            });
+          }
         }
       }
 

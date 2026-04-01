@@ -1,6 +1,6 @@
 // lib/types/production.ts
 
-import { ProductionStatus, ArretType, BottleType, ReservoirType } from '@prisma/client';
+import { ProductionStatus, ArretType, BottleType, ReservoirType, ShiftType } from '@prisma/client';
 
 export interface ProductionArret {
   id: number;
@@ -40,6 +40,7 @@ export interface BottleProduction {
   id: number;
   inventoryId: number;
   type: BottleType;
+  shift: ShiftType;
   quantity: number;
   tonnage: number;
 }
@@ -121,6 +122,22 @@ export interface ProductionInventory {
   exports: number;
   divers: number;
 
+  // Quart de Nuit
+  isQuartDeNuit: boolean;
+  quartDeNuitTHT?: number | null;
+  quartDeNuitTA?: number | null;
+  quartDeNuitCumulSortie?: number | null;
+  quartDeNuitRendement?: number | null;
+  quartDeNuitLines?: Array<{
+    id: number;
+    lineId: number;
+    line: {
+      id: number;
+      name: string;
+      capacityPerHour: number;
+    };
+  }>;
+
   // Audit
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -198,7 +215,13 @@ export interface CompleteInventoryData {
   bottles: Array<{
     type: BottleType;
     quantity: number;
+    shift?: ShiftType;
   }>;
+  // Quart de Nuit
+  isQuartDeNuit?: boolean;
+  quartDeNuitTHT?: number;
+  quartDeNuitTA?: number;
+  quartDeNuitLineIds?: number[];
   reservoirs: Array<{
     name: string;
     reservoirConfigId?: number;
@@ -313,6 +336,17 @@ export const calculateRendement = (
 ): number => {
   if (tempsTotal <= 0) return 0;
   return (tempsUtile / tempsTotal) * 100;
+};
+
+export const calculateQDNRendement = (
+  cumulSortieQDN: number,
+  tht: number,
+  ta: number
+): number => {
+  const tempsUtileMinutes = tht - ta;
+  if (tempsUtileMinutes <= 0) return 0;
+  const tempsUtileHeures = tempsUtileMinutes / 60;
+  return cumulSortieQDN / tempsUtileHeures;
 };
 
 export const formatDuration = (minutes: number): string => {

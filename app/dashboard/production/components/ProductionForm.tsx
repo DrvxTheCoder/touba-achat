@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, CheckCircle, AlertCircle, Edit } from 'lucide-react';
+import { Save, CheckCircle, AlertCircle, Edit, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 import ApproSection from './ApproSection';
 import BottlesSection from './BottlesSection';
@@ -17,6 +17,8 @@ import { ProductionInventory, CompleteInventoryData } from '@/lib/types/producti
 import { calculateTonnage } from '@/lib/types/production';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 
 interface ProductionFormProps {
   inventory: ProductionInventory;
@@ -102,11 +104,27 @@ export default function ProductionForm({
     heureFin: inventory.heureFin || '',
     bottles: inventory.bottles || [],
     reservoirs: transformedReservoirs,
-    densiteAmbiante: (inventory as any).densiteAmbiante || 0
+    densiteAmbiante: (inventory as any).densiteAmbiante || 0,
+    // QDN fields
+    isQuartDeNuit: inventory.isQuartDeNuit || false,
+    quartDeNuitTHT: inventory.quartDeNuitTHT || 0,
+    quartDeNuitTA: inventory.quartDeNuitTA || 0,
+    quartDeNuitLineIds: (inventory.quartDeNuitLines || []).map((ql: any) => ql.lineId) as number[],
   });
 
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [lastSaved, setLastSaved] = useState<string>('');
+
+  // Fetch production lines for the centre
+  const [productionLines, setProductionLines] = useState<Array<{ id: number; name: string; capacityPerHour: number; isActive: boolean }>>([]);
+  useEffect(() => {
+    if (inventory.productionCenterId) {
+      fetch(`/api/production/settings/centers/${inventory.productionCenterId}/lines`)
+        .then(res => res.ok ? res.json() : [])
+        .then(lines => setProductionLines(lines.filter((l: any) => l.isActive)))
+        .catch(() => setProductionLines([]));
+    }
+  }, [inventory.productionCenterId]);
 
   // Auto-save toutes les 30 secondes si des changements (désactivé en mode édition)
   useEffect(() => {
@@ -187,14 +205,38 @@ export default function ProductionForm({
     }
   }, [tempsTotal, onTempsCalculated]);
 
-  // Calculs automatiques
-  const remplissageTotal = formData.bottles.reduce(
-    (sum, b) => {
-      const tonnage = calculateTonnage(b.type, b.quantity || 0);
-      return sum + tonnage;
-    },
-    0
-  );
+  // Toggle QDN line selection
+  const toggleQDNLine = (lineId: number) => {
+    setFormData(prev => {
+      const ids = prev.quartDeNuitLineIds.includes(lineId)
+        ? prev.quartDeNuitLineIds.filter(id => id !== lineId)
+        : [...prev.quartDeNuitLineIds, lineId];
+      return { ...prev, quartDeNuitLineIds: ids };
+    });
+    setAutoSaveStatus('idle');
+  };
+
+  // Calculate QDN cumul sortie from NUIT bottles
+  const qdnCumulSortie = formData.bottles
+    .filter(b => b.shift === 'NUIT')
+    .reduce((sum, b) => sum + calculateTonnage(b.type, b.quantity || 0), 0);
+
+  // Calculate QDN rendement horaire
+  const qdnTempsUtile = (formData.quartDeNuitTHT || 0) - (formData.quartDeNuitTA || 0);
+  const qdnRendement = qdnTempsUtile > 0 && qdnCumulSortie > 0
+    ? qdnCumulSortie / (qdnTempsUtile / 60)
+    : 0;
+
+  // Calculate total selected QDN lines capacity
+  const qdnLinesCapacity = formData.quartDeNuitLineIds.reduce((sum, lineId) => {
+    const line = productionLines.find(l => l.id === lineId);
+    return sum + (line?.capacityPerHour || 0);
+  }, 0);
+
+  // Calculs automatiques (JOUR shift only)
+  const remplissageTotal = formData.bottles
+    .filter(b => !b.shift || b.shift === 'JOUR')
+    .reduce((sum, b) => sum + calculateTonnage(b.type, b.quantity || 0), 0);
 
   // Calculate total approvisionnement from dynamic values
   const totalAppro = Object.values(formData.approValues).reduce((sum, val) => sum + val, 0);
@@ -203,7 +245,8 @@ export default function ProductionForm({
   const totalSorties = Object.values(formData.sortieValues).reduce((sum, val) => sum + val, 0);
 
   const stockFinalTheorique =
-    inventory.stockInitialPhysique +
+    inventory.stockInitialPhysique -
+    (formData.isQuartDeNuit ? qdnCumulSortie : 0) +
     totalAppro -
     totalSorties -
     remplissageTotal;
@@ -273,8 +316,14 @@ export default function ProductionForm({
       tempsTotal,
       bottles: formData.bottles.map(b => ({
         type: b.type,
-        quantity: b.quantity || 0
+        quantity: b.quantity || 0,
+        shift: b.shift || 'JOUR',
       })),
+      // QDN data
+      isQuartDeNuit: formData.isQuartDeNuit,
+      quartDeNuitTHT: formData.isQuartDeNuit ? formData.quartDeNuitTHT : undefined,
+      quartDeNuitTA: formData.isQuartDeNuit ? formData.quartDeNuitTA : undefined,
+      quartDeNuitLineIds: formData.isQuartDeNuit ? formData.quartDeNuitLineIds : undefined,
       densiteAmbiante: formData.densiteAmbiante,
       reservoirs: formData.reservoirs.map((s: any) => ({
         name: s.name,
@@ -322,11 +371,149 @@ export default function ProductionForm({
         disabled={disabled}
       />
 
+      {/* Quart de Nuit Toggle */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Moon className="h-5 w-5 text-indigo-500" />
+            <div>
+              <Label htmlFor="qdn-toggle" className="text-base font-medium cursor-pointer">
+                Quart de Nuit
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Activer pour saisir les données du quart de nuit
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="qdn-toggle"
+            checked={formData.isQuartDeNuit}
+            onCheckedChange={(checked) => {
+              setFormData(prev => ({ ...prev, isQuartDeNuit: checked }));
+              setAutoSaveStatus('idle');
+            }}
+            disabled={disabled}
+          />
+        </div>
+
+        {/* QDN Fields - shown when toggle is active */}
+        {formData.isQuartDeNuit && (
+          <div className="mt-6 space-y-6 border-t pt-6">
+            {/* QDN Time fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="qdn-tht">Total Heures Travaillées - THT (minutes)</Label>
+                <Input
+                  id="qdn-tht"
+                  type="number"
+                  min="0"
+                  value={formData.quartDeNuitTHT || ''}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, quartDeNuitTHT: parseInt(e.target.value) || 0 }));
+                    setAutoSaveStatus('idle');
+                  }}
+                  disabled={disabled}
+                  placeholder="Ex: 480"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="qdn-ta">Total Arrêt - TA (minutes)</Label>
+                <Input
+                  id="qdn-ta"
+                  type="number"
+                  min="0"
+                  value={formData.quartDeNuitTA || ''}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, quartDeNuitTA: parseInt(e.target.value) || 0 }));
+                    setAutoSaveStatus('idle');
+                  }}
+                  disabled={disabled}
+                  placeholder="Ex: 30"
+                />
+              </div>
+            </div>
+
+            {/* QDN Line Selection */}
+            {productionLines.length > 0 && (
+              <div className="space-y-3">
+                <Label>Lignes utilisées</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {productionLines.map(line => (
+                    <label
+                      key={line.id}
+                      className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        formData.quartDeNuitLineIds.includes(line.id)
+                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
+                          : 'hover:bg-muted/50'
+                      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.quartDeNuitLineIds.includes(line.id)}
+                        onChange={() => !disabled && toggleQDNLine(line.id)}
+                        disabled={disabled}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-sm">{line.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">({line.capacityPerHour} T/h)</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {formData.quartDeNuitLineIds.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Capacité totale sélectionnée: <span className="font-semibold">{qdnLinesCapacity} T/h</span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {productionLines.length === 0 && (
+              <p className="text-sm text-orange-600">
+                Aucune ligne de production configurée pour ce centre. Veuillez configurer les lignes dans les paramètres du centre.
+              </p>
+            )}
+
+            {/* QDN Metrics Summary */}
+            {(qdnCumulSortie > 0 || formData.quartDeNuitTHT > 0) && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground">Cumul Sortie QDN</p>
+                  <p className="text-lg font-semibold">{qdnCumulSortie.toFixed(3)} T</p>
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground">Temps Utile QDN</p>
+                  <p className="text-lg font-semibold">{qdnTempsUtile > 0 ? `${Math.floor(qdnTempsUtile / 60)}h${(qdnTempsUtile % 60).toString().padStart(2, '0')}` : '-'}</p>
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground">Rendement QDN</p>
+                  <p className="text-lg font-semibold">
+                    {qdnRendement > 0 ? `${qdnRendement.toFixed(2)} T/h` : '-'}
+                    {qdnRendement > 0 && qdnLinesCapacity > 0 && (
+                      <span className="text-xs text-muted-foreground ml-1">
+                        ({((qdnRendement / qdnLinesCapacity) * 100).toFixed(1)}%)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
       <Card className="p-6">
         <Tabs defaultValue="appro" className="w-full">
-            <TabsList className="grid w-full h-fit grid-cols-2 sm:grid-cols-4">
+            <TabsList className={`grid w-full h-fit ${formData.isQuartDeNuit ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
             <TabsTrigger value="appro">Approvisionnement</TabsTrigger>
             <TabsTrigger value="bottles">Bouteilles</TabsTrigger>
+            {formData.isQuartDeNuit && (
+              <TabsTrigger value="bottles-nuit" className="text-indigo-600">
+                <Moon className="h-3 w-3 mr-1" />
+                Bouteilles QDN
+              </TabsTrigger>
+            )}
             <TabsTrigger value="exports">Sorties</TabsTrigger>
             <TabsTrigger value="reservoirs">Réservoirs</TabsTrigger>
             </TabsList>
@@ -346,8 +533,20 @@ export default function ProductionForm({
               bottles={formData.bottles}
               onUpdate={updateBottles}
               disabled={disabled}
+              shift="JOUR"
             />
           </TabsContent>
+
+          {formData.isQuartDeNuit && (
+            <TabsContent value="bottles-nuit" className="space-y-4 mt-6">
+              <BottlesSection
+                bottles={formData.bottles}
+                onUpdate={updateBottles}
+                disabled={disabled}
+                shift="NUIT"
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="exports" className="space-y-4 mt-6">
             <ExportsSection
@@ -388,6 +587,7 @@ export default function ProductionForm({
         stockFinalPhysique={stockFinalPhysique}
         ecart={ecart}
         ecartPourcentage={ecartPourcentage}
+        qdnCumulSortie={formData.isQuartDeNuit ? qdnCumulSortie : 0}
       />
 
       {/* Observations */}

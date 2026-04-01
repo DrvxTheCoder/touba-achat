@@ -79,28 +79,55 @@ export async function POST(
         ? Object.values(data.sortieValues).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
         : (data.ngabou || 0) + (data.exports || 0) + (data.divers || 0);
 
-      // Delete any existing bottles/reservoirs from autosave before recreating
+      // Delete any existing bottles/reservoirs/QDN lines from autosave before recreating
       await tx.bottleProduction.deleteMany({ where: { inventoryId } });
       await tx.reservoir.deleteMany({ where: { inventoryId } });
+      await tx.quartDeNuitLine.deleteMany({ where: { inventoryId } });
 
-      // Créer les bouteilles
+      // Créer les bouteilles (JOUR + NUIT)
       let totalBottles = 0;
       let cumulSortie = totalSorties;
+      let quartDeNuitCumulSortie = 0;
 
-      for (const bottle of data.bottles as Bottle[]) {
+      for (const bottle of data.bottles as (Bottle & { shift?: 'JOUR' | 'NUIT' })[]) {
+        const shift = bottle.shift || 'JOUR' as const;
         const tonnage = (bottle.quantity * BOTTLE_WEIGHTS[bottle.type]) / 1000;
 
         await tx.bottleProduction.create({
           data: {
             inventoryId,
             type: bottle.type,
+            shift,
             quantity: bottle.quantity,
             tonnage
           }
         });
 
-        totalBottles += bottle.quantity;
-        cumulSortie += tonnage;
+        if (shift === 'NUIT') {
+          quartDeNuitCumulSortie += tonnage;
+        } else {
+          totalBottles += bottle.quantity;
+          cumulSortie += tonnage;
+        }
+      }
+
+      // QDN: create line associations and calculate rendement
+      let quartDeNuitRendement: number | null = null;
+      const isQuartDeNuit = data.isQuartDeNuit === true;
+
+      if (isQuartDeNuit && data.quartDeNuitLineIds?.length) {
+        for (const lineId of data.quartDeNuitLineIds) {
+          await tx.quartDeNuitLine.create({
+            data: { inventoryId, lineId }
+          });
+        }
+
+        const tht = data.quartDeNuitTHT || 0;
+        const ta = data.quartDeNuitTA || 0;
+        const tempsUtileMinutes = tht - ta;
+        if (tempsUtileMinutes > 0 && quartDeNuitCumulSortie > 0) {
+          quartDeNuitRendement = quartDeNuitCumulSortie / (tempsUtileMinutes / 60);
+        }
       }
 
       // Créer les réservoirs avec validation et calculs automatiques
@@ -211,9 +238,10 @@ export async function POST(
         await tx.reservoir.create({ data: reservoirData });
       }
 
-      // Calculs finaux
+      // Calculs finaux (QDN cumul sortie is subtracted from stock initial)
       const stockFinalTheorique =
-        inventory.stockInitialPhysique +
+        inventory.stockInitialPhysique -
+        (isQuartDeNuit ? quartDeNuitCumulSortie : 0) +
         totalAppro -
         cumulSortie;
 
@@ -319,12 +347,23 @@ export async function POST(
           tempsTotal,
           tempsUtile: tempsTotal - inventory.tempsArret,
           observations: data.observations,
-          densiteAmbiante: data.densiteAmbiante || null
+          densiteAmbiante: data.densiteAmbiante || null,
+          // QDN fields
+          isQuartDeNuit,
+          quartDeNuitTHT: isQuartDeNuit ? (data.quartDeNuitTHT || null) : null,
+          quartDeNuitTA: isQuartDeNuit ? (data.quartDeNuitTA || null) : null,
+          quartDeNuitCumulSortie: isQuartDeNuit ? quartDeNuitCumulSortie : null,
+          quartDeNuitRendement: isQuartDeNuit ? quartDeNuitRendement : null,
         },
         include: {
           bottles: true,
           reservoirs: true,
           arrets: true,
+          quartDeNuitLines: {
+            include: {
+              line: true
+            }
+          },
           approValues: {
             include: {
               fieldConfig: true

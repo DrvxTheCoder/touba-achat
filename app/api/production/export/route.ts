@@ -79,6 +79,9 @@ export async function POST(req: NextRequest) {
       orderBy: { date: 'asc' },
       include: {
         bottles: true,
+        quartDeNuitLines: {
+          include: { line: true }
+        },
         reservoirs: {
           include: {
             reservoirConfig: {
