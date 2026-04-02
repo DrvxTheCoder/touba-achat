@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2Icon, Calendar, ChevronLeft, ChevronRight, FilterIcon, LayoutListIcon, ListFilter, Package2, RefreshCwIcon, TagIcon } from "lucide-react";
+import { Building2Icon, Calendar, CheckSquare, ChevronLeft, ChevronRight, FilterIcon, LayoutListIcon, ListFilter, Package2, PackageCheck, RefreshCw, RefreshCwIcon, TagIcon, X } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { SpinnerCircular } from "spinners-react";
 import { StockEDBTableRow } from "./components/StockEDBTableRow";
 import { StockEDBDetails } from "./components/StockEDBDetails";
 import { CategoryType } from "@prisma/client";
@@ -25,6 +24,9 @@ import { OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import { PrintTest } from "@/components/PrintBDCButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { SpinnerCircular } from "spinners-react";
 
 type Category = {
     id: number;
@@ -116,6 +118,11 @@ export default function StockEDBPage() {
     const [isTimeOptionSelected, setIsTimeOptionSelected] = useState(false);
     const [isCatOptionSelected, setIsCatOptionSelected] = useState(false);
     const [isStatusOptionSelected, setIsStatusOptionSelected] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [bulkActionType, setBulkActionType] = useState<'deliver' | 'convert' | null>(null);
+    const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
+
+  const canPerformActions = session?.user?.role && ['ADMIN', 'MAGASINIER'].includes(session.user.role);
 
   // Check if user has required role
   const hasAccess = session?.user?.role && ['ADMIN', 'MAGASINIER', 'DIRECTEUR_GENERAL'].includes(session.user.role);
@@ -170,6 +177,7 @@ export default function StockEDBPage() {
   const fetchStockEDBs = async () => {
     setIsLoading(true);
     setSelectedEDB(null);
+    setSelectedIds(new Set());
     try {
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -217,6 +225,114 @@ export default function StockEDBPage() {
     if (!hasAccess) return;
     fetchStockEDBs();
   }, [hasAccess, page, searchTerm, categoryFilter, timeRange, statusFilter, departmentFilter]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === stockEdbs.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(stockEdbs.map((edb) => edb.id)));
+    }
+  };
+
+  const toggleSelectOne = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const getEligibleForDeliver = () => {
+    return stockEdbs.filter(
+      (edb) => selectedIds.has(edb.id) && edb.status !== 'DELIVERED' && edb.status !== 'CONVERTED'
+    );
+  };
+
+  const getEligibleForConvert = () => {
+    return stockEdbs.filter(
+      (edb) => selectedIds.has(edb.id) && edb.status === 'SUBMITTED' && edb.employee?.id
+    );
+  };
+
+  const handleBulkDeliver = async () => {
+    setIsBulkActionLoading(true);
+    try {
+      const eligible = getEligibleForDeliver();
+      const response = await fetch('/api/edb/stock/bulk/deliver', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: eligible.map((edb) => edb.id) }),
+      });
+
+      if (!response.ok) throw new Error('Erreur lors de la livraison groupée');
+
+      const { successCount, failureCount } = await response.json();
+
+      if (failureCount > 0) {
+        toast.warning('Livraison partielle', {
+          description: `${successCount} EDB(s) marqué(s) comme livré(s), ${failureCount} erreur(s).`,
+        });
+      } else {
+        toast.success('Livraison groupée', {
+          description: `${successCount} EDB(s) marqué(s) comme livré(s).`,
+        });
+      }
+
+      clearSelection();
+      fetchStockEDBs();
+    } catch (error) {
+      toast.error('Erreur', {
+        description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      });
+    } finally {
+      setIsBulkActionLoading(false);
+      setBulkActionType(null);
+    }
+  };
+
+  const handleBulkConvert = async () => {
+    setIsBulkActionLoading(true);
+    try {
+      const eligible = getEligibleForConvert();
+      const response = await fetch('/api/edb/stock/bulk/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: eligible.map((edb) => edb.id) }),
+      });
+
+      if (!response.ok) throw new Error('Erreur lors de la conversion groupée');
+
+      const { successCount, failureCount } = await response.json();
+
+      if (failureCount > 0) {
+        toast.warning('Conversion partielle', {
+          description: `${successCount} EDB(s) converti(s), ${failureCount} erreur(s).`,
+        });
+      } else {
+        toast.success('Conversion groupée', {
+          description: `${successCount} EDB(s) converti(s) en EDB standard.`,
+        });
+      }
+
+      clearSelection();
+      fetchStockEDBs();
+    } catch (error) {
+      toast.error('Erreur', {
+        description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      });
+    } finally {
+      setIsBulkActionLoading(false);
+      setBulkActionType(null);
+    }
+  };
 
   const handleStockEdbSubmit = async (data: any) => {
     try {
@@ -377,12 +493,55 @@ export default function StockEDBPage() {
               )}
               </div>
             </div>
+            {canPerformActions && selectedIds.size > 0 && (
+              <div className="flex items-center justify-between rounded-2xl border bg-muted/50 px-4 py-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckSquare className="h-4 w-4 text-primary" />
+                  <span className="font-medium">{selectedIds.size} sélectionné(s)</span>
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={clearSelection}>
+                    <X className="mr-1 h-3 w-3" />
+                    Désélectionner
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={getEligibleForDeliver().length === 0}
+                    onClick={() => setBulkActionType('deliver')}
+                  >
+                    <PackageCheck className="mr-1 h-3.5 w-3.5" />
+                    Marquer comme livré ({getEligibleForDeliver().length})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={getEligibleForConvert().length === 0}
+                    onClick={() => setBulkActionType('convert')}
+                  >
+                    <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                    Convertir en EDB standard ({getEligibleForConvert().length})
+                  </Button>
+                </div>
+              </div>
+            )}
             <Card className="rounded-2xl">
               <CardContent className="pt-5 p-1 md:p-4">
                 <Table>
                 <TableHeader className="bg-muted">
                     <TableRow className="rounded-lg border-0">
-                    <TableHead className="rounded-l-lg">
+                    {canPerformActions && (
+                      <TableHead className="w-8 rounded-l-lg pr-0">
+                        <Checkbox
+                          checked={stockEdbs.length > 0 && selectedIds.size === stockEdbs.length}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Tout sélectionner"
+                        />
+                      </TableHead>
+                    )}
+                    <TableHead className={!canPerformActions ? "rounded-l-lg" : ""}>
                     ID
                     </TableHead>
                     <TableHead className=" sm:table-cell">
@@ -398,14 +557,14 @@ export default function StockEDBPage() {
                     Date
                     </TableHead>
                     <TableHead className="md:hidden table-cell text-right rounded-r-lg">
-                    
+
                     </TableHead>
                     </TableRow>
                 </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={canPerformActions ? 7 : 6} className="h-24 text-center">
                           <div className="flex justify-center items-center h-24">
                             <SpinnerCircular size={40} thickness={100} speed={100} color="#36ad47" secondaryColor="rgba(73, 172, 57, 0.23)" />
                           </div>
@@ -413,22 +572,22 @@ export default function StockEDBPage() {
                       </TableRow>
                     ) : stockEdbs.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center">
+                        <TableCell colSpan={canPerformActions ? 7 : 6} className="text-center">
                           Aucun article en stock trouvé.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      stockEdbs.map((stockEdb) => {
-                        console.log("Mapping stockEdb:", stockEdb); // Add this log
-                        return (
+                      stockEdbs.map((stockEdb) => (
                           <StockEDBTableRow
                             key={stockEdb.id}
                             stockEdb={stockEdb}
                             onClick={() => setSelectedEDB(stockEdb)}
                             isSelected={selectedEDB?.id === stockEdb.id}
+                            isChecked={selectedIds.has(stockEdb.id)}
+                            onCheckedChange={(checked) => toggleSelectOne(stockEdb.id, checked)}
+                            showCheckbox={!!canPerformActions}
                           />
-                        );
-                      })
+                        ))
                     )}
                   </TableBody>
                 </Table>
@@ -545,6 +704,41 @@ export default function StockEDBPage() {
           </div>
         </div>
       </main>
+
+      <AlertDialog open={bulkActionType !== null} onOpenChange={() => setBulkActionType(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkActionType === 'deliver' ? 'Confirmer la livraison groupée' : 'Confirmer la conversion groupée'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkActionType === 'deliver'
+                ? `Êtes-vous sûr de vouloir marquer ${getEligibleForDeliver().length} EDB(s) comme livré(s) ?`
+                : `Êtes-vous sûr de vouloir convertir ${getEligibleForConvert().length} EDB(s) en EDB standard ? Cette action est irréversible.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkActionLoading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (bulkActionType === 'deliver') {
+                  handleBulkDeliver();
+                } else {
+                  handleBulkConvert();
+                }
+              }}
+              disabled={isBulkActionLoading}
+            >
+              {isBulkActionLoading ? (
+                <SpinnerCircular size={20} thickness={180} speed={180} color="#ffffff" secondaryColor="rgba(0, 0, 0, 0.2)" />
+              ) : (
+                'Confirmer'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ContentLayout>
 
   );

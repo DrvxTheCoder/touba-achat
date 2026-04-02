@@ -235,6 +235,9 @@ export default function UserStockEDBPage() {
                             stockEdb={stockEdb}
                             onClick={() => setSelectedEDB(stockEdb)}
                             isSelected={selectedEDB?.id === stockEdb.id}
+                            isChecked={false}
+                            onCheckedChange={() => {}}
+                            showCheckbox={false}
                           />
                         );
                       })
