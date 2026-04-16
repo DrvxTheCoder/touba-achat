@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { processODMByRH } from '@/app/api/odm/utils/odm-util';
@@ -44,6 +45,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       accompanyingPersons
     });
 
+    revalidatePath('/dashboard/odm', 'layout');
     return NextResponse.json({
       message: 'ODM traité, en attente de validation DRH',
       odm: updatedODM

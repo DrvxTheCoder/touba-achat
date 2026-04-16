@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import {
@@ -51,6 +52,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       case 'director_approve':
         // Director approves ODM (SUBMITTED -> AWAITING_DRH_APPROVAL)
         updatedODM = await approveODMByDirector(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
           message: 'ODM approuvé par le directeur',
           odm: updatedODM
@@ -59,6 +61,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       case 'drh_approve':
         // DRH marks for RH processing (AWAITING_DRH_APPROVAL -> RH_PROCESSING)
         updatedODM = await approveDRHForProcessing(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
           message: 'ODM envoyé pour traitement RH',
           odm: updatedODM
@@ -67,6 +70,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       case 'drh_validate':
         // DRH validates RH work (AWAITING_DRH_VALIDATION -> AWAITING_DOG_APPROVAL)
         updatedODM = await validateByDRH(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
           message: 'ODM validé par DRH, envoyé pour approbation DOG',
           odm: updatedODM
@@ -75,6 +79,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       case 'dog_approve':
         // DOG final approval (AWAITING_DOG_APPROVAL -> READY_FOR_PRINT)
         updatedODM = await approveByDOG(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
           message: 'ODM approuvé par DOG, prêt pour impression',
           odm: updatedODM
@@ -83,6 +88,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       case 'restart_to_processing':
         // DRH restarts rejected ODM to RH_PROCESSING
         updatedODM = await restartODMToProcessing(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
           message: 'ODM redémarré vers traitement RH',
           odm: updatedODM
@@ -91,6 +97,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       case 'restart_to_dog':
         // DRH restarts rejected ODM to AWAITING_DOG_APPROVAL
         updatedODM = await restartODMToDOGApproval(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
           message: 'ODM redémarré vers approbation DOG',
           odm: updatedODM
@@ -99,11 +106,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       // Legacy action support
       case 'approveRHDirector':
         updatedODM = await approveDRHForProcessing(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json(updatedODM);
 
       default:
         // Legacy flow - treat as director approval
         updatedODM = await approveODMByDirector(odmId, parseInt(userId));
+        revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
           message: 'ODM approuvé avec succès',
           odm: updatedODM

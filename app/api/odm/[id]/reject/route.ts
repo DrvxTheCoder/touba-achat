@@ -1,5 +1,6 @@
 // api/edb/[id]/reject/route.ts
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { PrismaClient, EDBStatus, EDBEventType } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
@@ -45,6 +46,7 @@ export async function POST(
     // Update the EDB status to REJECTED, log the event, and add the rejection reason
     const updatedODM = await rejectODM(Number(id), parseInt(session.user.id), reason);
 
+    revalidatePath('/dashboard/odm', 'layout');
     return NextResponse.json(updatedODM);
   } catch (error) {
     console.error('Error rejecting ODM:', error);
