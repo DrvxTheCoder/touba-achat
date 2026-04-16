@@ -20,7 +20,7 @@ export function getEventTypeFromStatus(status: EDBStatus): EDBEventType {
     case 'APPROVED_DG': return EDBEventType.APPROVED_DG;
     case 'REJECTED': return EDBEventType.REJECTED;
     case 'COMPLETED': return EDBEventType.UPDATED;
-    default: 
+    default:
       console.warn(`Unhandled EDB status: ${status}`);
       return EDBEventType.UPDATED;
   }
@@ -60,15 +60,14 @@ export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus | St
       default:
         return NotificationType.EDB_UPDATED;
     }
-  }
-  else if (entityType === 'STOCK'){
+  } else if (entityType === 'STOCK') {
     switch (status) {
       case 'SUBMITTED':
         return NotificationType.EDB_CREATED;
       case 'DELIVERED':
         return NotificationType.EDB_DELIVERED;
       case 'CONVERTED':
-        return NotificationType.EDB_CONVERTED
+        return NotificationType.EDB_CONVERTED;
       default:
         return NotificationType.EDB_UPDATED;
     }
@@ -92,189 +91,195 @@ export function getNotificationTypeFromStatus(status: EDBStatus | ODMStatus | St
   }
 }
 
+// ─── ODM recipient logic ──────────────────────────────────────────────────────
+
+async function addODMRecipients(_entity: any, status: ODMStatus, recipients: Set<number>) {
+  switch (status) {
+    case 'SUBMITTED': {
+      // Notify all roles that can approve at the director stage
+      const approvers = await prisma.user.findMany({
+        where: { role: { in: ['DIRECTEUR', 'DIRECTEUR_GENERAL', 'ADMIN', 'DAF', 'DOG', 'DCM', 'DRH'] } },
+        select: { id: true },
+      });
+      approvers.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'AWAITING_DRH_APPROVAL': {
+      // DRH needs to send the ODM to RH processing
+      const drhUsers = await prisma.user.findMany({
+        where: { role: { in: ['DRH', 'ADMIN'] } },
+        select: { id: true },
+      });
+      drhUsers.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'RH_PROCESSING':
+    case 'AWAITING_RH_PROCESSING': {
+      // RH users need to process the ODM
+      const rhUsers = await prisma.user.findMany({
+        where: { role: { in: ['RH', 'DRH', 'ADMIN'] } },
+        select: { id: true },
+      });
+      rhUsers.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'AWAITING_DRH_VALIDATION': {
+      // DRH needs to validate the RH work before it goes to DOG
+      const drhUsers = await prisma.user.findMany({
+        where: { role: { in: ['DRH', 'ADMIN'] } },
+        select: { id: true },
+      });
+      drhUsers.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'AWAITING_DOG_APPROVAL':
+    case 'AWAITING_FINANCE_APPROVAL': {
+      // DOG needs to give final approval
+      const dogUsers = await prisma.user.findMany({
+        where: { role: { in: ['DOG', 'DAF', 'ADMIN'] } },
+        select: { id: true },
+      });
+      dogUsers.forEach(u => recipients.add(u.id));
+      break;
+    }
+    // READY_FOR_PRINT, REJECTED, COMPLETED → creator only (already added in determineRecipients)
+  }
+}
+
+// ─── EDB recipient logic ──────────────────────────────────────────────────────
+
+const EDB_POST_DIRECTOR_STATUSES: EDBStatus[] = [
+  'APPROVED_DIRECTEUR', 'ESCALATED', 'AWAITING_MAGASINIER', 'MAGASINIER_ATTACHED',
+  'AWAITING_SUPPLIER_CHOICE', 'SUPPLIER_CHOSEN', 'AWAITING_IT_APPROVAL', 'IT_APPROVED',
+  'AWAITING_FINAL_APPROVAL', 'APPROVED_DG', 'DELIVERED', 'COMPLETED',
+];
+
+async function addEDBRecipients(entity: any, status: EDBStatus, recipients: Set<number>) {
+  // Notify MAGASINIER for all post-director approval statuses (they track the order lifecycle)
+  if (EDB_POST_DIRECTOR_STATUSES.includes(status)) {
+    const magasiniers = await prisma.user.findMany({
+      where: { role: 'MAGASINIER' },
+      select: { id: true },
+    });
+    magasiniers.forEach(u => recipients.add(u.id));
+  }
+
+  switch (status) {
+    case 'SUBMITTED': {
+      // Responsable and Director of the submitter's department need to approve
+      const users = await prisma.user.findMany({
+        where: {
+          role: { in: ['RESPONSABLE', 'DIRECTEUR'] },
+          employee: { currentDepartmentId: entity.departmentId },
+        },
+        select: { id: true },
+      });
+      users.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'APPROVED_RESPONSABLE': {
+      // Director of the department needs to approve next
+      const users = await prisma.user.findMany({
+        where: {
+          role: 'DIRECTEUR',
+          employee: { currentDepartmentId: entity.departmentId },
+        },
+        select: { id: true },
+      });
+      users.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'APPROVED_DIRECTEUR':
+    case 'ESCALATED':
+    case 'AWAITING_FINAL_APPROVAL': {
+      // DG needs to give final approval
+      const users = await prisma.user.findMany({
+        where: { role: 'DIRECTEUR_GENERAL' },
+        select: { id: true },
+      });
+      users.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'AWAITING_SUPPLIER_CHOICE': {
+      const users = await prisma.user.findMany({
+        where: { access: { has: 'CHOOSE_SUPPLIER' as Access } },
+        select: { id: true },
+      });
+      users.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'AWAITING_IT_APPROVAL': {
+      const users = await prisma.user.findMany({
+        where: { role: 'IT_ADMIN' },
+        select: { id: true },
+      });
+      users.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'DELIVERED': {
+      // Notify the department that their order has been delivered
+      const users = await prisma.user.findMany({
+        where: {
+          role: { in: ['RESPONSABLE', 'DIRECTEUR'] },
+          employee: { currentDepartmentId: entity.departmentId },
+        },
+        select: { id: true },
+      });
+      users.forEach(u => recipients.add(u.id));
+      break;
+    }
+    // REJECTED, APPROVED_DG, COMPLETED → creator only (already added in determineRecipients)
+  }
+}
+
+// ─── STOCK recipient logic ────────────────────────────────────────────────────
+
+async function addSTOCKRecipients(entity: any, status: StockEDBStatus, recipients: Set<number>) {
+  switch (status) {
+    case 'SUBMITTED':
+    case 'DELIVERED': {
+      const magasiniers = await prisma.user.findMany({
+        where: { role: 'MAGASINIER' },
+        select: { id: true },
+      });
+      magasiniers.forEach(u => recipients.add(u.id));
+      break;
+    }
+    case 'CONVERTED': {
+      const users = await prisma.user.findMany({
+        where: {
+          role: { in: ['RESPONSABLE', 'DIRECTEUR', 'DIRECTEUR_GENERAL'] },
+          employee: { currentDepartmentId: entity.departmentId },
+        },
+        select: { id: true },
+      });
+      users.forEach(u => recipients.add(u.id));
+      break;
+    }
+  }
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+
 export async function determineRecipients(
   entity: any,
   newStatus: EDBStatus | ODMStatus | StockEDBStatus,
-  actorId: number,
+  _actorId: number,
   entityType: 'EDB' | 'ODM' | 'STOCK'
 ): Promise<number[]> {
   const recipients = new Set<number>();
 
-  // Fetch all relevant users in one query
-  const relevantUsers = await prisma.user.findMany({
-    where: {
-      OR: [
-        { id: entity.creatorId },
-        { id: actorId },
-        { 
-          employee: { 
-            currentDepartmentId: entity.departmentId,
-            OR: [
-              { user: { role: 'RESPONSABLE' } },
-              { user: { role: 'DIRECTEUR' } }
-            ]
-          }
-        },
-        { role: 'DIRECTEUR_GENERAL' },
-        { role: 'MAGASINIER' },
-        { role: 'IT_ADMIN' },
-        { role: 'RH' },
-        { access: { has: Access.CHOOSE_SUPPLIER } }
-      ]
-    },
-    select: {
-      id: true,
-      role: true,
-      access: true,
-      employee: {
-        select: {
-          currentDepartmentId: true,
-          currentDepartment: {
-            select: {
-              name: true
-            }
-          }
-        }
-      }
-    }
-  });
+  // Always notify the creator (STOCK uses employeeId instead of creatorId)
+  const creatorId = entity.creatorId ?? entity.employeeId;
+  if (creatorId) recipients.add(creatorId);
 
-  // Always notify the creator and the actor
-  recipients.add(entity.creatorId);
-  // recipients.add(actorId);
-
-  if (entityType === 'ODM' && (newStatus === 'AWAITING_RH_PROCESSING' || newStatus === 'COMPLETED' || newStatus === 'AWAITING_FINANCE_APPROVAL')) {
-    // Separate query to find HR director
-    const hrDirector = await prisma.user.findFirst({
-      where: {
-        role: 'DIRECTEUR',
-        employee: {
-          currentDepartment: {
-            name: 'Direction Ressources Humaines'
-          }
-        }
-      },
-      select: {
-        id: true
-      }
-    });
-
-    if (hrDirector) {
-      recipients.add(hrDirector.id);
-    } else {
-      console.warn('No HR Director found for ODM notification');
-    }
+  if (entityType === 'ODM') {
+    await addODMRecipients(entity, newStatus as ODMStatus, recipients);
+  } else if (entityType === 'EDB') {
+    await addEDBRecipients(entity, newStatus as EDBStatus, recipients);
+  } else if (entityType === 'STOCK') {
+    await addSTOCKRecipients(entity, newStatus as StockEDBStatus, recipients);
   }
-
-  if (entityType === 'ODM' && newStatus === 'AWAITING_FINANCE_APPROVAL') {
-    // Separate query to find HR director
-    const FinanceDirector = await prisma.user.findFirst({
-      where: {
-        role: 'DIRECTEUR',
-        employee: {
-          currentDepartment: {
-            name: 'Direction Administrative et Financière'
-          }
-        }
-      },
-      select: {
-        id: true
-      }
-    });
-
-    if (FinanceDirector) {
-      recipients.add(FinanceDirector.id);
-    } else {
-      console.warn('No Finance Director found for ODM notification');
-    }
-  }
-  const edbStatusesAfterDirecteurApproval = [
-    'APPROVED_DIRECTEUR',
-    'ESCALATED',
-    'AWAITING_MAGASINIER',
-    'MAGASINIER_ATTACHED',
-    'AWAITING_SUPPLIER_CHOICE',
-    'SUPPLIER_CHOSEN',
-    'AWAITING_IT_APPROVAL',
-    'IT_APPROVED',
-    'AWAITING_FINAL_APPROVAL',
-    'APPROVED_DG',
-    'DELIVERED',
-    'COMPLETED'
-  ];
-
-  relevantUsers.forEach(user => {
-    if (entityType === 'EDB') {
-      // Notify magasinier for all statuses after APPROVED_DIRECTEUR
-      if (user.role === 'MAGASINIER' && edbStatusesAfterDirecteurApproval.includes(newStatus)) {
-        recipients.add(user.id);
-      }
-
-      switch (newStatus) {
-        case 'SUBMITTED':
-          if (user.employee?.currentDepartmentId === entity.departmentId && 
-              (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR' || user.role === 'DIRECTEUR_GENERAL')) {
-            recipients.add(user.id);
-          }
-          break;
-        case 'APPROVED_RESPONSABLE':
-          if (user.employee?.currentDepartmentId === entity.departmentId && user.role === 'DIRECTEUR') {
-            recipients.add(user.id);
-          }
-          break;
-        case 'DELIVERED':
-          if (user.employee?.currentDepartmentId === entity.departmentId && 
-            (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR')) {
-          recipients.add(user.id);
-          }
-        case 'APPROVED_DIRECTEUR':
-        case 'ESCALATED':
-        case 'AWAITING_FINAL_APPROVAL':
-          if (user.role === 'DIRECTEUR_GENERAL') {
-            recipients.add(user.id);
-          }
-          break;
-        case 'AWAITING_SUPPLIER_CHOICE':
-          if (user.access.includes('CHOOSE_SUPPLIER')) {
-            recipients.add(user.id);
-          }
-          break;
-        case 'AWAITING_IT_APPROVAL':
-          if (user.role === 'IT_ADMIN') {
-            recipients.add(user.id);
-          }
-          break;
-      }
-    } else if (entityType === 'STOCK') {
-      switch (newStatus){
-        case 'SUBMITTED':
-        case 'DELIVERED':
-          if (user.role === 'MAGASINIER') {
-            recipients.add(user.id);
-          }
-        case 'CONVERTED':
-          if (user.employee?.currentDepartmentId === entity.departmentId && 
-            (user.role === 'RESPONSABLE' || user.role === 'DIRECTEUR' || user.role === 'DIRECTEUR_GENERAL')) {
-          recipients.add(user.id);
-        }
-      }
-    } else {
-      switch (newStatus) {
-        case 'SUBMITTED':
-          if (user.employee?.currentDepartmentId === entity.departmentId && user.role === 'DIRECTEUR') {
-            recipients.add(user.id);
-          }
-          break;
-        case 'REJECTED':
-        case 'COMPLETED':
-        case 'RH_PROCESSING':
-          if (user.role === 'RH') {
-            recipients.add(user.id);
-          }
-          break;
-      }
-    }
-  });
 
   return Array.from(recipients);
 }
@@ -290,19 +295,19 @@ export async function createNotification(
   let numericEntityId: number | undefined;
 
   if (entityType === 'EDB') {
-    entity = await prisma.etatDeBesoin.findUnique({ 
+    entity = await prisma.etatDeBesoin.findUnique({
       where: { edbId: entityId },
       select: { id: true, creatorId: true, departmentId: true }
     });
     numericEntityId = entity?.id;
-  } else if (entityType === 'STOCK'){
-    entity = await prisma.stockEtatDeBesoin.findUnique({ 
+  } else if (entityType === 'STOCK') {
+    entity = await prisma.stockEtatDeBesoin.findUnique({
       where: { edbId: entityId },
       select: { id: true, employeeId: true, departmentId: true }
     });
     numericEntityId = entity?.id;
   } else {
-    entity = await prisma.ordreDeMission.findUnique({ 
+    entity = await prisma.ordreDeMission.findUnique({
       where: { odmId: entityId },
       select: { id: true, creatorId: true, departmentId: true }
     });
@@ -317,7 +322,7 @@ export async function createNotification(
   const notificationType = getNotificationTypeFromStatus(newStatus, entityType);
 
   const { subject, body } = generateNotificationMessage({
-    id: entityId, // Keep using the string ID for the message
+    id: entityId,
     status: newStatus,
     actionInitiator,
     entityType
@@ -347,4 +352,3 @@ export async function createNotification(
 
   return { notification, subject, body };
 }
-
