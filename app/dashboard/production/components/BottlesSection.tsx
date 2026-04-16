@@ -9,49 +9,50 @@ interface BottlesSectionProps {
   bottles: any[];
   onUpdate: (bottles: any[]) => void;
   disabled?: boolean;
+  shift?: 'JOUR' | 'NUIT';
 }
 
 export default function BottlesSection({
   bottles,
   onUpdate,
-  disabled
+  disabled,
+  shift = 'JOUR'
 }: BottlesSectionProps) {
   const bottleTypes = Object.entries(BOTTLE_TYPES);
 
+  // Filter bottles for this shift only
+  const shiftBottles = bottles.filter(b => (b.shift || 'JOUR') === shift);
+  // Bottles from the other shift (preserved during updates)
+  const otherShiftBottles = bottles.filter(b => (b.shift || 'JOUR') !== shift);
+
   const updateBottle = (type: BottleType, quantity: number) => {
-    const existingIndex = bottles.findIndex(b => b.type === type);
-    const newBottles = [...bottles];
+    const newShiftBottles = [...shiftBottles];
+    const existingIndex = newShiftBottles.findIndex(b => b.type === type);
 
     if (quantity === 0) {
-      // Remove bottle if quantity is 0
       if (existingIndex >= 0) {
-        newBottles.splice(existingIndex, 1);
+        newShiftBottles.splice(existingIndex, 1);
       }
     } else {
       if (existingIndex >= 0) {
-        newBottles[existingIndex] = {
-          type,
-          quantity
-        };
+        newShiftBottles[existingIndex] = { type, quantity, shift };
       } else {
-        newBottles.push({
-          type,
-          quantity
-        });
+        newShiftBottles.push({ type, quantity, shift });
       }
     }
 
-    onUpdate(newBottles);
+    // Merge back with other shift bottles
+    onUpdate([...otherShiftBottles, ...newShiftBottles]);
   };
 
   const getBottleData = (type: BottleType) => {
-    return bottles.find(b => b.type === type) || { quantity: 0 };
+    return shiftBottles.find(b => b.type === type) || { quantity: 0 };
   };
 
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground mb-4">
-        Entrez la quantité de bouteilles produites. Le tonnage sera calculé automatiquement.
+        Entrez la quantité de bouteilles produites{shift === 'NUIT' ? ' (quart de nuit)' : ''}. Le tonnage sera calculé automatiquement.
       </div>
       {bottleTypes.map(([type, label]) => {
         const data = getBottleData(type as BottleType);
@@ -67,9 +68,9 @@ export default function BottlesSection({
             </div>
             <div className="grid grid-cols-2 gap-4 items-end">
               <div className="grid gap-2">
-                <Label htmlFor={`bottle-${type}`}>Quantité</Label>
+                <Label htmlFor={`bottle-${shift}-${type}`}>Quantité</Label>
                 <Input
-                  id={`bottle-${type}`}
+                  id={`bottle-${shift}-${type}`}
                   type="number"
                   min="0"
                   value={quantity}

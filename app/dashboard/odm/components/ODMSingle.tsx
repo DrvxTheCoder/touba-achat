@@ -35,6 +35,22 @@ type ODMSingleProps = {
 export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole: initialUserRole }) => {
   const [odm, setOdm] = useState(initialOdm);
   const [userRole, setUserRole] = useState(initialUserRole);
+  const router = useRouter();
+
+  useEffect(() => {
+    setOdm(initialOdm);
+  }, [initialOdm]);
+
+  // Poll for status changes from other users (e.g. DRH approving on another tab)
+  const ACTIVE_STATUSES = ['SUBMITTED', 'AWAITING_DRH_APPROVAL', 'AWAITING_RH_PROCESSING', 'RH_PROCESSING', 'AWAITING_DRH_VALIDATION', 'AWAITING_DOG_APPROVAL', 'AWAITING_FINANCE_APPROVAL'];
+  useEffect(() => {
+    if (!ACTIVE_STATUSES.includes(odm.status)) return;
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [odm.status]);
+
   const [userAccess, setUserAccess] = useState<Access[]>([]);
   const [userDepartment, setUserDepartment] = useState<string | null>(null);
   const [userJobTitle, setUserJobTitle] = useState<string | null>(null);
@@ -121,7 +137,6 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
   const [restartTarget, setRestartTarget] = useState<'processing' | 'dog'>('processing');
   const [isValidating, setIsValidating] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const router = useRouter();
 
   // Check if ODM has been processed (has cost information)
   const isProcessed = ['AWAITING_DRH_VALIDATION', 'AWAITING_DOG_APPROVAL', 'READY_FOR_PRINT', 'AWAITING_FINANCE_APPROVAL', 'COMPLETED'].includes(odm.status);
@@ -222,6 +237,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       }
       const updatedOdm = await updatedOdmResponse.json();
       setOdm(updatedOdm);
+      router.refresh();
 
       toast.info("ODM Rejeté", {
         description: `L'ordre de mission (${odm.odmId}) a été rejeté avec succès.`,
@@ -269,6 +285,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       }
       const updatedOdm = await updatedOdmResponse.json();
       setOdm(updatedOdm);
+      router.refresh();
 
       toast.success("ODM Validé", {
         description: `L'ODM #${odm.odmId} a été validé par le directeur.`,
@@ -308,6 +325,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       }
       const updatedOdm = await updatedOdmResponse.json();
       setOdm(updatedOdm);
+      router.refresh();
 
       toast.success("ODM envoyé pour traitement", {
         description: `L'ODM #${odm.odmId} a été envoyé aux Ressources Humaines pour traitement.`,
@@ -348,6 +366,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       }
       const updatedOdm = await updatedOdmResponse.json();
       setOdm(updatedOdm);
+      router.refresh();
 
       toast.success("ODM validé par DRH", {
         description: `L'ODM #${odm.odmId} a été validé et envoyé pour approbation DOG.`,
@@ -387,6 +406,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       }
       const updatedOdm = await updatedOdmResponse.json();
       setOdm(updatedOdm);
+      router.refresh();
 
       toast.success("ODM approuvé par DOG", {
         description: `L'ODM #${odm.odmId} est maintenant prêt pour impression.`,
@@ -428,6 +448,7 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       }
       const updatedOdm = await updatedOdmResponse.json();
       setOdm(updatedOdm);
+      router.refresh();
 
       toast.success("ODM redémarré", {
         description: target === 'processing'

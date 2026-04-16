@@ -1,12 +1,18 @@
 import React from 'react';
+import path from 'path';
 import { Document, Page, Text, View, StyleSheet, Font, Image, DocumentProps } from '@react-pdf/renderer';
 
-// Register fonts
+// Local asset paths (server-side rendering)
+const ASSETS_DIR = path.join(process.cwd(), 'public');
+const FONT_DIR = path.join(ASSETS_DIR, 'font', 'pdf');
+const IMG_DIR = path.join(ASSETS_DIR, 'assets', 'img');
+
+// Register fonts from local files
 Font.register({
   family: 'Ubuntu',
   fonts: [
     {
-      src: 'https://fonts.gstatic.com/s/questrial/v13/QdVUSTchPBm7nuUeVf7EuStkm20oJA.ttf',
+      src: path.join(FONT_DIR, 'Questrial-Regular.ttf'),
       fontWeight: 'normal',
     },
   ],
@@ -14,7 +20,7 @@ Font.register({
 
 Font.register({
   family: 'Oswald',
-  src: 'https://fonts.gstatic.com/s/oswald/v13/Y_TKV6o8WovbUd3m_X9aAA.ttf'
+  src: path.join(FONT_DIR, 'Oswald-Regular.ttf')
 });
 
 // Interfaces
@@ -228,11 +234,14 @@ const DynamicMonthlyProductionPDF = ({
   const showSortieSection = sortieFields.length > 0;
   const showReservoirColumns = reservoirs.length > 0;
 
-  // Get all unique bottle types from inventories
+  // Check if any inventory has QDN data
+  const hasQDN = inventories.some((inv: any) => inv.isQuartDeNuit);
+
+  // Get all unique bottle types from inventories (JOUR shift only for main columns)
   const bottleTypes = Array.from(
     new Set(
       inventories.flatMap(inv =>
-        inv.bottles?.map((b: any) => b.type) || []
+        inv.bottles?.filter((b: any) => !b.shift || b.shift === 'JOUR').map((b: any) => b.type) || []
       )
     )
   ).sort();
@@ -254,6 +263,7 @@ const DynamicMonthlyProductionPDF = ({
     const dateWidth = 3.5;
     const stockInitWidth = 5;
     const rendementWidth = 14;
+    const qdnWidth = hasQDN ? 6 : 0; // QDN Sortie + QDN RH columns
     const stockFinalBaseWidth = 12; // ST, SFP, Écart, Creux (4 columns)
 
     const approCols = approFields.length;
@@ -261,7 +271,7 @@ const DynamicMonthlyProductionPDF = ({
     const reservoirCols = reservoirs.length;
     const bottleCols = Math.max(bottleTypes.length, 1) + 1; // +1 for Cumul
 
-    const fixedWidth = dateWidth + stockInitWidth + stockFinalBaseWidth + rendementWidth;
+    const fixedWidth = dateWidth + stockInitWidth + stockFinalBaseWidth + rendementWidth + qdnWidth;
     const remainingWidth = 100 - fixedWidth;
 
     // Calculate total dynamic columns
@@ -273,6 +283,7 @@ const DynamicMonthlyProductionPDF = ({
         sortieWidth: 0,
         bottleWidth: remainingWidth,
         reservoirWidth: 0,
+        qdnWidth,
       };
     }
 
@@ -283,6 +294,7 @@ const DynamicMonthlyProductionPDF = ({
       sortieWidth: sortieCols * colUnit,
       bottleWidth: bottleCols * colUnit,
       reservoirWidth: reservoirCols * colUnit,
+      qdnWidth,
     };
   };
 
@@ -339,7 +351,7 @@ const DynamicMonthlyProductionPDF = ({
 
   const calculateBottleTotal = (bottleType: string): number => {
     return inventories.reduce((sum, inv) => {
-      const bottle = inv.bottles?.find((b: any) => b.type === bottleType);
+      const bottle = inv.bottles?.find((b: any) => b.type === bottleType && (!b.shift || b.shift === 'JOUR'));
       return sum + (bottle?.quantity || 0);
     }, 0);
   };
@@ -356,25 +368,25 @@ const DynamicMonthlyProductionPDF = ({
     return `${hours}H${mins.toString().padStart(2, '0')}`;
   };
 
-  // Calculate Rendement Horaire for a single inventory (in T/hour)
+  // Calculate Rendement Horaire for a single inventory (in T/hour) - JOUR shift only
   const calculateRendementHoraire = (inventory: any): string => {
     if (!inventory.tempsUtile || inventory.tempsUtile === 0) return '-';
 
-    const totalBottlesTonnage = inventory.bottles?.reduce((sum: number, bottle: any) => {
-      return sum + (bottle.tonnage || 0);
-    }, 0) || 0;
+    const totalBottlesTonnage = inventory.bottles
+      ?.filter((b: any) => !b.shift || b.shift === 'JOUR')
+      .reduce((sum: number, bottle: any) => sum + (bottle.tonnage || 0), 0) || 0;
 
     const hoursWorked = inventory.tempsUtile / 60;
     return (totalBottlesTonnage / hoursWorked).toFixed(2);
   };
 
-  // Calculate percentage of RH over hourly capacity
+  // Calculate percentage of RH over hourly capacity - JOUR shift only
   const calculatePercentageCapacity = (inventory: any): string => {
     if (!inventory.tempsUtile || inventory.tempsUtile === 0) return '-';
 
-    const totalBottlesTonnage = inventory.bottles?.reduce((sum: number, bottle: any) => {
-      return sum + (bottle.tonnage || 0);
-    }, 0) || 0;
+    const totalBottlesTonnage = inventory.bottles
+      ?.filter((b: any) => !b.shift || b.shift === 'JOUR')
+      .reduce((sum: number, bottle: any) => sum + (bottle.tonnage || 0), 0) || 0;
 
     const hoursWorked = inventory.tempsUtile / 60;
     const rendementHoraire = totalBottlesTonnage / hoursWorked;
@@ -410,11 +422,11 @@ const DynamicMonthlyProductionPDF = ({
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Logo */}
-        <Image style={styles.logo} src="https://touba-app.com/assets/img/TGAZ.png" />
-        <Image style={styles.logoTwo} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
+        <Image style={styles.logo} src={path.join(IMG_DIR, 'TGAZ.png')} />
+        <Image style={styles.logoTwo} src={path.join(IMG_DIR, 'touba-app512x512-1.png')} />
 
         {/* Watermark */}
-        <Image style={styles.watermark} src="https://touba-app.com/assets/img/touba-app512x512-1.png" />
+        <Image style={styles.watermark} src={path.join(IMG_DIR, 'touba-app512x512-1.png')} />
 
         {/* Header */}
         <View style={styles.header}>
@@ -468,6 +480,13 @@ const DynamicMonthlyProductionPDF = ({
             <View style={{ width: '14%', flexDirection: 'row' }}>
               <Text style={styles.headerCell}>RENDEMENT</Text>
             </View>
+
+            {/* QDN */}
+            {hasQDN && (
+              <View style={{ width: `${widths.qdnWidth}%`, flexDirection: 'row' }}>
+                <Text style={styles.headerCell}>QDN</Text>
+              </View>
+            )}
           </View>
 
           {/* Column Headers (Row 2) */}
@@ -558,6 +577,18 @@ const DynamicMonthlyProductionPDF = ({
                 <Text style={styles.headerCellSub}>% {hourlyCapacity}T</Text>
               </View>
             </View>
+
+            {/* QDN columns */}
+            {hasQDN && (
+              <View style={{ width: `${widths.qdnWidth}%`, flexDirection: 'row' }}>
+                <View style={{ flex: 1, ...colStyle }}>
+                  <Text style={styles.headerCellSub}>Sortie QDN (T)</Text>
+                </View>
+                <View style={{ flex: 1, ...colStyle }}>
+                  <Text style={styles.headerCellSub}>RH QDN (T/h)</Text>
+                </View>
+              </View>
+            )}
           </View>
 
           {/* Data Rows */}
@@ -597,10 +628,10 @@ const DynamicMonthlyProductionPDF = ({
                 </View>
               )}
 
-              {/* Sorties Conditionnées section */}
+              {/* Sorties Conditionnées section (JOUR only) */}
               <View style={sectionStyle(widths.bottleWidth)}>
                 {bottleTypes.map((type, typeIdx) => {
-                  const bottle = inventory.bottles?.find((b: any) => b.type === type);
+                  const bottle = inventory.bottles?.find((b: any) => b.type === type && (!b.shift || b.shift === 'JOUR'));
                   return (
                     <View key={typeIdx} style={{ flex: 1, ...colStyle }}>
                       <Text style={styles.cellText}>{bottle?.quantity || '0'}</Text>
@@ -672,6 +703,26 @@ const DynamicMonthlyProductionPDF = ({
                   </Text>
                 </View>
               </View>
+
+              {/* QDN data cells */}
+              {hasQDN && (
+                <View style={{ width: `${widths.qdnWidth}%`, flexDirection: 'row' }}>
+                  <View style={{ flex: 1, ...colStyle }}>
+                    <Text style={styles.cellText}>
+                      {inventory.isQuartDeNuit && inventory.quartDeNuitCumulSortie
+                        ? inventory.quartDeNuitCumulSortie.toFixed(3)
+                        : '-'}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, ...colStyle }}>
+                    <Text style={styles.cellText}>
+                      {inventory.isQuartDeNuit && inventory.quartDeNuitRendement
+                        ? inventory.quartDeNuitRendement.toFixed(2)
+                        : '-'}
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
           ))}
 
@@ -769,9 +820,9 @@ const DynamicMonthlyProductionPDF = ({
                     if (!totalTempsUtile || totalTempsUtile === 0) return '-';
 
                     const totalBottlesTonnage = inventories.reduce((sum, inv) => {
-                      const invBottlesTonnage = inv.bottles?.reduce((bottleSum: number, bottle: any) => {
-                        return bottleSum + (bottle.tonnage || 0);
-                      }, 0) || 0;
+                      const invBottlesTonnage = inv.bottles
+                        ?.filter((b: any) => !b.shift || b.shift === 'JOUR')
+                        .reduce((bottleSum: number, bottle: any) => bottleSum + (bottle.tonnage || 0), 0) || 0;
                       return sum + invBottlesTonnage;
                     }, 0);
 
@@ -787,9 +838,9 @@ const DynamicMonthlyProductionPDF = ({
                     if (!totalTempsUtile || totalTempsUtile === 0) return '-';
 
                     const totalBottlesTonnage = inventories.reduce((sum, inv) => {
-                      const invBottlesTonnage = inv.bottles?.reduce((bottleSum: number, bottle: any) => {
-                        return bottleSum + (bottle.tonnage || 0);
-                      }, 0) || 0;
+                      const invBottlesTonnage = inv.bottles
+                        ?.filter((b: any) => !b.shift || b.shift === 'JOUR')
+                        .reduce((bottleSum: number, bottle: any) => bottleSum + (bottle.tonnage || 0), 0) || 0;
                       return sum + invBottlesTonnage;
                     }, 0);
 
@@ -801,6 +852,29 @@ const DynamicMonthlyProductionPDF = ({
                 </Text>
               </View>
             </View>
+
+            {/* QDN Totals */}
+            {hasQDN && (
+              <View style={{ width: `${widths.qdnWidth}%`, flexDirection: 'row' }}>
+                <View style={{ flex: 1, ...colStyle }}>
+                  <Text style={[styles.cellText, { fontSize: 6 }]}>
+                    {calculateTotal('quartDeNuitCumulSortie').toFixed(3)}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, ...colStyle }}>
+                  <Text style={[styles.cellText, { fontSize: 6 }]}>
+                    {(() => {
+                      const totalQDNCumulSortie = calculateTotal('quartDeNuitCumulSortie');
+                      const totalQDNTHT = calculateTotal('quartDeNuitTHT');
+                      const totalQDNTA = calculateTotal('quartDeNuitTA');
+                      const tempsUtile = totalQDNTHT - totalQDNTA;
+                      if (tempsUtile <= 0 || totalQDNCumulSortie <= 0) return '-';
+                      return (totalQDNCumulSortie / (tempsUtile / 60)).toFixed(2);
+                    })()}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         </View>
 

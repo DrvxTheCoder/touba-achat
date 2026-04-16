@@ -37,20 +37,23 @@ export async function POST(req: NextRequest) {
     const date = new Date(data.date);
     date.setHours(0, 0, 0, 0);
 
-    // Vérifier si un inventaire existe déjà pour cette date ET ce centre
+    // Vérifier si un inventaire existe déjà pour cette date, ce centre et ce type de quart
+    const isQuartDeNuit = false; // Creation is always a day shift inventory
     const existing = data.productionCenterId
       ? await prisma.productionInventory.findUnique({
           where: {
-            date_productionCenterId: {
+            date_productionCenterId_isQuartDeNuit: {
               date,
-              productionCenterId: data.productionCenterId
+              productionCenterId: data.productionCenterId,
+              isQuartDeNuit
             }
           }
         })
       : await prisma.productionInventory.findFirst({
           where: {
             date,
-            productionCenterId: null
+            productionCenterId: null,
+            isQuartDeNuit
           }
         });
 

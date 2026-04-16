@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { editODMProcessing } from '@/app/api/odm/utils/odm-util';
@@ -26,16 +27,17 @@ export async function PUT(
     } = await req.json();
 
     const updatedODM = await editODMProcessing(
-      id, 
-      parseInt(session.user.id), 
-      { 
-        missionCostPerDay, 
-        expenseItems, 
+      id,
+      parseInt(session.user.id),
+      {
+        missionCostPerDay,
+        expenseItems,
         totalCost,
         accompanyingPersons // Include in the function call
       }
     );
 
+    revalidatePath('/dashboard/odm', 'layout');
     return NextResponse.json(updatedODM);
   } catch (error) {
     console.error('Erreur lors de la modification du traitement de l\'ODM:', error);

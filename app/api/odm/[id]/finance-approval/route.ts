@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options';
 import { approveByDOG, rejectODM, approveODMByFinance, rejectODMByFinance } from '../../utils/odm-util';
@@ -65,12 +66,14 @@ export async function POST(
         updatedOdm = await approveByDOG(odmId, parseInt(session.user.id));
       }
 
+      revalidatePath('/dashboard/odm', 'layout');
       return NextResponse.json({
         message: 'ODM approuvé par DOG, prêt pour impression',
         odm: updatedOdm
       });
     } else {
       const updatedOdm = await rejectODM(odmId, parseInt(session.user.id), reason);
+      revalidatePath('/dashboard/odm', 'layout');
       return NextResponse.json({
         message: 'ODM rejeté',
         odm: updatedOdm

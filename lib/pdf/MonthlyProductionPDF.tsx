@@ -1,14 +1,18 @@
 import React from 'react';
+import path from 'path';
 import { Document, Page, Text, View, StyleSheet, Font, Image, DocumentProps } from '@react-pdf/renderer';
 
-const pageURL = "https://touba-app.com";
+// Local asset paths (server-side rendering)
+const ASSETS_DIR = path.join(process.cwd(), 'public');
+const FONT_DIR = path.join(ASSETS_DIR, 'font', 'pdf');
+const IMG_DIR = path.join(ASSETS_DIR, 'assets', 'img');
 
-// Register fonts
+// Register fonts from local files
 Font.register({
   family: 'Ubuntu',
   fonts: [
     {
-      src: 'https://fonts.gstatic.com/s/questrial/v13/QdVUSTchPBm7nuUeVf7EuStkm20oJA.ttf',
+      src: path.join(FONT_DIR, 'Questrial-Regular.ttf'),
       fontWeight: 'normal',
     },
   ],
@@ -16,7 +20,7 @@ Font.register({
 
 Font.register({
   family: 'Oswald',
-  src: 'https://fonts.gstatic.com/s/oswald/v13/Y_TKV6o8WovbUd3m_X9aAA.ttf'
+  src: path.join(FONT_DIR, 'Oswald-Regular.ttf')
 });
 
 // Define styles
