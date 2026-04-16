@@ -511,7 +511,7 @@ export default function ProductionForm({
             {formData.isQuartDeNuit && (
               <TabsTrigger value="bottles-nuit" className="text-indigo-600">
                 <Moon className="h-3 w-3 mr-1" />
-                Bouteilles QDN
+                Bouteilles Quart de Nuit
               </TabsTrigger>
             )}
             <TabsTrigger value="exports">Sorties</TabsTrigger>

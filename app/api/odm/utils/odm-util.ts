@@ -94,7 +94,7 @@ async function hasODMAccess(userId: number, requiredAccess: Access): Promise<boo
  */
 async function canApproveAsDirector(userId: number): Promise<boolean> {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userId, status: 'ACTIVE' },
     select: { role: true, access: true }
   });
   if (!user) return false;
@@ -109,7 +109,7 @@ async function canApproveAsDirector(userId: number): Promise<boolean> {
  */
 async function canApproveAsDRH(userId: number): Promise<boolean> {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userId, status: 'ACTIVE' },
     select: { role: true, access: true }
   });
   if (!user) return false;
