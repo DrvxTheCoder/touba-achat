@@ -115,7 +115,7 @@ export async function sendNotification(payload: NotificationPayload) {
 
     // ── Email notifications ──────────────────────────────────────────────────
     // To disable emails entirely, comment out the block below.
-    await sendEmailNotifications(notification, payload, body, subject);
+    // await sendEmailNotifications(notification, payload, body, subject);
     // ── End email notifications ──────────────────────────────────────────────
 
     return { success: true, notification };

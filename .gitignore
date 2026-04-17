@@ -6,3 +6,7 @@ prisma/resetDB.ts
 app/dashboard/mail
 .vscode
 nul
+
+# Build artifacts
+tsconfig.tsbuildinfo
+.next/
