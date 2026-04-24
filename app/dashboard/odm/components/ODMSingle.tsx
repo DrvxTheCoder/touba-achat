@@ -180,8 +180,15 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
     return userRole === 'DOG' || userRole === 'ADMIN' || userRole === 'DAF' || userAccess.includes('ODM_DOG_APPROVE' as Access);
   }, [odm.status, userRole, userAccess]);
 
-  // Can restart rejected ODM (DRH only)
-  const canRestartODM = useMemo(() => {
+  // Can restart rejected ODM to RH processing (RH, DRH, ADMIN)
+  const canRestartToProcessing = useMemo(() => {
+    if (odm.status !== 'REJECTED') return false;
+    return userRole === 'RH' || userRole === 'DRH' || userRole === 'ADMIN' ||
+      userAccess.includes('ODM_RH_PROCESS' as Access) || userAccess.includes('ODM_DRH_APPROVE' as Access);
+  }, [odm.status, userRole, userAccess]);
+
+  // Can restart rejected ODM to DOG approval (DRH, ADMIN only)
+  const canRestartToDOG = useMemo(() => {
     if (odm.status !== 'REJECTED') return false;
     return userRole === 'DRH' || userRole === 'ADMIN' || userAccess.includes('ODM_DRH_APPROVE' as Access);
   }, [odm.status, userRole, userAccess]);
@@ -287,8 +294,8 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
       setOdm(updatedOdm);
       router.refresh();
 
-      toast.success("ODM Validé", {
-        description: `L'ODM #${odm.odmId} a été validé par le directeur.`,
+      toast.success("ODM Approuvé", {
+        description: `L'ODM #${odm.odmId} a été approuvé et envoyé aux Ressources Humaines pour traitement.`,
       });
     } catch (error: any) {
       console.error('Error validating ODM:', error);
@@ -631,18 +638,20 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
                       )}
 
                       {/* Restart rejected ODM */}
-                      {canRestartODM && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => { setRestartTarget('processing'); setIsRestartDialogOpen(true); }} className="text-blue-600">
-                            Redémarrer vers traitement RH
-                            <DropdownMenuShortcut><RotateCcw className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => { setRestartTarget('dog'); setIsRestartDialogOpen(true); }} className="text-blue-600">
-                            Redémarrer vers approbation DOG
-                            <DropdownMenuShortcut><RotateCcw className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
-                          </DropdownMenuItem>
-                        </>
+                      {(canRestartToProcessing || canRestartToDOG) && (
+                        <DropdownMenuSeparator />
+                      )}
+                      {canRestartToProcessing && (
+                        <DropdownMenuItem onClick={() => { setRestartTarget('processing'); setIsRestartDialogOpen(true); }} className="text-blue-600">
+                          Redémarrer vers traitement RH
+                          <DropdownMenuShortcut><RotateCcw className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                      )}
+                      {canRestartToDOG && (
+                        <DropdownMenuItem onClick={() => { setRestartTarget('dog'); setIsRestartDialogOpen(true); }} className="text-blue-600">
+                          Redémarrer vers approbation DOG
+                          <DropdownMenuShortcut><RotateCcw className="ml-4 h-4 w-4" /></DropdownMenuShortcut>
+                        </DropdownMenuItem>
                       )}
 
                       {/* Reject option */}
@@ -875,8 +884,8 @@ export const ODMSingle: React.FC<ODMSingleProps> = ({ odm: initialOdm, userRole:
             <AlertDialogTitle>Redémarrer l&apos;ODM</AlertDialogTitle>
             <AlertDialogDescription>
               {restartTarget === 'processing'
-                ? `Êtes-vous sûr de vouloir renvoyer l'ODM #${odm.odmId} pour traitement RH ? Le statut rejeté sera effacé.`
-                : `Êtes-vous sûr de vouloir renvoyer l'ODM #${odm.odmId} pour approbation DOG ? Le statut rejeté sera effacé.`}
+                ? `Êtes-vous sûr de vouloir renvoyer l'ODM #${odm.odmId} pour traitement RH ? Le motif de rejet sera effacé.`
+                : `Êtes-vous sûr de vouloir renvoyer l'ODM #${odm.odmId} pour approbation DOG ? Le motif de rejet sera effacé.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

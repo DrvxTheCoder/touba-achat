@@ -69,6 +69,8 @@ export async function GET(request: NextRequest) {
 
     const orderBy: Prisma.EmployeeOrderByWithRelationInput = { [sortBy]: sortOrder };
 
+    const onlineThreshold = new Date(Date.now() - 15 * 60 * 1000);
+
     const [employees, totalCount] = await Promise.all([
       prisma.employee.findMany({
         where,
@@ -81,9 +83,18 @@ export async function GET(request: NextRequest) {
             select: {
               access: true,
               role: true,
-              status: true
-            }
-          }
+              status: true,
+              sessions: {
+                where: {
+                  isRevoked: false,
+                  expiresAt: { gt: new Date() },
+                  lastActiveAt: { gt: onlineThreshold },
+                },
+                take: 1,
+                select: { id: true },
+              },
+            },
+          },
         },
       }),
       prisma.employee.count({ where }),
@@ -95,6 +106,7 @@ export async function GET(request: NextRequest) {
       access: employee.user.access,
       role: employee.user.role,
       userStatus: employee.user.status,
+      isOnline: employee.user.sessions.length > 0,
       user: undefined // Remove the nested user object
     }));
 

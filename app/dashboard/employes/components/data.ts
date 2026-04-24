@@ -10,6 +10,7 @@ export type Employee = {
   jobTitle: string,
   currentDepartmentId: number;
   status: string;
+  isOnline: boolean;
   access: Access[];
   currentDepartment: {
     id: number;

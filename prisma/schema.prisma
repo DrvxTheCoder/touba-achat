@@ -306,6 +306,9 @@ model User {
   ArretCreator          ProductionArret[] @relation("ArretCreator")
   ProductionCentersManaged ProductionCenterChef[] @relation("ProductionCenterChefs")
   inventoryAuditLogs    InventoryAuditLog[] @relation("InventoryEditor")
+  sessions              UserSession[]
+  revokedSessions       UserSession[]   @relation("SessionRevoker")
+  activities            UserActivity[]
 }
 
 model Employee {
@@ -920,4 +923,38 @@ model InventoryAuditLog {
   @@index([inventoryId])
   @@index([editedById])
   @@index([editedAt])
+}
+
+model UserSession {
+  id            Int           @id @default(autoincrement())
+  userId        Int
+  user          User          @relation(fields: [userId], references: [id])
+  sessionToken  String        @unique
+  ipAddress     String?
+  userAgent     String?
+  loginAt       DateTime      @default(now())
+  lastActiveAt  DateTime      @default(now())
+  expiresAt     DateTime
+  isRevoked     Boolean       @default(false)
+  revokedAt     DateTime?
+  revokedById   Int?
+  revokedBy     User?         @relation("SessionRevoker", fields: [revokedById], references: [id])
+  activities    UserActivity[]
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+model UserActivity {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  sessionId   Int?
+  session     UserSession? @relation(fields: [sessionId], references: [id])
+  pathname    String
+  visitedAt   DateTime     @default(now())
+  ipAddress   String?
+
+  @@index([userId])
+  @@index([visitedAt])
 }

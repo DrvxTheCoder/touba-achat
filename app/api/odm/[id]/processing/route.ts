@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma';
 
 /**
  * RH Processing Endpoint
- * Handles RH processing of ODM (RH_PROCESSING -> AWAITING_DRH_VALIDATION)
+ * Handles RH processing of ODM (RH_PROCESSING -> AWAITING_DOG_APPROVAL)
  */
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -47,7 +47,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     revalidatePath('/dashboard/odm', 'layout');
     return NextResponse.json({
-      message: 'ODM traité, en attente de validation DRH',
+      message: 'ODM traité, en attente d\'approbation DOG',
       odm: updatedODM
     });
   } catch (error) {

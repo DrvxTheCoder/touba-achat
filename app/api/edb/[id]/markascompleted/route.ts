@@ -14,6 +14,7 @@ export async function POST(
   }
 
   const { id } = params;
+  const userRole = session.user.role;
 
   try {
     const edb = await prisma.etatDeBesoin.findUnique({
@@ -25,8 +26,12 @@ export async function POST(
       return NextResponse.json({ message: 'EDB non trouvé' }, { status: 404 });
     }
 
-    // Check if the EDB is in the correct state for final approval
-    if (edb.status !== 'FINAL_APPROVAL') {
+    // Standard path: FINAL_APPROVAL → COMPLETED (any authorized user)
+    // Temporary shortcut: APPROVED_DIRECTEUR → COMPLETED (MAGASINIER only, after director approval)
+    const isFinalApprovalPath = edb.status === 'FINAL_APPROVAL';
+    const isMagasinierShortcut = edb.status === 'APPROVED_DIRECTEUR' && userRole === 'MAGASINIER';
+
+    if (!isFinalApprovalPath && !isMagasinierShortcut) {
       return NextResponse.json({ message: 'Action impossible à cette étape' }, { status: 400 });
     }
 

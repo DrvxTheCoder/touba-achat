@@ -48,7 +48,7 @@ export default function Employes() {
     <title>Employés - Touba App™</title>
     <ContentLayout title="Employés">
       <DynamicBreadcrumbs />
-      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6">
+      <main className="flex flex-1 flex-col gap-4 px-4 md:gap-4 md:px-6 pb-24">
         <div>
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-lg md:text-3xl font-bold tracking-tight">Employés</h2>

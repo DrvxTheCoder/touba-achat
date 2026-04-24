@@ -13,14 +13,14 @@ import {
 
 /**
  * ODM Approval Endpoint
- * Handles all approval actions in the new workflow:
+ * Handles all approval actions in the workflow:
  *
- * action: 'director_approve' - Director approves (SUBMITTED -> AWAITING_DRH_APPROVAL)
- * action: 'drh_approve' - DRH marks for processing (AWAITING_DRH_APPROVAL -> RH_PROCESSING)
- * action: 'drh_validate' - DRH validates RH work (AWAITING_DRH_VALIDATION -> AWAITING_DOG_APPROVAL)
+ * action: 'director_approve' - Director approves (SUBMITTED -> RH_PROCESSING)
+ * action: 'drh_approve' - [legacy] DRH marks for processing (AWAITING_DRH_APPROVAL -> RH_PROCESSING)
+ * action: 'drh_validate' - [legacy] DRH validates RH work (AWAITING_DRH_VALIDATION -> AWAITING_DOG_APPROVAL)
  * action: 'dog_approve' - DOG final approval (AWAITING_DOG_APPROVAL -> READY_FOR_PRINT)
- * action: 'restart_to_processing' - DRH restarts rejected ODM to RH_PROCESSING
- * action: 'restart_to_dog' - DRH restarts rejected ODM to AWAITING_DOG_APPROVAL
+ * action: 'restart_to_processing' - RH/DRH/ADMIN restarts rejected ODM to RH_PROCESSING
+ * action: 'restart_to_dog' - DRH/ADMIN restarts rejected ODM to AWAITING_DOG_APPROVAL
  */
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -50,11 +50,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     switch (action) {
       case 'director_approve':
-        // Director approves ODM (SUBMITTED -> AWAITING_DRH_APPROVAL)
+        // Director approves ODM (SUBMITTED -> RH_PROCESSING)
         updatedODM = await approveODMByDirector(odmId, parseInt(userId));
         revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({
-          message: 'ODM approuvé par le directeur',
+          message: 'ODM approuvé par le directeur, envoyé au traitement RH',
           odm: updatedODM
         });
 
@@ -86,7 +86,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         });
 
       case 'restart_to_processing':
-        // DRH restarts rejected ODM to RH_PROCESSING
+        // RH/DRH/ADMIN restarts rejected ODM to RH_PROCESSING
         updatedODM = await restartODMToProcessing(odmId, parseInt(userId));
         revalidatePath('/dashboard/odm', 'layout');
         return NextResponse.json({

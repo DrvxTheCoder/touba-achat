@@ -225,11 +225,12 @@ const statusMapping = {
 
   
       const { role, access = [] } = session.user;
-  
+
       const actionPermissions: ActionPermissions = edb ? {
         canAttachDocuments: !["SUBMITTED", "APPROVED_RESPONSABLE", "SUPPLIER_CHOSEN", "MAGASINIER_ATTACHED", "COMPLETED", "FINAL_APPROVAL"].includes(edb.status),
         canMarkDelivered: edb.status === "SUPPLIER_CHOSEN",
-        canMarkComplete: edb.status === "FINAL_APPROVAL",
+        canMarkComplete: edb.status === "FINAL_APPROVAL" ||
+          (edb.status === "APPROVED_DIRECTEUR" && role === Role.MAGASINIER),
         canFinalApprove: ["DELIVERED", "FINAL_APPROVAL"].includes(edb.status) && !["COMPLETED", "FINAL_APPROVAL"].includes(edb.status),
         canReject:   (edb.status === "ESCALATED" && !['ADMIN', 'DIRECTEUR_GENERAL'].includes(session.user.role) || ["APPROVED_DG", "COMPLETED", "FINAL_APPROVAL"].includes(edb.status))
       } : defaultActionPermissions;

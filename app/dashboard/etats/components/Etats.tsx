@@ -230,7 +230,8 @@ import EDBMetrics from "./EDBMetrics"
       const actionPermissions: ActionPermissions = selectedEDB ? {
         canAttachDocuments: !["SUBMITTED", "APPROVED_RESPONSABLE", "SUPPLIER_CHOSEN", "MAGASINIER_ATTACHED", "COMPLETED", "FINAL_APPROVAL"].includes(selectedEDB.status),
         canMarkDelivered: selectedEDB.status === "SUPPLIER_CHOSEN",
-        canMarkComplete: selectedEDB.status === "FINAL_APPROVAL",
+        canMarkComplete: selectedEDB.status === "FINAL_APPROVAL" ||
+          (selectedEDB.status === "APPROVED_DIRECTEUR" && role === Role.MAGASINIER),
         canFinalApprove: ["DELIVERED", "FINAL_APPROVAL"].includes(selectedEDB.status) && !["COMPLETED", "FINAL_APPROVAL"].includes(selectedEDB.status),
         canReject: !["APPROVED_DG", "COMPLETED", "FINAL_APPROVAL"].includes(selectedEDB.status)
       } : defaultActionPermissions;
@@ -239,11 +240,11 @@ import EDBMetrics from "./EDBMetrics"
 
       return {
         canHandleStock: 
-          role === Role.MAGASINIER || 
+          role === Role.MAGASINIER || role === Role.ADMIN ||
           access.includes(Access.ATTACH_DOCUMENTS),
         
         canManageDocuments: 
-          role === Role.MAGASINIER || 
+          role === Role.MAGASINIER || role === Role.ADMIN ||
           access.includes(Access.ATTACH_DOCUMENTS),
         
         canApprove: 

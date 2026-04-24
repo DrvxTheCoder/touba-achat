@@ -73,15 +73,15 @@ const eventTypeTranslations: Record<ODMEventType, string> = {
   AWAITING_DIRECTOR_APPROVAL: "En attente d'approbation du Directeur",
   AWAITING_DRH_APPROVAL: "Approuvé par le Directeur - En attente DRH",
   AWAITING_RH_PROCESSING: "Approuvé par la Direction",
-  RH_PROCESSING: "Envoyé pour traitement RH",
+  RH_PROCESSING: "Approuvé par le Directeur - En traitement RH",
   AWAITING_DRH_VALIDATION: "Traité par RH - En attente validation DRH",
-  AWAITING_DOG_APPROVAL: "Validé par DRH - En attente approbation DOG",
+  AWAITING_DOG_APPROVAL: "Traité par RH - En attente approbation DOG",
   READY_FOR_PRINT: "Approuvé par DOG - Prêt pour impression",
   AWAITING_FINANCE_APPROVAL: "Traité par les Ressources Humaines",
   COMPLETED: "Imprimé",
   REJECTED: "Rejeté",
   UPDATED: "Mis à jour",
-  RESTARTED: "Redémarré par DRH",
+  RESTARTED: "Redémarré vers traitement RH",
 };
 
 const formatDate = (dateString: string) => {

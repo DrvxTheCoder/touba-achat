@@ -14,7 +14,8 @@ declare module "next-auth" {
       role: Role;
       status: UserStatus;
       isSimpleUser: boolean;
-      access: Access[]; // Add this line
+      access: Access[];
+      revoked?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -22,7 +23,8 @@ declare module "next-auth" {
     role: Role;
     status: UserStatus;
     isSimpleUser: boolean;
-    access: Access[]; // Add this line
+    access: Access[];
+    sessionToken?: string;
   }
 }
 
@@ -33,6 +35,8 @@ declare module "next-auth/jwt" {
     status: UserStatus;
     access: Access[];
     isSimpleUser: boolean;
+    sessionToken?: string;
+    revoked?: boolean;
   }
 }
 

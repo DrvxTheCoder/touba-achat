@@ -185,11 +185,11 @@ export async function createODM(
   const odmId = generateODMId();
 
   // Determine initial status based on the user's role/access
-  // Directors and above bypass initial director approval
+  // Directors and above bypass director approval and go straight to RH processing
   let initialStatus: ODMStatus = 'SUBMITTED';
   const canBypassDirector = await canApproveAsDirector(userId);
   if (canBypassDirector) {
-    initialStatus = 'AWAITING_DRH_APPROVAL';
+    initialStatus = 'RH_PROCESSING';
   }
 
   const newODM = await prisma.ordreDeMission.create({
@@ -286,7 +286,7 @@ export async function updateODMStatus(
 }
 
 /**
- * Director approves ODM (SUBMITTED -> AWAITING_DRH_APPROVAL)
+ * Director approves ODM (SUBMITTED -> RH_PROCESSING)
  */
 export async function approveODMByDirector(
   odmId: number,
@@ -313,19 +313,19 @@ export async function approveODMByDirector(
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
     data: {
-      status: 'AWAITING_DRH_APPROVAL',
+      status: 'RH_PROCESSING',
       approverId: userId
     },
     include: { department: true }
   });
 
-  await logODMEvent(odmId, userId, ODMEventType.AWAITING_DRH_APPROVAL, {
+  await logODMEvent(odmId, userId, ODMEventType.RH_PROCESSING, {
     oldStatus: odm.status,
-    newStatus: 'AWAITING_DRH_APPROVAL'
+    newStatus: 'RH_PROCESSING'
   });
 
   // Email notifications disabled
-  // await sendODMNotification(updatedODM, ODMEventType.AWAITING_DRH_APPROVAL, userId);
+  // await sendODMNotification(updatedODM, ODMEventType.RH_PROCESSING, userId);
 
   return updatedODM;
 }
@@ -373,7 +373,7 @@ export async function approveDRHForProcessing(
 }
 
 /**
- * RH processes ODM and submits for DRH validation (RH_PROCESSING -> AWAITING_DRH_VALIDATION)
+ * RH processes ODM and submits for DOG approval (RH_PROCESSING -> AWAITING_DOG_APPROVAL)
  */
 export async function processODMByRH(
   odmId: number,
@@ -400,7 +400,7 @@ export async function processODMByRH(
   const updatedODM = await prisma.ordreDeMission.update({
     where: { id: odmId },
     data: {
-      status: 'AWAITING_DRH_VALIDATION',
+      status: 'AWAITING_DOG_APPROVAL',
       totalCost: processingData.totalCost,
       rhProcessorId: userId,
       accompanyingPersons: processingData.accompanyingPersons as any,
@@ -410,7 +410,7 @@ export async function processODMByRH(
     include: { department: true }
   });
 
-  await logODMEvent(odmId, userId, ODMEventType.AWAITING_DRH_VALIDATION, {
+  await logODMEvent(odmId, userId, ODMEventType.AWAITING_DOG_APPROVAL, {
     totalCost: processingData.totalCost,
     accompanyingPersons: processingData.accompanyingPersons
   });
@@ -539,15 +539,15 @@ export async function rejectODM(
 }
 
 /**
- * DRH restarts a rejected ODM back to RH_PROCESSING
+ * RH (or DRH/ADMIN) restarts a rejected ODM back to RH_PROCESSING
  */
 export async function restartODMToProcessing(
   odmId: number,
   userId: number
 ): Promise<OrdreDeMission> {
-  const canRestart = await canApproveAsDRH(userId);
+  const canRestart = await canProcessAsRH(userId);
   if (!canRestart) {
-    throw new Error('Non autorisé - Seul le DRH peut redémarrer les ODMs');
+    throw new Error('Non autorisé - Seul le RH peut redémarrer les ODMs vers le traitement');
   }
 
   const odm = await prisma.ordreDeMission.findUnique({
@@ -725,8 +725,8 @@ export async function approveODM(
 
   // Map old flow to new flow
   if (odm.status === 'SUBMITTED') {
-    newStatus = 'AWAITING_DRH_APPROVAL';
-    eventType = ODMEventType.AWAITING_DRH_APPROVAL;
+    newStatus = 'RH_PROCESSING';
+    eventType = ODMEventType.RH_PROCESSING;
   } else {
     throw new Error('Non autorisé à approuver à cette étape');
   }

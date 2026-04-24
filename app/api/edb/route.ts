@@ -100,17 +100,27 @@ export async function GET(request: Request) {
 
     const statusFilter = status ? status.split(',') as EDBStatus[] : [];
 
+    // For the JSON description field, Prisma can't do partial matching inside a jsonb array
+    // without raw SQL, so we pre-fetch matching IDs via a jsonb_array_elements query.
+    const descriptionMatchIds: number[] = [];
+    if (search) {
+      const matches = await prisma.$queryRaw<{ id: number }[]>`
+        SELECT id FROM "EtatDeBesoin"
+        WHERE EXISTS (
+          SELECT 1 FROM jsonb_array_elements(description->'items') AS item
+          WHERE item->>'designation' ILIKE ${`%${search}%`}
+        )
+      `;
+      descriptionMatchIds.push(...matches.map(m => m.id));
+    }
+
     let where: Prisma.EtatDeBesoinWhereInput = {
       createdAt: dateRange,
       OR: [
         { edbId: { contains: search, mode: 'insensitive' } },
         { title: { contains: search, mode: 'insensitive' } },
-        { 
-          description: {
-            path: ['items'],
-            array_contains: [{ designation: { contains: search } }]
-          }
-        },
+        { references: { contains: search, mode: 'insensitive' } },
+        ...(descriptionMatchIds.length > 0 ? [{ id: { in: descriptionMatchIds } }] : []),
         { userCreator: { name: { contains: search, mode: 'insensitive' } } },
         { userCreator: { email: { contains: search, mode: 'insensitive' } } },
         { department: { name: { contains: search, mode: 'insensitive' } } },
