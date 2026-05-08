@@ -39,6 +39,7 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
   const [selectedReservoirId, setSelectedReservoirId] = useState<string>('');
   const [stockData, setStockData] = useState<ReservoirStock | null>(null);
   const [loading, setLoading] = useState(true);
+  const creuxTonnes = stockData ? stockData.capacityTonnes - stockData.stockActuel : 0;
 
   useEffect(() => {
     fetchReservoirs();
@@ -201,15 +202,20 @@ export default function ReservoirStockCard({ selectedCenterId }: ReservoirStockC
 
             {/* Progress Bar */}
             <div className="space-y-2">
-              <div className="flex justify-end text-sm">
+              <div className="flex justify-start text-sm">
                 <span className="text-muted-foreground">
-                  {stockData.capacityTonnes.toFixed(2)} T
+                  {stockData.capacityTonnes.toFixed(3)} T
                 </span>
               </div>
               <Progress
                 value={stockData.pourcentageRemplissage}
                 className="h-4"
               />
+              <div className="flex justify-end text-sm">
+                <span className="text-muted-foreground">
+                  {creuxTonnes.toFixed(3)} T ({(100 - stockData.pourcentageRemplissage).toFixed(1)}%)
+                </span>
+              </div>
             </div>
 
           </div>
