@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipProvider
 } from "@/components/ui/tooltip";
-import { getAdminMenuList, getUserMenuList, getMagasinierMenuList } from "@/lib/menu-list";
+import { getAdminMenuList, getUserMenuList, getMagasinierMenuList, getGardienMenuList } from "@/lib/menu-list";
 import { useAllowedRoles } from "@/app/hooks/use-allowed-roles";
 
 interface MenuProps {
@@ -23,11 +23,13 @@ interface MenuProps {
 
 export function Menu({ isOpen }: MenuProps) {
   const pathname = usePathname();
-  const { hasReadAccess, hasMagasinierAccess } = useAllowedRoles();
-  const menuList = hasReadAccess 
-    ? getAdminMenuList(pathname) 
-    : hasMagasinierAccess 
-    ? getMagasinierMenuList(pathname) 
+  const { hasReadAccess, hasMagasinierAccess, hasGardienAccess } = useAllowedRoles();
+  const menuList = hasReadAccess
+    ? getAdminMenuList(pathname)
+    : hasMagasinierAccess
+    ? getMagasinierMenuList(pathname)
+    : hasGardienAccess
+    ? getGardienMenuList(pathname)
     : getUserMenuList(pathname);
 
   return (

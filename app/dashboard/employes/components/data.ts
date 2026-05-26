@@ -3,6 +3,7 @@ import { Access } from "@prisma/client";
 export type Employee = {
   id: number;
   name: string;
+  role: string;
   email: string;
   matriculation: string;
   phoneNumber: string;

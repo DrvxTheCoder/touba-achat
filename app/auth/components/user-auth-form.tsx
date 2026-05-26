@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 
 import { cn } from "@/lib/utils";
 import { Icons } from "@/components/icons";
@@ -55,7 +55,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const result = await customSignIn(email, password);
   
     if (result.success) {
-      router.replace("/");
+      const session = await getSession();
+      router.replace(session?.user?.role === "GARDIEN" ? "/bds" : "/");
     } else {
       // Parse the error message from the API response
       try {

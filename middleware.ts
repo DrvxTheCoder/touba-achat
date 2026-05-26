@@ -11,9 +11,13 @@ export async function middleware(req: NextRequest) {
     return response;
   }
 
+  if (token?.role === 'GARDIEN' && req.nextUrl.pathname.startsWith('/acceuil')) {
+    return NextResponse.redirect(new URL('/bds', req.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/dashboard/:path*', '/acceuil/:path*', '/acceuil'],
 };

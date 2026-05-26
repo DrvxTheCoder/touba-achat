@@ -15,6 +15,7 @@ import {
   HandCoins,
   Factory,
   Database,
+  DoorOpen,
 } from "lucide-react";
 
 type Submenu = {
@@ -94,6 +95,13 @@ export function getAdminMenuList(pathname: string): Group[] {
           submenus: []
         },
         {
+          href: "/bds",
+          label: "Bons de sortie",
+          active: pathname.includes("/bds"),
+          icon: DoorOpen,
+          submenus: []
+        },
+        {
           href: "/dashboard/employes",
           label: "Employés / Utilisateur",
           active: pathname.includes("/dashboard/employes"),
@@ -162,7 +170,14 @@ export function getManagementMenuList(pathname: string): Group[] {
           active: pathname.includes("/bdc"),
           icon: HandCoins,
           submenus: []
-        }
+        },
+        {
+          href: "/bds",
+          label: "Bons de sortie",
+          active: pathname.includes("/bds"),
+          icon: DoorOpen,
+          submenus: []
+        },
       ]
     },
   ];
@@ -206,7 +221,14 @@ export function getMagasinierMenuList(pathname: string): Group[] {
           active: pathname.includes("/bdc"),
           icon: HandCoins,
           submenus: []
-        },        
+        },
+        {
+          href: "/bds",
+          label: "Bons de sortie",
+          active: pathname.includes("/bds"),
+          icon: DoorOpen,
+          submenus: []
+        },
       ]
     },
   ];
@@ -235,6 +257,29 @@ export function getUserMenuList(pathname: string): Group[] {
           label: "Bons de caisse",
           active: pathname.includes("/bdc"),
           icon: HandCoins,
+          submenus: []
+        },
+        {
+          href: "/bds",
+          label: "Bons de sortie",
+          active: pathname.includes("/bds"),
+          icon: DoorOpen,
+          submenus: []
+        },
+      ]
+    },
+  ];
+}
+
+export function getGardienMenuList(pathname: string): Group[] {
+  return [
+    {
+      menus: [
+        {
+          href: "/bds",
+          label: "Bons de sortie",
+          active: pathname.includes("/bds"),
+          icon: DoorOpen,
           submenus: []
         },
       ]

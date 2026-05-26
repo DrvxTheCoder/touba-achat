@@ -109,10 +109,10 @@ export const createColumns = (refreshData: () => void): ColumnDef<Employee>[] =>
     ),
   },
   {
-    accessorKey: "email",
-    header: "Email",
+    accessorKey: "role",
+    header: "Rôle",
     cell: ({ row }) => (
-      <span className="hidden sm:inline text-xs text-muted-foreground">{row.original.email}</span>
+      <span className="hidden sm:inline text-xs text-muted-foreground">{row.original.role}</span>
     ),
   },
   {

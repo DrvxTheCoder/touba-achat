@@ -21,6 +21,7 @@ enum Role {
   DOG
   DRH
   DCM
+  GARDIEN
 }
 
 enum Access {
@@ -35,6 +36,9 @@ enum Access {
   RH_PROCESS
   CASHIER
   APPROVE_BDC
+  APPROVE_BDS
+  VIEW_ALL_BDS
+  CREATE_BDS_MATERIEL
   CREATE_PRODUCTION_INVENTORY
   VIEW_PRODUCTION_DASHBOARD
   VALIDATE_PRODUCTION_INVENTORY
@@ -85,6 +89,11 @@ enum NotificationType {
   BDC_APPROVED_DAF
   BDC_PRINTED
   BDC_REJECTED
+  BDS_CREATED
+  BDS_VALIDATED
+  BDS_COMPLETED
+  BDS_RETURNED
+  BDS_REJECTED
 }
 
 enum AttachmentType {
@@ -197,6 +206,28 @@ enum BDCEventType {
   PRINTED
 }
 
+enum BDSType {
+  PERSONNEL
+  MATERIEL
+}
+
+enum BDSStatus {
+  SUBMITTED
+  VALIDATED
+  COMPLETED
+  RETURNED
+  REJECTED
+}
+
+enum BDSEventType {
+  SUBMITTED
+  VALIDATED
+  COMPLETED
+  RETURNED
+  REJECTED
+  UPDATED
+}
+
 enum ODMPersonCategory {
   DIRECTOR      // Directeur - 25k CFA/jour
   TEAM_MANAGER  // Chef d'équipe - 20k CFA/jour
@@ -301,6 +332,12 @@ model User {
   rejectedBdcs          BonDeCaisse[] @relation("BDCRejector")
   printedBdcs           BonDeCaisse[] @relation("BDCPrinter")
   bdcAuditLogs          BonDeCaisseAuditLog[]
+  createdBds            BonDeSortie[] @relation("BDSUserCreator")
+  validatedBds          BonDeSortie[] @relation("BDSValidator")
+  rejectedBds           BonDeSortie[] @relation("BDSRejector")
+  completedBds          BonDeSortie[] @relation("BDSCompleter")
+  returnedBds           BonDeSortie[] @relation("BDSReturner")
+  bdsAuditLogs          BonDeSortieAuditLog[]
   ProductionStarter     ProductionInventory[] @relation("ProductionStarter")
   ProductionCompleter   ProductionInventory[] @relation("ProductionCompleter")
   ArretCreator          ProductionArret[] @relation("ArretCreator")
@@ -328,6 +365,7 @@ model Employee {
   createdOdms         OrdreDeMission[]            @relation("EmployeeCreator")
   stockEdbs           StockEtatDeBesoin[]         @relation("StockCreator")
   createdBdcs         BonDeCaisse[]               @relation("BDCCreator")
+  createdBds          BonDeSortie[]               @relation("BDSCreator")
 }
 
 model Department {
@@ -339,7 +377,8 @@ model Department {
   employeeHistory  EmployeeDepartmentHistory[]
   stockEdbs        StockEtatDeBesoin[]
   bdcs             BonDeCaisse[]
-  
+  bds              BonDeSortie[]
+
 }
 
 model EmployeeDepartmentHistory {
@@ -541,7 +580,66 @@ model BonDeCaisseAuditLog {
   user          User         @relation(fields: [userId], references: [id])
   eventType     BDCEventType
   eventAt       DateTime     @default(now())
-  details       Json?        // For storing any additional event-specific details
+  details       Json?
+}
+
+model BonDeSortie {
+  id                     Int          @id @default(autoincrement())
+  bdsId                  String       @unique
+  type                   BDSType
+  motif                  String
+  destination            String?
+  date                   DateTime
+  heureSortie            String?
+  heureRetour            String?
+  heureSortieEffective   String?
+  heureRetourEffective   String?
+  comment                String?
+
+  employees              Json?
+  vehicule               String?
+  chauffeur              String?
+  items                  Json?
+  nombreColis            Int?
+
+  status                 BDSStatus    @default(SUBMITTED)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  departmentId           Int
+  department             Department   @relation(fields: [departmentId], references: [id])
+  creatorId              Int
+  creator                Employee     @relation("BDSCreator", fields: [creatorId], references: [id])
+  userCreatorId          Int
+  userCreator            User         @relation("BDSUserCreator", fields: [userCreatorId], references: [id])
+  validatorId            Int?
+  validator              User?        @relation("BDSValidator", fields: [validatorId], references: [id])
+  rejectorId             Int?
+  rejector               User?        @relation("BDSRejector", fields: [rejectorId], references: [id])
+  completedById          Int?
+  completedBy            User?        @relation("BDSCompleter", fields: [completedById], references: [id])
+  completedAt            DateTime?
+  isReturnable           Boolean      @default(true)
+  returnedById           Int?
+  returnedBy             User?        @relation("BDSReturner", fields: [returnedById], references: [id])
+  returnedAt             DateTime?
+  returnHistory          Json?
+  isFullyReturned        Boolean      @default(false)
+  rejectionReason        String?
+
+  notifications          Notification[]
+  auditLogs              BonDeSortieAuditLog[]
+}
+
+model BonDeSortieAuditLog {
+  id             Int            @id @default(autoincrement())
+  bonDeSortieId  Int
+  bonDeSortie    BonDeSortie    @relation(fields: [bonDeSortieId], references: [id])
+  userId         Int
+  user           User           @relation(fields: [userId], references: [id])
+  eventType      BDSEventType
+  eventAt        DateTime       @default(now())
+  details        Json?
 }
 
 model ProductionInventory {
@@ -811,6 +909,8 @@ model Notification {
   recipients       NotificationRecipient[]
   bonDeCaisseId Int?
   bonDeCaisse   BonDeCaisse? @relation(fields: [bonDeCaisseId], references: [id])
+  bonDeSortieId Int?
+  bonDeSortie   BonDeSortie? @relation(fields: [bonDeSortieId], references: [id])
 }
 
 model NotificationRecipient {

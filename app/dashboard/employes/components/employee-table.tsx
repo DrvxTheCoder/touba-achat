@@ -43,7 +43,7 @@ interface EmployeeDataTableProps {
 
 const columnLabels: { [key: string]: string } = {
   name: "Nom Complet",
-  email: "Email",
+  role: "Rôle",
   matriculation: "Matricule",
   status: "Statut",
   phoneNumber: "Téléphone",

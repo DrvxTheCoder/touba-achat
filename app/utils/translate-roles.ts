@@ -4,6 +4,8 @@ export const translateRole = (role: string | undefined): string => {
         return 'Administrateur';
       case 'USER':
         return 'Utilisateur';
+      case 'GARDIEN':
+        return 'Gardien';
       case 'RESPONSABLE':
         return 'Responsable';
       case 'DIRECTEUR':

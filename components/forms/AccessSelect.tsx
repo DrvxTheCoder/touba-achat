@@ -21,6 +21,9 @@ const accessOptions: { value: Access; label: string }[] = [
   { value: 'VIEW_PRODUCTION_DASHBOARD', label: 'Voir tableau de bord production'},
   { value: 'VALIDATE_PRODUCTION_INVENTORY', label: 'Valider inventaire'},
   { value: 'EXPORT_PRODUCTION_REPORTS', label: 'Exporter rapports production'},
+  { value: 'APPROVE_BDS', label: 'Approuver BDS' },
+  { value: 'VIEW_ALL_BDS', label: 'Voir tous les BDS' },
+  { value: 'CREATE_BDS_MATERIEL', label: 'Créer un BDS matériel' }
 ]
 
   // CREATE_PRODUCTION_INVENTORY

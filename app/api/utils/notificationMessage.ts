@@ -1,10 +1,10 @@
-import { EDBStatus, ODMStatus, NotificationType, EDBEventType, StockEDBStatus } from '@prisma/client';
+import { EDBStatus, ODMStatus, NotificationType, EDBEventType, StockEDBStatus, BDSStatus } from '@prisma/client';
 
 type EntityContext = {
   id: string;
-  status: EDBStatus | ODMStatus | StockEDBStatus;
+  status: EDBStatus | ODMStatus | StockEDBStatus | BDSStatus;
   actionInitiator: string;
-  entityType: 'EDB' | 'ODM' | 'STOCK';
+  entityType: 'EDB' | 'ODM' | 'STOCK' | 'BDS';
 };
 
 const translateStatus = (status: string): string => {
@@ -38,6 +38,8 @@ export function generateNotificationMessage(
     return generateEDBNotificationMessage(context);
   } else if (context.entityType === 'ODM') {
     return generateODMNotificationMessage(context);
+  } else if (context.entityType === 'BDS') {
+    return generateBDSNotificationMessage(context);
   } else {
     return generateStockEDBMessage(context);
   }
@@ -143,6 +145,41 @@ function generateODMNotificationMessage(
       break;
     default:
       body = `Une mise à jour a été effectuée sur l'ODM (${id}) par ${actionInitiator}. Nouveau statut : ${status}`;
+  }
+
+  return { subject, body };
+}
+
+function generateBDSNotificationMessage(
+  context: EntityContext
+): { subject: string; body: string } {
+  const { id, status, actionInitiator } = context;
+  let subject = `Mise à jour du bon de sortie (${id})`;
+  let body = '';
+
+  switch (status) {
+    case 'SUBMITTED':
+      subject = `Nouveau BDS (${id}) créé`;
+      body = `Un nouveau bon de sortie (${id}) a été créé par ${actionInitiator} et nécessite une validation.`;
+      break;
+    case 'VALIDATED':
+      subject = `BDS (${id}) validé`;
+      body = `Le bon de sortie (${id}) a été validé par ${actionInitiator}.`;
+      break;
+    case 'COMPLETED':
+      subject = `BDS (${id}) - Sortie confirmée`;
+      body = `La sortie pour le bon de sortie (${id}) a été confirmée par ${actionInitiator}.`;
+      break;
+    case 'RETURNED':
+      subject = `BDS (${id}) - Retour confirmé`;
+      body = `Le retour pour le bon de sortie (${id}) a été confirmé par ${actionInitiator}.`;
+      break;
+    case 'REJECTED':
+      subject = `BDS (${id}) rejeté`;
+      body = `Le bon de sortie (${id}) a été rejeté par ${actionInitiator}.`;
+      break;
+    default:
+      body = `Une mise à jour a été effectuée sur le BDS (${id}) par ${actionInitiator}.`;
   }
 
   return { subject, body };

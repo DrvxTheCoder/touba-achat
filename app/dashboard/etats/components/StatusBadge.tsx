@@ -21,10 +21,11 @@ const statusMapping: Record<string, string[]> = {
   'Livré': ['DELIVERED'],
   'Livré*': ['PARTIALLY_DELIVERED'],
   'Décaissé': ['PRINTED'],
-  'Validé': ['FINAL_APPROVAL'],
+  'Validé': ['FINAL_APPROVAL', 'VALIDATED'],
   'Rejeté': ['REJECTED'],
   'Traité': ['AWAITING_FINANCE_APPROVAL'],
   'Imprimé': ['COMPLETED'],
+  'Retourné': ['RETURNED'],
 };
 
 // Function to get the display status based on internal status
