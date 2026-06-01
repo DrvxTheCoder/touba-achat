@@ -33,6 +33,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Icons } from "@/components/icons";
 import { Access } from "@prisma/client";
 
+const frenchDatePattern = /^\d{2}\/\d{2}\/\d{4}$/;
+const frenchTimePattern = /^\d{2}:\d{2}$/;
+
+const formatFrenchDate = (date: Date) => date.toLocaleDateString("fr-FR");
+const formatFrenchTime = (date: Date) =>
+  date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
 const employeeInfoSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   role: z.string().min(1, "Le rôle est requis"),
@@ -48,9 +55,22 @@ const personnelFormSchema = z.object({
   type: z.literal("PERSONNEL"),
   motif: z.string().min(1, "Le motif est requis"),
   destination: z.string().optional(),
-  date: z.string().min(1, "La date est requise"),
-  heureSortie: z.string().optional(),
-  heureRetour: z.string().optional(),
+  date: z
+    .string()
+    .min(1, "La date est requise")
+    .regex(frenchDatePattern, "La date doit être au format JJ/MM/AAAA"),
+  heureSortie: z
+    .string()
+    .optional()
+    .refine((value) => !value || frenchTimePattern.test(value), {
+      message: "L'heure doit être au format HH:mm",
+    }),
+  heureRetour: z
+    .string()
+    .optional()
+    .refine((value) => !value || frenchTimePattern.test(value), {
+      message: "L'heure doit être au format HH:mm",
+    }),
   employees: z.array(employeeInfoSchema).optional(),
   comment: z.string().optional(),
 });
@@ -59,9 +79,22 @@ const materielFormSchema = z.object({
   type: z.literal("MATERIEL"),
   motif: z.string().min(1, "Le motif est requis"),
   destination: z.string().optional(),
-  date: z.string().min(1, "La date est requise"),
-  heureSortie: z.string().optional(),
-  heureRetour: z.string().optional(),
+  date: z
+    .string()
+    .min(1, "La date est requise")
+    .regex(frenchDatePattern, "La date doit être au format JJ/MM/AAAA"),
+  heureSortie: z
+    .string()
+    .optional()
+    .refine((value) => !value || frenchTimePattern.test(value), {
+      message: "L'heure doit être au format HH:mm",
+    }),
+  heureRetour: z
+    .string()
+    .optional()
+    .refine((value) => !value || frenchTimePattern.test(value), {
+      message: "L'heure doit être au format HH:mm",
+    }),
   vehicule: z.string().optional(),
   chauffeur: z.string().optional(),
   items: z.array(bdsItemSchema).optional(),
@@ -87,7 +120,7 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
     session?.user?.access?.includes(Access.CREATE_BDS_MATERIEL) ||
     ["ADMIN", "DIRECTEUR_GENERAL"].includes(session?.user?.role ?? "");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = formatFrenchDate(new Date());
 
   const personnelForm = useForm<PersonnelFormData>({
     resolver: zodResolver(personnelFormSchema),
@@ -210,7 +243,13 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                         <FormItem>
                           <FormLabel>Date *</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <Input
+                              type="text"
+                              placeholder="JJ/MM/AAAA"
+                              inputMode="numeric"
+                              pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -223,7 +262,13 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                         <FormItem>
                           <FormLabel>Heure de sortie</FormLabel>
                           <FormControl>
-                            <Input type="time" {...field} />
+                            <Input
+                              type="text"
+                              placeholder="HH:mm"
+                              inputMode="numeric"
+                              pattern="[0-2][0-9]:[0-5][0-9]"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -236,7 +281,13 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                         <FormItem>
                           <FormLabel>Heure de retour</FormLabel>
                           <FormControl>
-                            <Input type="time" {...field} />
+                            <Input
+                              type="text"
+                              placeholder="HH:mm"
+                              inputMode="numeric"
+                              pattern="[0-2][0-9]:[0-5][0-9]"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -363,7 +414,13 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                           <FormItem>
                             <FormLabel>Date *</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <Input
+                                type="text"
+                                placeholder="JJ/MM/AAAA"
+                                inputMode="numeric"
+                                pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -376,7 +433,13 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                           <FormItem>
                             <FormLabel>Heure de sortie</FormLabel>
                             <FormControl>
-                              <Input type="time" {...field} />
+                              <Input
+                                type="text"
+                                placeholder="HH:mm"
+                                inputMode="numeric"
+                                pattern="[0-2][0-9]:[0-5][0-9]"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -389,7 +452,13 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                           <FormItem>
                             <FormLabel>Heure de retour</FormLabel>
                             <FormControl>
-                              <Input type="time" {...field} />
+                              <Input
+                                type="text"
+                                placeholder="HH:mm"
+                                inputMode="numeric"
+                                pattern="[0-2][0-9]:[0-5][0-9]"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

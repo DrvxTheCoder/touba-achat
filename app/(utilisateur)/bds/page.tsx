@@ -184,13 +184,27 @@ export default function BDSPage() {
     }
   };
 
+  const parseFrenchDateToISO = (value: string) => {
+    const parts = value?.split("/");
+    if (!parts || parts.length !== 3) return value;
+    const [day, month, year] = parts;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  };
+
+  const normalizeBdsPayload = (payload: any) => {
+    if (payload?.date && typeof payload.date === "string" && payload.date.includes("/")) {
+      return { ...payload, date: parseFrenchDateToISO(payload.date) };
+    }
+    return payload;
+  };
+
   const handleBDSSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/bds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(normalizeBdsPayload(data)),
       });
 
       if (!response.ok) {
