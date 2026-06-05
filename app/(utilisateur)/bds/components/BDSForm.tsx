@@ -263,10 +263,7 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                           <FormLabel>Heure de sortie</FormLabel>
                           <FormControl>
                             <Input
-                              type="text"
-                              placeholder="HH:mm"
-                              inputMode="numeric"
-                              pattern="[0-2][0-9]:[0-5][0-9]"
+                              type="time"
                               {...field}
                             />
                           </FormControl>
@@ -282,10 +279,7 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                           <FormLabel>Heure de retour</FormLabel>
                           <FormControl>
                             <Input
-                              type="text"
-                              placeholder="HH:mm"
-                              inputMode="numeric"
-                              pattern="[0-2][0-9]:[0-5][0-9]"
+                              type="time"
                               {...field}
                             />
                           </FormControl>
