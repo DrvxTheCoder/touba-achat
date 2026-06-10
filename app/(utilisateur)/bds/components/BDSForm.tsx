@@ -81,8 +81,7 @@ const materielFormSchema = z.object({
   destination: z.string().optional(),
   date: z
     .string()
-    .min(1, "La date est requise")
-    .regex(frenchDatePattern, "La date doit être au format JJ/MM/AAAA"),
+    .min(1, "La date est requise"),
   heureSortie: z
     .string()
     .optional()
@@ -409,10 +408,8 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                             <FormLabel>Date *</FormLabel>
                             <FormControl>
                               <Input
-                                type="text"
-                                placeholder="JJ/MM/AAAA"
+                                type="date"
                                 inputMode="numeric"
-                                pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
                                 {...field}
                               />
                             </FormControl>
@@ -427,13 +424,10 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                           <FormItem>
                             <FormLabel>Heure de sortie</FormLabel>
                             <FormControl>
-                              <Input
-                                type="text"
-                                placeholder="HH:mm"
-                                inputMode="numeric"
-                                pattern="[0-2][0-9]:[0-5][0-9]"
-                                {...field}
-                              />
+                            <Input
+                              type="time"
+                              {...field}
+                            />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -447,10 +441,7 @@ export function BDSForm({ onSubmit, isLoading }: BDSFormProps) {
                             <FormLabel>Heure de retour</FormLabel>
                             <FormControl>
                               <Input
-                                type="text"
-                                placeholder="HH:mm"
-                                inputMode="numeric"
-                                pattern="[0-2][0-9]:[0-5][0-9]"
+                                type="time"
                                 {...field}
                               />
                             </FormControl>
