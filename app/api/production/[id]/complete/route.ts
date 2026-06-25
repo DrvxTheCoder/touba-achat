@@ -61,14 +61,12 @@ export async function POST(
         throw new Error('Inventaire déjà terminé');
       }
 
-      // Use manual time fields if provided, otherwise calculate from timestamps
+      // Use manual time fields if provided (already net of the lunch break,
+      // computed in ProductionForm), otherwise calculate from timestamps
       const now = new Date();
-      let tempsTotal = data.tempsTotal || Math.floor(
+      const tempsTotal = data.tempsTotal || Math.floor(
         (now.getTime() - inventory.startedAt.getTime()) / 60000
       );
-
-      // Subtract 60 minutes (1 hour) for lunch break
-      tempsTotal = Math.max(0, tempsTotal - 60);
 
       // Calculate total appro and sorties from dynamic values
       const totalAppro = data.approValues

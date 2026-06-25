@@ -50,7 +50,8 @@ export async function GET(
           include: {
             editedBy: { select: { id: true, name: true, email: true } }
           }
-        }
+        },
+        vehicleMovement: true
       }
     });
 

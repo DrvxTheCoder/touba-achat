@@ -10,3 +10,4 @@ nul
 # Build artifacts
 tsconfig.tsbuildinfo
 .next/
+PRODUCT_SPEC.md

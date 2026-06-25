@@ -717,7 +717,37 @@ model ProductionInventory {
   // Audit logs for edit tracking
   auditLogs             InventoryAuditLog[]
 
+  // Mouvements de véhicules
+  vehicleMovement       VehicleMovement?
+
   @@unique([date, productionCenterId, isQuartDeNuit])
+}
+
+model VehicleMovement {
+  id                        Int                 @id @default(autoincrement())
+  inventoryId               Int                 @unique
+  inventory                 ProductionInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  // Véhicules Déchargés
+  dechargesComm             Int                 @default(0)
+  dechargesLiv              Int                 @default(0)
+
+  // Véhicules Chargés
+  chargesComm               Int                 @default(0)
+  chargesLiv                Int                 @default(0)
+
+  // Véhicules Non Déchargés
+  nonDechargesComm          Int                 @default(0)
+  nonDechargesLiv           Int                 @default(0)
+
+  // Véhicules Déchargés Non Chargés
+  dechargesNonChargesComm   Int                 @default(0)
+  dechargesNonChargesLiv    Int                 @default(0)
+
+  observations              String?
+
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
 }
 
 model ProductionArret {

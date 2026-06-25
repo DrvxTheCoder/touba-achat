@@ -53,6 +53,25 @@ export interface Reservoir {
   poids: number;
 }
 
+export interface VehicleMovementData {
+  dechargesComm: number;
+  dechargesLiv: number;
+  chargesComm: number;
+  chargesLiv: number;
+  nonDechargesComm: number;
+  nonDechargesLiv: number;
+  dechargesNonChargesComm: number;
+  dechargesNonChargesLiv: number;
+  observations: string;
+}
+
+export interface VehicleMovement extends VehicleMovementData {
+  id: number;
+  inventoryId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProductionInventory {
   id: number;
   date: Date | string;
@@ -158,6 +177,7 @@ export interface ProductionInventory {
   bottles?: BottleProduction[];
   reservoirs?: Reservoir[];
   auditLogs?: InventoryAuditLog[];
+  vehicleMovement?: VehicleMovement | null;
 
 }
 

@@ -105,7 +105,8 @@ export async function POST(req: NextRequest) {
           }
         },
         startedBy: { select: { name: true } },
-        completedBy: { select: { name: true } }
+        completedBy: { select: { name: true } },
+        vehicleMovement: true
       }
     });
 

@@ -5,15 +5,16 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, CheckCircle, AlertCircle, Edit, Moon } from 'lucide-react';
+import { Save, CheckCircle, AlertCircle, Edit, Moon, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import ApproSection from './ApproSection';
 import BottlesSection from './BottlesSection';
 import ExportsSection from './ExportsSection';
 import ReservoirSection from './ReservoirSection';
+import VehiclesSection from './VehiclesSection';
 import AutoCalcs from './AutoCalcs';
 import TimeInputSection from './TimeInputSection';
-import { ProductionInventory, CompleteInventoryData } from '@/lib/types/production';
+import { ProductionInventory, CompleteInventoryData, VehicleMovementData } from '@/lib/types/production';
 import { calculateTonnage } from '@/lib/types/production';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -115,6 +116,42 @@ export default function ProductionForm({
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [lastSaved, setLastSaved] = useState<string>('');
 
+  const initVehicleMovement = (): VehicleMovementData => ({
+    dechargesComm: inventory.vehicleMovement?.dechargesComm ?? 0,
+    dechargesLiv: inventory.vehicleMovement?.dechargesLiv ?? 0,
+    chargesComm: inventory.vehicleMovement?.chargesComm ?? 0,
+    chargesLiv: inventory.vehicleMovement?.chargesLiv ?? 0,
+    nonDechargesComm: inventory.vehicleMovement?.nonDechargesComm ?? 0,
+    nonDechargesLiv: inventory.vehicleMovement?.nonDechargesLiv ?? 0,
+    dechargesNonChargesComm: inventory.vehicleMovement?.dechargesNonChargesComm ?? 0,
+    dechargesNonChargesLiv: inventory.vehicleMovement?.dechargesNonChargesLiv ?? 0,
+    observations: inventory.vehicleMovement?.observations ?? '',
+  });
+
+  const [vehicleMovement, setVehicleMovement] = useState<VehicleMovementData>(initVehicleMovement);
+  const [vehicleSaveStatus, setVehicleSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  const updateVehicleField = (field: keyof VehicleMovementData, value: number | string) => {
+    setVehicleMovement(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveVehicleMovement = async () => {
+    setVehicleSaveStatus('saving');
+    try {
+      const res = await fetch(`/api/production/${inventory.id}/vehicles`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicleMovement),
+      });
+      if (!res.ok) throw new Error('Erreur serveur');
+      setVehicleSaveStatus('saved');
+      setTimeout(() => setVehicleSaveStatus('idle'), 2000);
+    } catch {
+      setVehicleSaveStatus('error');
+      setTimeout(() => setVehicleSaveStatus('idle'), 3000);
+    }
+  };
+
   // Fetch production lines for the centre
   const [productionLines, setProductionLines] = useState<Array<{ id: number; name: string; capacityPerHour: number; isActive: boolean }>>([]);
   useEffect(() => {
@@ -179,6 +216,8 @@ export default function ProductionForm({
   };
 
   // Calculate temps total from heureDebut and heureFin
+  // Subtracts the 1-hour (60 min) lunch break so the displayed/saved total
+  // already reflects actual production time, instead of doing it later at clôture.
   const calculateTempsTotal = (debut: string, fin: string): number => {
     if (!debut || !fin) return 0;
 
@@ -193,7 +232,8 @@ export default function ProductionForm({
       finMinutes += 24 * 60; // Add 24 hours
     }
 
-    return finMinutes - debutMinutes;
+    const rawTotal = finMinutes - debutMinutes;
+    return Math.max(0, rawTotal - 60);
   };
 
   const tempsTotal = calculateTempsTotal(formData.heureDebut, formData.heureFin);
@@ -505,17 +545,19 @@ export default function ProductionForm({
 
       <Card className="p-6">
         <Tabs defaultValue="appro" className="w-full">
-            <TabsList className={`grid w-full h-fit ${formData.isQuartDeNuit ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            <TabsList className={`grid w-full h-fit ${formData.isQuartDeNuit ? 'grid-cols-2 sm:grid-cols-6' : 'grid-cols-2 sm:grid-cols-5'}`}>
             <TabsTrigger value="appro">Approvisionnement</TabsTrigger>
             <TabsTrigger value="bottles">Bouteilles</TabsTrigger>
             {formData.isQuartDeNuit && (
               <TabsTrigger value="bottles-nuit" className="text-indigo-600">
-                <Moon className="h-3 w-3 mr-1" />
                 Bouteilles Quart de Nuit
               </TabsTrigger>
             )}
             <TabsTrigger value="exports">Sorties</TabsTrigger>
             <TabsTrigger value="reservoirs">Réservoirs</TabsTrigger>
+            <TabsTrigger value="mouvements">
+              Mouvements
+            </TabsTrigger>
             </TabsList>
 
           <TabsContent value="appro" className="space-y-4 mt-6">
@@ -569,6 +611,44 @@ export default function ProductionForm({
                 setAutoSaveStatus('idle');
               }}
             />
+          </TabsContent>
+
+          <TabsContent value="mouvements" className="space-y-4 mt-6">
+            <VehiclesSection
+              data={vehicleMovement}
+              onUpdate={updateVehicleField}
+              disabled={disabled}
+            />
+
+            {!disabled && (
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-sm text-muted-foreground">
+                  {vehicleSaveStatus === 'saving' && 'Sauvegarde en cours...'}
+                  {vehicleSaveStatus === 'saved' && (
+                    <span className="text-green-600 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Sauvegardé
+                    </span>
+                  )}
+                  {vehicleSaveStatus === 'error' && (
+                    <span className="text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Erreur lors de la sauvegarde
+                    </span>
+                  )}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={saveVehicleMovement}
+                  disabled={vehicleSaveStatus === 'saving'}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Sauvegarder les mouvements
+                </Button>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </Card>

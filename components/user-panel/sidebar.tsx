@@ -22,7 +22,7 @@ export function Sidebar() {
       )}
     >
       <SidebarToggle isOpen={sidebar?.isOpen} setIsOpen={sidebar?.setIsOpen} />
-      <div className="relative h-full flex flex-col px-3 py-4 overflow-y-auto border-r ">
+      <div className="relative h-full flex flex-col px-3 py-4 overflow-y-auto overflow-x-clip border-r ">
         <div
           className={cn(
             "flex flex-row items-center px-3 transition-transform ease-in-out duration-300 mb-1 bg-opacity-0",

@@ -73,6 +73,9 @@ export default function TimeInputSection({
               ({tempsTotal} min)
             </span>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Pause déjeuner d&apos;1h déjà déduite
+          </p>
         </div>
       </div>
     </Card>

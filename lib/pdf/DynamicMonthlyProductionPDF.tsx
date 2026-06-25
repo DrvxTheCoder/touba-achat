@@ -418,6 +418,67 @@ const DynamicMonthlyProductionPDF = ({
     flexDirection: 'row' as const,
   });
 
+  // Build a map of date string -> vehicleMovement for O(1) lookup
+  // Key format: 'YYYY-MM-DD'
+  const vehicleMovementByDate = new Map<string, {
+    dechargesComm: number;
+    dechargesLiv: number;
+    chargesComm: number;
+    chargesLiv: number;
+    nonDechargesComm: number;
+    nonDechargesLiv: number;
+    dechargesNonChargesComm: number;
+    dechargesNonChargesLiv: number;
+    observations?: string | null;
+  }>();
+
+  inventories.forEach((inv: any) => {
+    if (inv.vehicleMovement) {
+      const dateKey = new Date(inv.date).toISOString().split('T')[0];
+      vehicleMovementByDate.set(dateKey, inv.vehicleMovement);
+    }
+  });
+
+  // Generate all calendar days in the period (one row per day)
+  const allDaysInPeriod: Date[] = [];
+  const cursor = new Date(startDate);
+  cursor.setHours(0, 0, 0, 0);
+  const periodEnd = new Date(endDate);
+  periodEnd.setHours(23, 59, 59, 999);
+  while (cursor <= periodEnd) {
+    allDaysInPeriod.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // Helper: format a vehicle count - show "N/A" for 0 or undefined
+  const fmtVehicle = (val: number | undefined | null): string => {
+    if (val === undefined || val === null || val === 0) return 'N/A';
+    return String(val);
+  };
+
+  // Vehicle movement column totals
+  const vmTotals = {
+    dechargesComm: 0,
+    dechargesLiv: 0,
+    chargesComm: 0,
+    chargesLiv: 0,
+    nonDechargesComm: 0,
+    nonDechargesLiv: 0,
+    dechargesNonChargesComm: 0,
+    dechargesNonChargesLiv: 0,
+  };
+
+  vehicleMovementByDate.forEach((vm) => {
+    vmTotals.dechargesComm += vm.dechargesComm;
+    vmTotals.dechargesLiv += vm.dechargesLiv;
+    vmTotals.chargesComm += vm.chargesComm;
+    vmTotals.chargesLiv += vm.chargesLiv;
+    vmTotals.nonDechargesComm += vm.nonDechargesComm;
+    vmTotals.nonDechargesLiv += vm.nonDechargesLiv;
+    vmTotals.dechargesNonChargesComm += vm.dechargesNonChargesComm;
+    vmTotals.dechargesNonChargesLiv += vm.dechargesNonChargesLiv;
+  });
+
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
@@ -876,6 +937,192 @@ const DynamicMonthlyProductionPDF = ({
               </View>
             )}
           </View>
+        </View>
+
+        {/* Footer Signatures */}
+        <View style={styles.footerSignatures}>
+          <View style={styles.signatureItem}>
+            <Text style={styles.signatureLabel}>VISA PRODUCTION: {exportedByUser || '_____________'}</Text>
+          </View>
+          <View style={styles.signatureItem}>
+            <Text style={styles.signatureLabel}>Chef de Centre: _____________</Text>
+          </View>
+        </View>
+
+        <Text style={styles.footer}>
+          Document généré le {new Date().toLocaleString('fr-FR')} - ToubaApp™
+        </Text>
+      </Page>
+
+      {/* PAGE 2: vehicle movement table */}
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        {/* Logos */}
+        <Image style={styles.logo} src={path.join(IMG_DIR, 'TGAZ.png')} />
+        <Image style={styles.logoTwo} src={path.join(IMG_DIR, 'touba-app512x512-1.png')} />
+
+        {/* Watermark */}
+        <Image style={styles.watermark} src={path.join(IMG_DIR, 'touba-app512x512-1.png')} />
+
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>MOUVEMENT DES VÉHICULES</Text>
+          <Text style={styles.subtitle}>
+            {productionCenter?.name || 'Centre de production'}
+            {' - '}
+            Période: {startDate.toLocaleDateString('fr-FR')} au {endDate.toLocaleDateString('fr-FR')}
+          </Text>
+        </View>
+
+        {/* Vehicle Movement Table */}
+        <View style={styles.table}>
+
+          {/* Row 1: Section headers */}
+          <View style={styles.tableHeaderSection}>
+            <View style={{ width: '8%' }}>
+              <Text style={styles.headerCell}>DATE</Text>
+            </View>
+
+            <View style={{ width: '23%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' }}>
+              <Text style={styles.headerCell}>VÉHICULES DÉCHARGÉS</Text>
+            </View>
+
+            <View style={{ width: '23%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' }}>
+              <Text style={styles.headerCell}>VÉHICULES CHARGÉS</Text>
+            </View>
+
+            <View style={{ width: '23%', borderRightWidth: 1, borderRightColor: '#ddd', flexDirection: 'row' }}>
+              <Text style={styles.headerCell}>VÉHICULES NON DÉCHARGÉS</Text>
+            </View>
+
+            <View style={{ width: '23%', flexDirection: 'row' }}>
+              <Text style={styles.headerCell}>VÉHICULES DÉCHARGÉS NON CHARGÉS</Text>
+            </View>
+          </View>
+
+          {/* Row 2: Sub-column headers */}
+          <View style={styles.tableHeaderRow}>
+            <View style={{ width: '8%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Date</Text>
+            </View>
+
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Commerciaux</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Livraison</Text>
+            </View>
+
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Commerciaux</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Livraison</Text>
+            </View>
+
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Commerciaux</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Livraison</Text>
+            </View>
+
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Commerciaux</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={styles.headerCellSub}>Livraison</Text>
+            </View>
+          </View>
+
+          {/* Data rows: one per calendar day */}
+          {allDaysInPeriod.map((day, idx) => {
+            const dateKey = day.toISOString().split('T')[0];
+            const vm = vehicleMovementByDate.get(dateKey);
+            const isEven = idx % 2 === 0;
+
+            return (
+              <View
+                key={dateKey}
+                style={[
+                  styles.tableRow,
+                  isEven ? { backgroundColor: '#fafafa' } : {},
+                ]}
+              >
+                <View style={{ width: '8%', ...colStyle }}>
+                  <Text style={styles.cellTextDate}>
+                    {day.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                  </Text>
+                </View>
+
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.dechargesComm)}</Text>
+                </View>
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.dechargesLiv)}</Text>
+                </View>
+
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.chargesComm)}</Text>
+                </View>
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.chargesLiv)}</Text>
+                </View>
+
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.nonDechargesComm)}</Text>
+                </View>
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.nonDechargesLiv)}</Text>
+                </View>
+
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.dechargesNonChargesComm)}</Text>
+                </View>
+                <View style={{ width: '11.5%', ...colStyle }}>
+                  <Text style={styles.cellText}>{fmtVehicle(vm?.dechargesNonChargesLiv)}</Text>
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Totals row */}
+          <View style={styles.tableTotalRow}>
+            <View style={{ width: '8%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>TOTAL</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.dechargesComm || 'N/A'}</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.dechargesLiv || 'N/A'}</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.chargesComm || 'N/A'}</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.chargesLiv || 'N/A'}</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.nonDechargesComm || 'N/A'}</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.nonDechargesLiv || 'N/A'}</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.dechargesNonChargesComm || 'N/A'}</Text>
+            </View>
+            <View style={{ width: '11.5%', ...colStyle }}>
+              <Text style={[styles.cellText, { fontFamily: 'Oswald' }]}>{vmTotals.dechargesNonChargesLiv || 'N/A'}</Text>
+            </View>
+          </View>
+
+        </View>
+
+        {/* Legend */}
+        <View style={{ marginTop: 8 }}>
+          <Text style={{ fontSize: 6, color: '#666' }}>
+            COM = Véhicules Commerciaux &nbsp;&nbsp; LIV = Véhicules de Livraison &nbsp;&nbsp; N/A = Aucun mouvement enregistré
+          </Text>
         </View>
 
         {/* Footer Signatures */}
