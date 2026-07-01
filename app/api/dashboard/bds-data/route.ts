@@ -44,11 +44,20 @@ export async function GET(req: NextRequest) {
     let baseWhere: any = { createdAt: dateRange };
 
     if (!hasFullAccess(user.role as Role, user.access)) {
-      const departmentId = user.employee?.currentDepartmentId;
-      if (!departmentId) {
-        return NextResponse.json({ error: "Département non trouvé" }, { status: 400 });
+      const deptScopedRoles: Role[] = [
+        Role.DIRECTEUR,
+        Role.DAF,
+        Role.DCM,
+        Role.DOG,
+        Role.DRH,
+        Role.RESPONSABLE,
+      ];
+
+      if (deptScopedRoles.includes(user.role) && user.employee) {
+        baseWhere.departmentId = user.employee.currentDepartmentId;
+      } else {
+        baseWhere.userCreatorId = user.id;
       }
-      baseWhere.departmentId = departmentId;
     }
 
     if (type && type !== "all") {
