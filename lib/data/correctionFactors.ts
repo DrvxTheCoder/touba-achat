@@ -587,7 +587,7 @@ export const CORRECTION_FACTORS_TABLE: CorrectionFactor[] = [
   },
   {
     "temperature": 26.5,
-    "facteurLiquide": 0.0333,
+    "facteurLiquide": 0.0133,
     "facteurGaz": 0.002336
   },
   {
