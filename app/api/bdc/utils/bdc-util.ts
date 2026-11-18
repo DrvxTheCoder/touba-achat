@@ -1,6 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { Access, BDCEventType, BDCStatus, NotificationType, Role } from "@prisma/client";
 
+// Business-rule violation (wrong status, already printed, ...) -> returned as 4xx, not 500
+export class BDCActionError extends Error {
+  constructor(message: string, public status: number = 409) {
+    super(message);
+    this.name = "BDCActionError";
+  }
+}
+
+// Statuses after which a BDC can no longer be approved/rejected
+const FINAL_STATUSES: BDCStatus[] = [BDCStatus.PRINTED, BDCStatus.REJECTED];
+
 type ExpenseItem = {
   item: string;
   amount: number;
@@ -378,14 +389,21 @@ export async function approveBDC(
         throw new Error("Rôle non autorisé pour l'approbation");
     }
 
-    // Update BDC
-    const updatedBdc = await tx.bonDeCaisse.update({
-      where: { id: bdcId },
+    // Conditional update: never move a BDC backwards once DAF-approved, printed or rejected
+    const { count } = await tx.bonDeCaisse.updateMany({
+      where: {
+        id: bdcId,
+        status: { notIn: [...FINAL_STATUSES, BDCStatus.APPROVED_DAF] },
+      },
       data: {
         status: newStatus,
         approverId: userId,
       },
     });
+    if (count === 0) {
+      throw new BDCActionError("Ce BDC ne peut plus être approuvé (déjà validé, décaissé ou rejeté)");
+    }
+    const updatedBdc = await tx.bonDeCaisse.findUniqueOrThrow({ where: { id: bdcId } });
 
     // Find next approvers
     const nextApprovers = await tx.user.findMany({
@@ -421,13 +439,19 @@ export async function rejectBDC(
   rejectionReason: string
 ) {
   return prisma.$transaction(async (tx) => {
-    const bdc = await tx.bonDeCaisse.update({
-      where: { id: bdcId },
+    const { count } = await tx.bonDeCaisse.updateMany({
+      where: { id: bdcId, status: { notIn: FINAL_STATUSES } },
       data: {
         status: BDCStatus.REJECTED,
         rejectionReason,
         rejectorId: userId,
       },
+    });
+    if (count === 0) {
+      throw new BDCActionError("Ce BDC ne peut plus être rejeté (déjà décaissé ou rejeté)");
+    }
+    const bdc = await tx.bonDeCaisse.findUniqueOrThrow({
+      where: { id: bdcId },
       include: {
         userCreator: true
       }
@@ -476,14 +500,21 @@ export async function approveDAF(
       nextAction = [Access.CASHIER];
     }
 
-    // Update BDC
-    const updatedBdc = await tx.bonDeCaisse.update({
-      where: { id: bdcId },
+    // Conditional update: a printed (décaissé) or rejected BDC must never go back to APPROVED_DAF
+    const { count } = await tx.bonDeCaisse.updateMany({
+      where: {
+        id: bdcId,
+        status: { notIn: [...FINAL_STATUSES, BDCStatus.APPROVED_DAF] },
+      },
       data: {
         status: newStatus,
         approverDAFId: userId,
       },
     });
+    if (count === 0) {
+      throw new BDCActionError("Ce BDC a déjà été validé par la DAF, décaissé ou rejeté");
+    }
+    const updatedBdc = await tx.bonDeCaisse.findUniqueOrThrow({ where: { id: bdcId } });
 
     // Find next approvers
     const nextApprovers = await tx.user.findMany({
@@ -524,26 +555,43 @@ export async function markBDCAsPrinted(bdcId: number, userId: number) {
     });
 
     if (!bdc) {
-      throw new Error("BDC introuvable");
+      throw new BDCActionError("BDC introuvable", 404);
+    }
+
+    // Already printed: idempotent. If the status was knocked back (e.g. a late DAF
+    // re-approval overwrote PRINTED), restore it instead of failing.
+    if (bdc.printedAt) {
+      if (bdc.status !== BDCStatus.PRINTED) {
+        return tx.bonDeCaisse.update({
+          where: { id: bdcId },
+          data: { status: BDCStatus.PRINTED },
+          include: { userCreator: true, printedBy: true },
+        });
+      }
+      return tx.bonDeCaisse.findUniqueOrThrow({
+        where: { id: bdcId },
+        include: { userCreator: true, printedBy: true },
+      });
     }
 
     if (bdc.status !== BDCStatus.APPROVED_DAF) {
-      throw new Error("Le BDC doit être approuvé par la DAF avant l'impression");
+      throw new BDCActionError("Le BDC doit être approuvé par la DAF avant l'impression");
     }
 
-    // Check if already printed
-    if (bdc.printedAt) {
-      throw new Error("Ce BDC a déjà été imprimé");
-    }
-
-    // Update BDC status and record print details
-    const updatedBdc = await tx.bonDeCaisse.update({
-      where: { id: bdcId },
+    // Conditional update guards against two cashiers printing at the same time
+    const { count } = await tx.bonDeCaisse.updateMany({
+      where: { id: bdcId, status: BDCStatus.APPROVED_DAF, printedAt: null },
       data: {
         status: BDCStatus.PRINTED,
         printedById: userId,
         printedAt: new Date(),
       },
+    });
+    if (count === 0) {
+      throw new BDCActionError("Ce BDC a déjà été imprimé");
+    }
+    const updatedBdc = await tx.bonDeCaisse.findUniqueOrThrow({
+      where: { id: bdcId },
       include: {
         userCreator: true,
         printedBy: true
@@ -587,6 +635,87 @@ export async function markBDCAsPrinted(bdcId: number, userId: number) {
     }
 
     return updatedBdc;
+  });
+}
+
+// Workflow order, used by the admin revert
+const BDC_STATUS_ORDER: BDCStatus[] = [
+  BDCStatus.SUBMITTED,
+  BDCStatus.APPROVED_RESPONSABLE,
+  BDCStatus.APPROVED_DIRECTEUR,
+  BDCStatus.APPROVED_DAF,
+  BDCStatus.PRINTED,
+];
+
+/** Statuses an admin may revert a BDC to from its current status. */
+export function getRevertTargets(current: BDCStatus): BDCStatus[] {
+  if (current === BDCStatus.REJECTED) {
+    // We don't know at which step it was rejected: allow any pre-payout step
+    return BDC_STATUS_ORDER.filter(s => s !== BDCStatus.PRINTED);
+  }
+  const idx = BDC_STATUS_ORDER.indexOf(current);
+  return idx > 0 ? BDC_STATUS_ORDER.slice(0, idx) : [];
+}
+
+/**
+ * ADMIN ONLY: move a BDC back to an earlier status (e.g. undo a mistaken décaissement).
+ * Clears the approval/print/rejection data belonging to the undone steps and logs it.
+ */
+export async function revertBDCStatus(
+  bdcId: number,
+  userId: number,
+  targetStatus: BDCStatus,
+  reason: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const bdc = await tx.bonDeCaisse.findUnique({ where: { id: bdcId } });
+    if (!bdc) throw new BDCActionError("BDC introuvable", 404);
+
+    if (!getRevertTargets(bdc.status).includes(targetStatus)) {
+      throw new BDCActionError(
+        `Impossible de rétablir un BDC du statut ${bdc.status} vers ${targetStatus}`,
+        400
+      );
+    }
+
+    const targetIdx = BDC_STATUS_ORDER.indexOf(targetStatus);
+    const data: any = { status: targetStatus };
+
+    if (targetIdx < BDC_STATUS_ORDER.indexOf(BDCStatus.PRINTED)) {
+      data.printedById = null;
+      data.printedAt = null;
+    }
+    if (targetIdx < BDC_STATUS_ORDER.indexOf(BDCStatus.APPROVED_DAF)) {
+      data.approverDAFId = null;
+    }
+    if (targetIdx < BDC_STATUS_ORDER.indexOf(BDCStatus.APPROVED_RESPONSABLE)) {
+      data.approverId = null;
+    }
+    if (bdc.status === BDCStatus.REJECTED) {
+      data.rejectorId = null;
+      data.rejectionReason = null;
+    }
+
+    // Conditional on the status we validated, so a concurrent action can't be overwritten
+    const { count } = await tx.bonDeCaisse.updateMany({
+      where: { id: bdcId, status: bdc.status },
+      data,
+    });
+    if (count === 0) {
+      throw new BDCActionError("Le statut du BDC a changé entre-temps, veuillez rafraîchir");
+    }
+
+    // No dedicated enum value: logged as UPDATED with revert details
+    await logBDCEvent(tx, bdcId, userId, BDCEventType.UPDATED, {
+      action: "ADMIN_REVERT",
+      from: bdc.status,
+      to: targetStatus,
+      reason,
+      previousPrintedById: bdc.printedById,
+      previousPrintedAt: bdc.printedAt,
+    });
+
+    return tx.bonDeCaisse.findUniqueOrThrow({ where: { id: bdcId } });
   });
 }
 

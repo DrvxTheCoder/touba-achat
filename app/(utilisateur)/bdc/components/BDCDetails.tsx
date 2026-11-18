@@ -6,7 +6,15 @@ import { BDC } from "../types/bdc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Printer, FileCheck, FileX, CheckCircle, BanIcon, Trash2, AlertCircle, AlertTriangle, CoinsIcon, HandCoinsIcon } from "lucide-react";
+import { Printer, FileCheck, FileX, CheckCircle, BanIcon, Trash2, AlertCircle, AlertTriangle, CoinsIcon, HandCoinsIcon, Undo2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +74,22 @@ const rejectFormSchema = z.object({
 
 type RejectFormData = z.infer<typeof rejectFormSchema>;
 
+// Mirrors getRevertTargets() in app/api/bdc/utils/bdc-util.ts (server re-validates)
+const STATUS_ORDER = ["SUBMITTED", "APPROVED_RESPONSABLE", "APPROVED_DIRECTEUR", "APPROVED_DAF", "PRINTED"] as const;
+const STATUS_LABELS: Record<string, string> = {
+  SUBMITTED: "Soumis",
+  APPROVED_RESPONSABLE: "En cours",
+  APPROVED_DIRECTEUR: "Approuvé",
+  APPROVED_DAF: "Approuvé DAF",
+  PRINTED: "Décaissé",
+  REJECTED: "Rejeté",
+};
+function getRevertTargets(current: string): string[] {
+  if (current === "REJECTED") return STATUS_ORDER.filter(s => s !== "PRINTED");
+  const idx = STATUS_ORDER.indexOf(current as typeof STATUS_ORDER[number]);
+  return idx > 0 ? [...STATUS_ORDER.slice(0, idx)] : [];
+}
+
 export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
   const { data: session } = useSession();
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -74,6 +98,12 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false);
+  const [revertTarget, setRevertTarget] = useState<string>("");
+  const [revertReason, setRevertReason] = useState("");
+
+  const revertTargets = getRevertTargets(bdc.status);
+  const canRevert = session?.user?.role === "ADMIN" && revertTargets.length > 0;
 
   const form = useForm<RejectFormData>({
     resolver: zodResolver(rejectFormSchema),
@@ -297,6 +327,41 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
       });
     } finally {
       setIsPrintDialogOpen(false);
+      setIsLoading(false);
+    }
+  };
+
+  const openRevertDialog = () => {
+    // Default to the immediately previous step
+    setRevertTarget(bdc.status === "REJECTED" ? "SUBMITTED" : revertTargets[revertTargets.length - 1]);
+    setRevertReason("");
+    setIsRevertDialogOpen(true);
+  };
+
+  const handleRevert = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/bdc?id=${bdc.id}&action=revert`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetStatus: revertTarget, reason: revertReason }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erreur lors du rétablissement');
+      }
+
+      toast.success("Succès", {
+        description: `Le BDC a été rétabli au statut « ${STATUS_LABELS[revertTarget]} »`
+      });
+      setIsRevertDialogOpen(false);
+      await onRefresh();
+    } catch (error) {
+      toast.error("Erreur", {
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors du rétablissement"
+      });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -532,8 +597,20 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
                 )}
               </div>
               
-              {canDelete(session?.user?.role) && (
-              <div>
+              {(canRevert || canDelete(session?.user?.role)) && (
+              <div className="flex flex-row gap-2">
+                {canRevert && (
+                  <Button
+                    onClick={openRevertDialog}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="h-8"
+                    title="Rétablir un statut précédent (Admin)"
+                  >
+                    <Undo2 className="h-4 w-4" />
+                  </Button>
+                )}
+                {canDelete(session?.user?.role) && (
                 <Button
                     onClick={() => setIsDeleteDialogOpen(true)}
                     disabled={isLoading}
@@ -542,6 +619,7 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
+                )}
               </div>
               )}
             </div>
@@ -726,6 +804,60 @@ export function BDCDetails({ bdc, onRefresh }: BDCDetailsProps) {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Revert Dialog (ADMIN only) */}
+      <Dialog open={isRevertDialogOpen} onOpenChange={setIsRevertDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rétablir un statut précédent</DialogTitle>
+            <DialogDescription>
+              Action administrateur : le BDC {bdc.bdcId} passera du statut « {STATUS_LABELS[bdc.status] ?? bdc.status} » au statut choisi.
+              Les validations des étapes annulées seront effacées.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nouveau statut</Label>
+              <Select value={revertTarget} onValueChange={setRevertTarget}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  {revertTargets.map(s => (
+                    <SelectItem key={s} value={s}>{STATUS_LABELS[s] ?? s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Motif</Label>
+              <Textarea
+                placeholder="Ex : décaissement effectué par erreur"
+                className="resize-none"
+                value={revertReason}
+                onChange={e => setRevertReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsRevertDialogOpen(false)}
+              disabled={isLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleRevert}
+              disabled={isLoading || !revertTarget || !revertReason.trim()}
+            >
+              Rétablir
+              {isLoading && (<Icons.spinner className="ml-2 h-4 w-4 animate-spin" />)}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

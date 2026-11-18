@@ -11,9 +11,11 @@ import {
   deleteBDC,
   markBDCAsPrinted,
   getBDCWithDetails,
-  approveDAF
+  approveDAF,
+  BDCActionError,
+  revertBDCStatus
 } from "@/app/api/bdc/utils/bdc-util";
-import { Access, Role } from "@prisma/client";
+import { Access, BDCStatus, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -40,6 +42,11 @@ const updateBDCSchema = createBDCSchema.partial();
 
 const rejectBDCSchema = z.object({
   reason: z.string().min(1, "La raison du rejet est requise")
+});
+
+const revertBDCSchema = z.object({
+  targetStatus: z.nativeEnum(BDCStatus),
+  reason: z.string().trim().min(1, "Le motif est requis")
 });
 
 export async function POST(req: NextRequest) {
@@ -156,6 +163,17 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json(printedBdc);
       }
 
+      case "revert": {
+        // Strictly ADMIN: corrective action, not part of the normal workflow
+        if (user.role !== Role.ADMIN) {
+          return NextResponse.json({ error: "Action réservée à l'administrateur" }, { status: 403 });
+        }
+        const data = await req.json();
+        const { targetStatus, reason } = revertBDCSchema.parse(data);
+        const revertedBdc = await revertBDCStatus(bdcIdNum, user.id, targetStatus, reason);
+        return NextResponse.json(revertedBdc);
+      }
+
       default:
         return NextResponse.json({ error: "Action non valide" }, { status: 400 });
     }
@@ -165,6 +183,9 @@ export async function PUT(req: NextRequest) {
         { error: "Données invalides", details: error.errors },
         { status: 400 }
       );
+    }
+    if (error instanceof BDCActionError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
     console.error("BDC update error:", error);
     return NextResponse.json(
